@@ -64,7 +64,8 @@ export const authOptions: NextAuthOptions = {
         return true;
       } catch (err) {
         console.error("Prisma custom signIn error (continuing with JWT):", err);
-        return true;
+        // Fail login explicitly if DB connection fails, otherwise we get Unauthorized later
+        return false;
       }
     },
     async jwt({ token, account, user }) {
@@ -98,5 +99,5 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "fallback_secret_for_vercel_deployments_only",
 };
