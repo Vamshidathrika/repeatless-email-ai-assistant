@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { db } from "./db";
-import { summarizeEmail } from "./gemini";
+import { summarizeThreadEmail } from "./gemini";
 import crypto from "crypto";
 
 const oauth2Client = new google.auth.OAuth2(
@@ -45,47 +45,74 @@ export async function getGmailClient(userId: string) {
   return google.gmail({ version: "v1", auth: oauth2Client });
 }
 
-// Extract email text body from MIME structure
-function getEmailBody(payload: any): string {
-  if (!payload) return "";
-
-  if (payload.body && payload.body.data) {
-    return Buffer.from(payload.body.data, "base64").toString("utf-8");
-  }
-
-  if (payload.parts) {
-    return getPartsBody(payload.parts);
-  }
-
-  return "";
+// Helper to escape HTML characters
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-function getPartsBody(parts: any[]): string {
-  const plainPart = parts.find((part) => part.mimeType === "text/plain");
-  if (plainPart && plainPart.body && plainPart.body.data) {
-    return Buffer.from(plainPart.body.data, "base64").toString("utf-8");
+// Helper to parse List-Unsubscribe header to extract HTTP URLs or mailtos
+function parseUnsubscribeUrl(headerValue: string): string | null {
+  if (!headerValue) return null;
+  // Match URLs inside angle brackets
+  const matches = headerValue.match(/<([^>]+)>/g);
+  if (matches) {
+    for (const match of matches) {
+      const url = match.slice(1, -1);
+      if (url.startsWith("http")) {
+        return url;
+      }
+    }
+    // Fallback to first match (e.g. mailto)
+    return matches[0].slice(1, -1);
+  }
+  return null;
+}
+
+// Extract both text and html email body from MIME structure
+function extractBodyParts(payload: any): { text: string; html: string } {
+  let text = "";
+  let html = "";
+
+  function traverse(part: any) {
+    if (!part) return;
+
+    if (part.body && part.body.data) {
+      const decoded = Buffer.from(part.body.data, "base64").toString("utf-8");
+      if (part.mimeType === "text/plain") {
+        text += decoded;
+      } else if (part.mimeType === "text/html") {
+        html += decoded;
+      }
+    }
+
+    if (part.parts && Array.isArray(part.parts)) {
+      part.parts.forEach(traverse);
+    }
   }
 
-  const htmlPart = parts.find((part) => part.mimeType === "text/html");
-  if (htmlPart && htmlPart.body && htmlPart.body.data) {
-    const rawHtml = Buffer.from(htmlPart.body.data, "base64").toString("utf-8");
-    // Simple tag strip for fallback
-    return rawHtml
+  traverse(payload);
+
+  // Fallbacks:
+  // If we only got html but no text, generate text by stripping tags
+  if (html && !text) {
+    text = html
       .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, "")
       .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, "")
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
       .trim();
   }
-
-  for (const part of parts) {
-    if (part.parts) {
-      const body = getPartsBody(part.parts);
-      if (body) return body;
-    }
+  // If we only got text but no html, generate html by formatting text
+  if (text && !html) {
+    html = `<html><body style="font-family: sans-serif; white-space: pre-wrap; padding: 20px; color: #1A1410;">${escapeHtml(text)}</body></html>`;
   }
 
-  return "";
+  return { text, html };
 }
 
 // Deduplication Signature Helpers
@@ -136,117 +163,145 @@ export async function syncEmails(userId: string, limit: number = 20) {
     });
   }
 
-  console.log(`Starting email sync for user ${userId}...`);
+  console.log(`Starting thread-first email sync for user ${userId}...`);
 
-  // Fetch list of recent messages
-  const response = await gmail.users.messages.list({
+  // Fetch list of recent threads (each thread can contain multiple messages)
+  const response = await gmail.users.threads.list({
     userId: "me",
     maxResults: limit,
     q: "-category:chats", // avoid chat histories
   });
 
-  const messages = response.data.messages || [];
+  const threadsList = response.data.threads || [];
   let newEmailsCount = 0;
   let skippedDuplicates = 0;
+  let processedMessagesCount = 0;
 
-  for (const message of messages) {
-    if (!message.id) continue;
+  for (const threadItem of threadsList) {
+    if (!threadItem.id) continue;
 
-    // 1. Idempotency Check: Check if message already exists
-    const existingEmail = await db.email.findUnique({
-      where: { id: message.id },
-    });
-    if (existingEmail) continue;
-
-    // 2. Fetch full email payload
-    const emailData = await gmail.users.messages.get({
-      userId: "me",
-      id: message.id,
-      format: "full",
-    });
-
-    const headers = emailData.data.payload?.headers || [];
-    const subject = headers.find((h) => h.name?.toLowerCase() === "subject")?.value || "(No Subject)";
-    const sender = headers.find((h) => h.name?.toLowerCase() === "from")?.value || "Unknown";
-    const receiver = headers.find((h) => h.name?.toLowerCase() === "to")?.value || "";
-    const dateStr = headers.find((h) => h.name?.toLowerCase() === "date")?.value || "";
-    const date = dateStr ? new Date(dateStr) : new Date();
-    const snippet = emailData.data.snippet || "";
-    
-    // Parse labels
-    const labels = emailData.data.labelIds?.join(",") || "";
-    
-    // Extract full body content
-    const bodyContent = getEmailBody(emailData.data.payload) || snippet;
-    
-    // 3. Deduplication Check
-    const dedupHash = generateDedupHash(sender, subject, date);
-    
-    // Check if another email with this hash exists in the user's DB
-    const duplicateEmail = await db.email.findFirst({
-      where: {
-        userId,
-        dedupHash,
-        isDuplicate: false,
-      },
-    });
-
-    let isDuplicate = false;
-    if (duplicateEmail) {
-      isDuplicate = true;
-      skippedDuplicates++;
-    }
-
-    // Save Email entry
-    const email = await db.email.create({
-      data: {
-        id: message.id,
-        threadId: emailData.data.threadId || message.id,
-        userId,
-        subject,
-        sender,
-        receiver,
-        date,
-        bodySnippet: snippet,
-        bodyContent,
-        labels,
-        isDuplicate,
-        dedupHash,
-      },
-    });
-
-    // 4. Summarization step (only if not a duplicate)
-    if (!isDuplicate) {
-      const summary = await summarizeEmail(
-        subject,
-        sender,
-        bodyContent,
-        preference.summaryModel
-      );
-
-      await db.emailSummary.create({
-        data: {
-          emailId: email.id,
-          shortSummary: summary.shortSummary,
-          detailedSummary: summary.detailedSummary,
-          actionItems: JSON.stringify(summary.actionItems),
-          category: summary.category,
-          importanceScore: summary.importanceScore,
-        },
+    try {
+      // Fetch full thread with all its historical messages
+      const threadData = await gmail.users.threads.get({
+        userId: "me",
+        id: threadItem.id,
+        format: "full"
       });
-      newEmailsCount++;
-    } else {
-      // Create a dummy summary for duplicates so schema relations don't break
-      await db.emailSummary.create({
-        data: {
-          emailId: email.id,
-          shortSummary: `[Duplicate Newsletter] Sender sent similar content this week.`,
-          detailedSummary: `This email was identified as a duplicate newsletter from ${sender} under subject "${subject}". Summarization skipped.`,
-          actionItems: JSON.stringify([]),
-          category: "Updates",
-          importanceScore: 1,
-        },
-      });
+
+      const messages = threadData.data.messages || [];
+      let threadContextText = "";
+
+      for (const msg of messages) {
+        if (!msg.id) continue;
+        processedMessagesCount++;
+
+        const headers = msg.payload?.headers || [];
+        const subject = headers.find((h) => h.name?.toLowerCase() === "subject")?.value || "(No Subject)";
+        const sender = headers.find((h) => h.name?.toLowerCase() === "from")?.value || "Unknown";
+        const receiver = headers.find((h) => h.name?.toLowerCase() === "to")?.value || "";
+        const dateStr = headers.find((h) => h.name?.toLowerCase() === "date")?.value || "";
+        const date = dateStr ? new Date(dateStr) : new Date();
+        const snippet = msg.snippet || "";
+
+        const parsedBodies = extractBodyParts(msg.payload);
+        const bodyContent = parsedBodies.text || snippet;
+        const htmlContent = parsedBodies.html || null;
+
+        const unsubHeader = headers.find((h) => h.name?.toLowerCase() === "list-unsubscribe")?.value || "";
+        const unsubscribeUrl = parseUnsubscribeUrl(unsubHeader);
+
+        // Build rolling thread context to give to summarizer
+        threadContextText += `From: ${sender}\nDate: ${date.toISOString()}\nSubject: ${subject}\nContent:\n${bodyContent.slice(0, 3000)}\n---\n`;
+
+        // Check if message already exists in database
+        const existingEmail = await db.email.findUnique({
+          where: { id: msg.id }
+        });
+
+        if (existingEmail) {
+          continue; // Already processed
+        }
+
+        // Deduplication Check: ONLY for single-message threads (e.g. newsletters/promotions)
+        // Multi-message threads = active conversations — NEVER deduplicate replies in those
+        const dedupHash = generateDedupHash(sender, subject, date);
+        let isDuplicate = false;
+
+        if (messages.length === 1) {
+          // Single-message thread: safe to dedup (newsletters, promo blasts, etc.)
+          const duplicateEmail = await db.email.findFirst({
+            where: {
+              userId,
+              dedupHash,
+              isDuplicate: false,
+            },
+          });
+          if (duplicateEmail) {
+            isDuplicate = true;
+            skippedDuplicates++;
+          }
+        }
+
+        // Save Email entry
+        const email = await db.email.create({
+          data: {
+            id: msg.id,
+            threadId: threadItem.id,
+            userId,
+            subject,
+            sender,
+            receiver,
+            date,
+            bodySnippet: snippet,
+            bodyContent,
+            htmlContent,
+            unsubscribeUrl,
+            labels: msg.labelIds?.join(",") || "",
+            isDuplicate,
+            dedupHash,
+          },
+        });
+
+        // 4. Summarization step (only if not a duplicate)
+        if (!isDuplicate) {
+          // Pass the rolling threadContextText to summarizeThreadEmail
+          const summary = await summarizeThreadEmail(
+            subject,
+            sender,
+            bodyContent,
+            threadContextText,
+            preference.summaryModel
+          );
+
+          await db.emailSummary.create({
+            data: {
+              emailId: email.id,
+              shortSummary: summary.shortSummary,
+              detailedSummary: summary.detailedSummary,
+              actionItems: JSON.stringify(summary.actionItems),
+              category: summary.category,
+              importanceScore: summary.importanceScore,
+              replySuggestions: JSON.stringify(summary.replySuggestions),
+            },
+          });
+          newEmailsCount++;
+        } else {
+          // Create dummy summary for duplicate
+          await db.emailSummary.create({
+            data: {
+              emailId: email.id,
+              shortSummary: `[Duplicate Newsletter] Similar newsletter sent this week.`,
+              detailedSummary: `This newsletter was flagged as a duplicate of an earlier one from ${sender}. Summarization skipped.`,
+              actionItems: JSON.stringify([]),
+              category: "Newsletters",
+              importanceScore: 1,
+              replySuggestions: JSON.stringify([]),
+            },
+          });
+        }
+      }
+    } catch (threadErr) {
+      console.error(`Failed to process thread ${threadItem.id}:`, threadErr);
     }
   }
 
@@ -258,31 +313,69 @@ export async function syncEmails(userId: string, limit: number = 20) {
   });
 
   return {
-    processed: messages.length,
+    processed: processedMessagesCount,
     newEmails: newEmailsCount,
     duplicatesSkipped: skippedDuplicates,
   };
 }
-
 export async function sendGmailReply(
   userId: string,
-  threadId: string,
+  threadId: string | null,
   replyText: string,
   recipient: string,
-  subject: string
+  subject: string,
+  cc?: string | null,
+  bcc?: string | null
 ) {
   const gmail = await getGmailClient(userId);
 
-  // Draft MIME message
-  const rawMessage = [
+  // Fetch ALL thread message IDs to build a proper References chain per RFC 2822
+  // Skip when threadId is null (forward mode — creates a brand-new thread)
+  let parentMessageId = "";
+  const allMessageIds: string[] = [];
+  if (threadId) {
+    try {
+      const threadRes = await gmail.users.threads.get({
+        userId: "me",
+        id: threadId,
+        format: "metadata",
+        metadataHeaders: ["Message-ID"],
+      });
+
+      const messages = threadRes.data.messages || [];
+      for (const msg of messages) {
+        const headers = msg.payload?.headers || [];
+        const msgId = headers.find((h: any) => h.name?.toLowerCase() === "message-id")?.value || "";
+        if (msgId) allMessageIds.push(msgId);
+      }
+      if (allMessageIds.length > 0) {
+        parentMessageId = allMessageIds[allMessageIds.length - 1];
+      }
+    } catch (err) {
+      console.error("Failed to fetch thread Message-IDs for threading:", err);
+    }
+  }
+
+  // Draft MIME message with proper threading headers
+  const mimeHeaders = [
     `To: ${recipient}`,
-    `Subject: ${subject.startsWith("Re:") ? subject : "Re: " + subject}`,
-    `In-Reply-To: ${threadId}`,
-    `References: ${threadId}`,
-    "Content-Type: text/plain; charset=utf-8",
-    "",
-    replyText,
-  ].join("\n");
+    `Subject: ${subject.startsWith("Re:") || subject.startsWith("Fwd:") ? subject : "Re: " + subject}`,
+  ];
+
+  if (cc) mimeHeaders.push(`Cc: ${cc}`);
+  if (bcc) mimeHeaders.push(`Bcc: ${bcc}`);
+
+  if (parentMessageId && threadId) {
+    mimeHeaders.push(`In-Reply-To: ${parentMessageId}`);
+    // References should include all message IDs in the thread chain (RFC 2822)
+    mimeHeaders.push(`References: ${allMessageIds.join(" ")}`);
+  }
+
+  mimeHeaders.push("Content-Type: text/plain; charset=utf-8");
+  mimeHeaders.push("");
+  mimeHeaders.push(replyText);
+
+  const rawMessage = mimeHeaders.join("\n");
 
   const encodedMessage = Buffer.from(rawMessage)
     .toString("base64")
@@ -290,12 +383,13 @@ export async function sendGmailReply(
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 
+  // Only set threadId in the request if we have one (omitting it creates a new thread for forwards)
+  const requestBody: any = { raw: encodedMessage };
+  if (threadId) requestBody.threadId = threadId;
+
   const res = await gmail.users.messages.send({
     userId: "me",
-    requestBody: {
-      raw: encodedMessage,
-      threadId: threadId,
-    },
+    requestBody,
   });
 
   return res.data;

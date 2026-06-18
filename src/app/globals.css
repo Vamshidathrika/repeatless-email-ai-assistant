@@ -1,59 +1,59 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* Premium Obsidian & Indigo Color Palette */
-  --bg-primary: #03050c;
-  --bg-secondary: #080c18;
-  --bg-surface: rgba(15, 22, 42, 0.6);
-  --bg-surface-hover: rgba(30, 41, 59, 0.4);
-  --bg-glass: rgba(10, 14, 26, 0.7);
+  /* Clean White & Light Grey Google Workspace Palette */
+  --bg-primary: #f6f8fc; /* Gmail container background */
+  --bg-secondary: #ffffff; /* Active panel & sheet background */
+  --bg-surface: #ffffff; /* Card backgrounds */
+  --bg-surface-hover: #f1f3f4; /* Subtle hover state */
+  --bg-glass: #ffffff; /* Solid white panel */
   
-  /* Micro-borders & glow colors */
-  --border-color: rgba(255, 255, 255, 0.05);
-  --border-hover: rgba(255, 255, 255, 0.12);
-  --border-accent: rgba(99, 102, 241, 0.25);
-  --border-glow: rgba(139, 92, 246, 0.4);
+  /* Micro-borders & subtle colors */
+  --border-color: #e0e2e6; /* Soft border */
+  --border-hover: #c7cdd4; /* Focused/hover border */
+  --border-accent: #c2e7ff; /* Gmail blue active indicators */
+  --border-glow: transparent; /* Remove glow */
   
   /* Radiant Accents */
-  --accent-purple: #8b5cf6;
-  --accent-indigo: #6366f1;
-  --accent-pink: #ec4899;
-  --accent-sky: #0ea5e9;
-  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-  --btn-glow: 0 4px 20px rgba(99, 102, 241, 0.25);
+  --accent-purple: #0b57d0; /* Google Brand Blue */
+  --accent-indigo: #1a73e8; /* Google Active Blue */
+  --accent-pink: #d93025; /* Google Red */
+  --accent-sky: #007b83; /* Teal */
+  --accent-gradient: linear-gradient(135deg, #1a73e8 0%, #0b57d0 100%);
+  --btn-glow: none;
   
   /* Categorized Theme Colors */
-  --google-red: #ef4444;
-  --google-blue: #3b82f6;
-  --google-green: #10b981;
-  --google-yellow: #f59e0b;
-  --google-indigo: #6366f1;
+  --google-red: #d93025;
+  --google-blue: #1a73e8;
+  --google-green: #188038;
+  --google-yellow: #f29900;
+  --google-indigo: #0b57d0;
   
   /* Modern Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Plus Jakarta Sans', 'Outfit', sans-serif;
   
   /* Text styling */
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --text-dim: #475569;
+  --text-primary: #1f1f1f; /* Charcoal black */
+  --text-secondary: #474747; /* Mid grey */
+  --text-muted: #5f6368; /* Google grey */
+  --text-dim: #80868b;
   
   /* Border radius */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
   --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-lg: 28px;
   --radius-pill: 9999px;
   
   /* Timing */
-  --transition-normal: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Shadows & Glows */
-  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.12);
-  --shadow-card: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
-  --shadow-dropdown: 0 12px 30px -4px rgba(0, 0, 0, 0.9);
+  --shadow-glow: none;
+  --shadow-card: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+  --shadow-dropdown: 0 2px 6px 2px rgba(60,64,67,0.15);
 }
 
 * {
@@ -90,21 +90,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.12);
   border-radius: var(--radius-pill);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.24);
 }
 
 /* Inputs & Form Elements */
 input, textarea, select {
-  background: rgba(0, 0, 0, 0.25);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem 1rem;
+  border-radius: var(--radius-xs);
+  padding: 0.5rem 0.75rem;
   font-size: 0.88rem;
   outline: none;
   transition: all var(--transition-normal);
@@ -112,8 +112,8 @@ input, textarea, select {
 
 input:focus, textarea:focus, select:focus {
   border-color: var(--accent-indigo);
-  background: rgba(0, 0, 0, 0.4);
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
 }
 
 /* Glass panel */

@@ -38,25 +38,85 @@ export async function POST(req: Request) {
         .map((e: any) => `From: ${e.sender}\nDate: ${e.date.toISOString()}\nSubject: ${e.subject}\nBody:\n${e.bodyContent}\n---`)
         .join("\n\n");
 
+      // Fetch user info for name and preference model
+      const user = await db.user.findUnique({
+        where: { id: userId }
+      });
+      const preference = await db.userPreference.findUnique({
+        where: { userId }
+      });
+
+      const userName = user?.name || "User";
+      const chatModel = preference?.chatModel || "gemini-2.5-flash-lite";
+
       const latestEmail = threadEmails[threadEmails.length - 1];
       const draft = await draftReply(
         latestEmail.subject,
         latestEmail.sender,
         threadContext,
-        userInstruction
+        userInstruction,
+        userName,
+        chatModel
       );
 
       return NextResponse.json({
         success: true,
-        draft,
+        draft, // structured as { subject: string, body: string }
       });
     } else if (action === "send") {
-      const { threadId, replyText, recipient, subject } = body;
-      if (!threadId || !replyText || !recipient || !subject) {
+      const { threadId, replyText, recipient, subject, cc, bcc } = body;
+      if (!replyText || !recipient || !subject) {
         return NextResponse.json({ error: "Missing required fields for sending" }, { status: 400 });
       }
 
-      const sendResult = await sendGmailReply(userId, threadId, replyText, recipient, subject);
+      const sendResult = await sendGmailReply(userId, threadId || null, replyText, recipient, subject, cc || null, bcc || null);
+
+      // Save the sent email to the local database so it immediately updates in the thread list
+      if (sendResult && sendResult.id) {
+        try {
+          const senderEmail = session.user.email || "me@gmail.com";
+          const senderName = session.user.name || "Me";
+          const senderFormatted = senderName ? `"${senderName}" <${senderEmail}>` : senderEmail;
+
+          // Use the thread ID that Gmail actually assigned (may differ from original if Gmail re-threads)
+          // For forwards, threadId may be null — use Gmail's assigned thread ID
+          const actualThreadId = (sendResult as any).threadId || threadId || sendResult.id;
+
+          const createdEmail = await db.email.create({
+            data: {
+              id: sendResult.id,
+              threadId: actualThreadId,
+              userId: userId,
+              subject: subject.startsWith("Re:") ? subject : "Re: " + subject,
+              sender: senderFormatted,
+              receiver: recipient,
+              date: new Date(),
+              bodySnippet: replyText.slice(0, 150),
+              bodyContent: replyText,
+              htmlContent: null,
+              unsubscribeUrl: null,
+              labels: "SENT",
+              isDuplicate: false,
+              dedupHash: null
+            }
+          });
+
+          // Create a summary for the sent message to avoid blank AI views
+          await db.emailSummary.create({
+            data: {
+              emailId: createdEmail.id,
+              shortSummary: "You replied to this thread.",
+              detailedSummary: `Sent response: "${replyText}"`,
+              actionItems: JSON.stringify([]),
+              category: "Personal",
+              importanceScore: 1,
+              replySuggestions: JSON.stringify([])
+            }
+          });
+        } catch (dbErr) {
+          console.error("Failed to save sent reply to database:", dbErr);
+        }
+      }
 
       return NextResponse.json({
         success: true,

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gmail Intelligence Platform - Personal AI Workspace",
-  description: "A secure, personal AI Gmail workspace that organizes, summarizes, and answers questions about your email inbox using Gemini 3.5 Flash.",
+  title: "Repeatless — AI-Powered Gmail Intelligence Platform",
+  description: "Your inbox, finally intelligent. Repeatless uses AI to summarize emails, compose smart replies, deduplicate newsletters, and provide priority scoring — all in a premium Gmail workspace.",
 };
 
 import { Providers } from "@/components/Providers";
@@ -26,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
+      <body suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

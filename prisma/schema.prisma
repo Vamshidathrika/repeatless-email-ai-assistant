@@ -5,6 +5,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 model Account {
@@ -58,7 +59,7 @@ model UserPreference {
   id             String  @id @default(cuid())
   userId         String  @unique
   user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categories     String  @default("Important,Promotions,Finance,Social,Updates") // comma-separated
+  categories     String  @default("Newsletters,Job / Recruitment,Finance,Notifications,Personal,Work / Professional") // comma-separated
   dedupWindowHrs Int     @default(168) // 1 week
   summaryModel   String  @default("gemini-3.5-flash") // Default model
   chatModel      String  @default("gemini-3.5-flash")
@@ -75,6 +76,8 @@ model Email {
   date        DateTime
   bodySnippet String   // Short preview snippet
   bodyContent String   // Stored raw body (plain text)
+  htmlContent String?  // Stored HTML body if available
+  unsubscribeUrl String? // Link or mailto for unsubscribing
   labels      String   // Comma-separated labels from Gmail
   isDuplicate Boolean  @default(false)
   dedupHash   String?  // The hash for dedup checks
@@ -97,6 +100,7 @@ model EmailSummary {
   actionItems    String   // JSON stringified list of action items
   category       String   // e.g. Important, Finance, Promotion, etc.
   importanceScore Int     // 1-10
+  replySuggestions String? // JSON stringified list of dynamic reply suggestions
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

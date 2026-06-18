@@ -13,41 +13,85 @@ export async function POST(req: Request) {
     }
 
     const userId = (session.user as any).id;
-    const { query } = await req.json();
+    const { query, history } = await req.json();
 
     if (!query) {
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
     }
 
     // 1. Retrieve User Preferences for model settings
-    let preference = await db.userPreference.findUnique({
+    const preference = await db.userPreference.findUnique({
       where: { userId }
     });
-    const chatModel = preference?.chatModel || "gemini-1.5-flash";
+    const chatModel = preference?.chatModel || "gemini-2.5-flash-lite";
 
-    // 2. Simple Keyword / Semantic Context Retrieval
-    // Fetch the 20 most recent emails
+    // 2. Map query keywords to target categories for intent classification
+    const categoryMappers: Record<string, string> = {
+      newsletter: "Newsletters",
+      digest: "Newsletters",
+      subscription: "Newsletters",
+      job: "Job / Recruitment",
+      interview: "Job / Recruitment",
+      application: "Job / Recruitment",
+      reject: "Job / Recruitment",
+      offer: "Job / Recruitment",
+      invoice: "Finance",
+      receipt: "Finance",
+      payment: "Finance",
+      bank: "Finance",
+      alert: "Notifications",
+      otp: "Notifications",
+      code: "Notifications",
+      personal: "Personal",
+      friend: "Personal",
+      work: "Work / Professional",
+      project: "Work / Professional",
+      team: "Work / Professional",
+      meeting: "Work / Professional"
+    };
+
+    let targetCategory = "";
+    const lowerQuery = query.toLowerCase();
+    for (const [key, cat] of Object.entries(categoryMappers)) {
+      if (lowerQuery.includes(key)) {
+        targetCategory = cat;
+        break;
+      }
+    }
+
+    const isNewsletterQuery =
+      lowerQuery.includes("newsletter") ||
+      lowerQuery.includes("news digest") ||
+      lowerQuery.includes("news updates") ||
+      lowerQuery.includes("digest of news") ||
+      (lowerQuery.includes("news") && (lowerQuery.includes("update") || lowerQuery.includes("recent") || lowerQuery.includes("brief") || lowerQuery.includes("summary")));
+
+    if (isNewsletterQuery) {
+      targetCategory = "Newsletters";
+    }
+
+    // 3. Search and Retrieve Relevant context
+    // A. Fetch recent emails (most recent 25)
     const recentEmails = await db.email.findMany({
       where: { userId, isDuplicate: false },
       include: { summary: true },
       orderBy: { date: "desc" },
-      take: 20,
+      take: 25,
     });
 
-    // Also try to find specifically matching emails based on keywords in query
-    // Simple word extraction: split query by space and filter out short words
+    // B. Keyword matching search
     const keywords = query
       .toLowerCase()
       .split(/\s+/)
-      .filter((w: string) => w.length > 3 && !["what", "show", "from", "with", "have", "about"].includes(w));
+      .filter((w: string) => w.length > 3 && !["what", "show", "from", "with", "have", "about", "your", "mail", "email"].includes(w));
 
     let searchEmails: any[] = [];
     if (keywords.length > 0) {
       const searchConditions = keywords.map((word: string) => ({
         OR: [
-          { subject: { contains: word } },
-          { sender: { contains: word } },
-          { bodyContent: { contains: word } },
+          { subject: { contains: word, mode: "insensitive" } },
+          { sender: { contains: word, mode: "insensitive" } },
+          { bodyContent: { contains: word, mode: "insensitive" } },
         ],
       }));
 
@@ -59,42 +103,85 @@ export async function POST(req: Request) {
         },
         include: { summary: true },
         orderBy: { date: "desc" },
-        take: 10,
+        take: 15,
       });
     }
 
-    // Combine and deduplicate by Email ID
+    // C. Category specific recent emails retrieval (to ensure cross-email category synthesis)
+    let categoryEmails: any[] = [];
+    if (targetCategory) {
+      categoryEmails = await db.email.findMany({
+        where: {
+          userId,
+          isDuplicate: false,
+          summary: {
+            category: targetCategory
+          }
+        },
+        include: { summary: true },
+        orderBy: { date: "desc" },
+        take: targetCategory === "Newsletters" ? 25 : 15
+      });
+    }
+
+    // Deduplicate matching emails by their primary Email ID
     const emailMap = new Map<string, any>();
     recentEmails.forEach((e: any) => emailMap.set(e.id, e));
     searchEmails.forEach((e: any) => emailMap.set(e.id, e));
-    const combinedEmails = Array.from(emailMap.values())
-      .sort((a, b) => b.date.getTime() - a.date.getTime())
-      .slice(0, 25); // Limit context size
+    categoryEmails.forEach((e: any) => emailMap.set(e.id, e));
 
-    // 3. Construct text context for LLM prompt
-    const contextLines = combinedEmails.map((e) => {
-      const summaryText = e.summary 
-        ? `Summary: ${e.summary.shortSummary}\nCategory: ${e.summary.category}\nImportance Score: ${e.summary.importanceScore}/10\nAction Items: ${e.summary.actionItems}`
-        : `Snippet: ${e.bodySnippet}`;
-      
-      const labelsList = e.labels ? e.labels.split(",") : [];
-      const isUnread = labelsList.includes("UNREAD");
-      const isStarred = labelsList.includes("STARRED");
-      
-      return `[Email ID: ${e.id} | Thread ID: ${e.threadId}]
-From: ${e.sender}
-Date: ${e.date.toISOString()}
-Status: ${isUnread ? "Unread" : "Read"}${isStarred ? " (Starred)" : ""}
-Subject: ${e.subject}
-${summaryText}
-Content: ${e.bodyContent.slice(0, 800)} // snippet of full body
+    const matchedEmailsList = Array.from(emailMap.values());
+
+    // 4. Thread-First Concept: Fetch all historical thread messages chronologically
+    const threadIds = Array.from(new Set(matchedEmailsList.map((e: any) => e.threadId).filter(Boolean)));
+    const threadEmails = await db.email.findMany({
+      where: {
+        userId,
+        threadId: { in: threadIds as string[] },
+      },
+      include: { summary: true },
+      orderBy: { date: "asc" }, // chronological order inside each thread
+    });
+
+    // Group emails by threadId
+    const threadsMap = new Map<string, any[]>();
+    threadEmails.forEach((email: any) => {
+      if (!threadsMap.has(email.threadId)) {
+        threadsMap.set(email.threadId, []);
+      }
+      threadsMap.get(email.threadId)!.push(email);
+    });
+
+    // 5. Construct Structured Prompt Context Grouped by Thread
+    const contextLines = Array.from(threadsMap.entries()).map(([threadId, emailsInThread]) => {
+      const messagesText = emailsInThread.map((e, index) => {
+        const summaryText = e.summary 
+          ? `Summary: ${e.summary.shortSummary}\nCategory: ${e.summary.category}\nImportance Score: ${e.summary.importanceScore}/10\nAction Items: ${e.summary.actionItems}`
+          : `Snippet: ${e.bodySnippet}`;
+        
+        const labelsList = e.labels ? e.labels.split(",") : [];
+        const isUnread = labelsList.includes("UNREAD");
+        
+        return `  Message #${index + 1} [ID: ${e.id}]:
+  From: ${e.sender}
+  Date: ${e.date.toISOString()}
+  Status: ${isUnread ? "Unread" : "Read"}
+  Subject: ${e.subject}
+  ${summaryText}
+  Content: ${e.bodyContent.slice(0, 1000)}`;
+      }).join("\n\n");
+
+      return `Thread ID: ${threadId}
+Total Messages in Thread: ${emailsInThread.length}
+Messages:
+${messagesText}
 ---`;
     });
 
     const emailContext = contextLines.join("\n\n");
 
-    // 4. Generate Answer using Gemini Chat Agent
-    const reply = await askAgentAboutEmails(query, emailContext, chatModel);
+    // 6. Generate Answer using Gemini Chat Agent with conversational history
+    const reply = await askAgentAboutEmails(query, emailContext, history || [], chatModel, isNewsletterQuery);
 
     return NextResponse.json({
       success: true,
