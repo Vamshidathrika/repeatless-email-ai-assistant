@@ -1,28 +1,28 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/client"
 }
 
-model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -42,8 +42,8 @@ model User {
   emailVerified DateTime?
   image         String?
   accounts      Account[]
-  sessions      Session[]
   emails        Email[]
+  sessions      Session[]
   preferences   UserPreference?
 }
 
@@ -56,54 +56,48 @@ model VerificationToken {
 }
 
 model UserPreference {
-  id             String  @id @default(cuid())
-  userId         String  @unique
-  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categories     String  @default("Newsletters,Job / Recruitment,Finance,Notifications,Personal,Work / Professional") // comma-separated
-  dedupWindowHrs Int     @default(168) // 1 week
-  summaryModel   String  @default("gemini-3.5-flash") // Default model
-  chatModel      String  @default("gemini-3.5-flash")
+  id             String @id @default(cuid())
+  userId         String @unique
+  categories     String @default("Important,Promotions,Finance,Social,Updates")
+  dedupWindowHrs Int    @default(168)
+  summaryModel   String @default("gemini-3.5-flash")
+  chatModel      String @default("gemini-3.5-flash")
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Email {
-  id          String   @id // Gmail message ID
-  threadId    String   // Gmail thread ID
+  id          String        @id
+  threadId    String
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   subject     String
   sender      String
   receiver    String
   date        DateTime
-  bodySnippet String   // Short preview snippet
-  bodyContent String   // Stored raw body (plain text)
-  htmlContent String?  // Stored HTML body if available
-  unsubscribeUrl String? // Link or mailto for unsubscribing
-  labels      String   // Comma-separated labels from Gmail
-  isDuplicate Boolean  @default(false)
-  dedupHash   String?  // The hash for dedup checks
-  
+  bodySnippet String
+  bodyContent String
+  labels      String
+  isDuplicate Boolean       @default(false)
+  dedupHash   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   summary     EmailSummary?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
   @@index([threadId])
   @@index([userId])
 }
 
 model EmailSummary {
-  id             String   @id @default(cuid())
-  emailId        String   @unique
-  email          Email    @relation(fields: [emailId], references: [id], onDelete: Cascade)
-  shortSummary   String
+  id              String   @id @default(cuid())
+  emailId         String   @unique
+  shortSummary    String
   detailedSummary String
-  actionItems    String   // JSON stringified list of action items
-  category       String   // e.g. Important, Finance, Promotion, etc.
-  importanceScore Int     // 1-10
-  replySuggestions String? // JSON stringified list of dynamic reply suggestions
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  actionItems     String
+  category        String
+  importanceScore Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  email           Email    @relation(fields: [emailId], references: [id], onDelete: Cascade)
 }
 
 model SyncState {
