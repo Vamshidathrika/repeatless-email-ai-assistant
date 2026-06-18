@@ -20,7 +20,6 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (!user.email) return false;
       try {
-        // Manually handle User creation/update
         const dbUser = await db.user.upsert({
           where: { email: user.email },
           update: {
@@ -35,7 +34,6 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (account) {
-          // Manually handle Account token updates
           await db.account.upsert({
             where: {
               provider_providerAccountId: {
@@ -61,37 +59,36 @@ export const authOptions: NextAuthOptions = {
             },
           });
         }
+
+        // Attach database user id to the user object (safe because of custom next-auth.d.ts definitions)
+        user.id = dbUser.id;
         return true;
-      } catch (err) {
-        console.error("Prisma custom signIn error (continuing with JWT):", err);
-        // Fail login explicitly if DB connection fails, otherwise we get Unauthorized later
+      } catch (error) {
+        console.error("signIn error:", error);
         return false;
       }
     },
-    async jwt({ token, account, user }) {
-      // Find database user CUID when user email is present
-      if (user && user.email) {
-        try {
-          const dbUser = await db.user.findUnique({
-            where: { email: user.email },
-          });
-          if (dbUser) {
-            token.id = dbUser.id;
-          }
-        } catch (err) {
-          console.error("JWT user lookup error:", err);
-        }
+    async jwt({ token, user, account }) {
+      // On initial sign-in, store database user.id and Google tokens in JWT
+      if (user) {
+        token.id = user.id;
       }
       if (account) {
+        token.access_token = account.access_token;
+        token.refresh_token = account.refresh_token;
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).accessToken = token.accessToken;
+      // Pass values from JWT into the session object
+      if (session.user && token) {
+        session.user.id = token.id;
+        session.user.access_token = token.access_token;
+        session.user.refresh_token = token.refresh_token;
+        session.user.accessToken = token.accessToken;
+        session.user.refreshToken = token.refreshToken;
       }
       return session;
     },

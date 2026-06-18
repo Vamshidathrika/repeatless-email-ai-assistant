@@ -15,6 +15,7 @@ interface EmailSummary {
   actionItems: string; // JSON string
   category: string;
   importanceScore: number;
+  replySuggestions?: string | null;
 }
 
 interface Email {
@@ -2756,7 +2757,7 @@ export default function Home() {
                                 
                                 const subject = (selectedEmail.subject || "").toLowerCase();
                                 const body = (selectedEmail.bodyContent || "").toLowerCase();
-                                const summaryObj = selectedEmail.summary as any;
+                                const summaryObj = selectedEmail.summary;
                                 const category = (summaryObj?.category || "").toLowerCase();
                                 const sender = (selectedEmail.sender || "").toLowerCase();
                                 const isNoReply = sender.includes("noreply") || sender.includes("no-reply") || sender.includes("notification") || sender.includes("alert");
@@ -2954,7 +2955,7 @@ export default function Home() {
                                             const sender = (selectedEmail.sender || "").toLowerCase();
                                             const subject = (selectedEmail.subject || "").toLowerCase();
                                             const body = (selectedEmail.bodyContent || "").toLowerCase();
-                                            const summaryObj = selectedEmail.summary as any;
+                                            const summaryObj = selectedEmail.summary;
                                             const category = (summaryObj?.category || "").toLowerCase();
                                             const isAutomated = sender.includes("noreply") || sender.includes("no-reply") || sender.includes("notification") || sender.includes("alert") || category === "notifications";
 
@@ -2967,7 +2968,7 @@ export default function Home() {
                                             }
                                           }
 
-                                          const summary = selectedEmail?.summary as any;
+                                          const summary = selectedEmail?.summary;
                                           if (summary?.replySuggestions) {
                                             try {
                                               const parsed = JSON.parse(summary.replySuggestions);

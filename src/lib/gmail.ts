@@ -1,4 +1,4 @@
-import { google } from "googleapis";
+import { google, gmail_v1 } from "googleapis";
 import { db } from "./db";
 import { summarizeThreadEmail } from "./gemini";
 import crypto from "crypto";
@@ -26,7 +26,7 @@ export async function getGmailClient(userId: string) {
 
   // Automatically save refreshed tokens
   oauth2Client.on("tokens", async (tokens) => {
-    const updateData: any = {};
+    const updateData: { access_token?: string | null; expires_at?: number | null; refresh_token?: string | null } = {};
     if (tokens.access_token) updateData.access_token = tokens.access_token;
     if (tokens.expiry_date) updateData.expires_at = Math.floor(tokens.expiry_date / 1000);
     if (tokens.refresh_token) updateData.refresh_token = tokens.refresh_token;
@@ -74,11 +74,11 @@ function parseUnsubscribeUrl(headerValue: string): string | null {
 }
 
 // Extract both text and html email body from MIME structure
-function extractBodyParts(payload: any): { text: string; html: string } {
+function extractBodyParts(payload: gmail_v1.Schema$MessagePart | undefined | null): { text: string; html: string } {
   let text = "";
   let html = "";
 
-  function traverse(part: any) {
+  function traverse(part: gmail_v1.Schema$MessagePart | undefined | null) {
     if (!part) return;
 
     if (part.body && part.body.data) {
@@ -345,7 +345,7 @@ export async function sendGmailReply(
       const messages = threadRes.data.messages || [];
       for (const msg of messages) {
         const headers = msg.payload?.headers || [];
-        const msgId = headers.find((h: any) => h.name?.toLowerCase() === "message-id")?.value || "";
+        const msgId = headers.find((h: gmail_v1.Schema$MessagePartHeader) => h.name?.toLowerCase() === "message-id")?.value || "";
         if (msgId) allMessageIds.push(msgId);
       }
       if (allMessageIds.length > 0) {
@@ -384,7 +384,7 @@ export async function sendGmailReply(
     .replace(/=+$/, "");
 
   // Only set threadId in the request if we have one (omitting it creates a new thread for forwards)
-  const requestBody: any = { raw: encodedMessage };
+  const requestBody: gmail_v1.Schema$Message = { raw: encodedMessage };
   if (threadId) requestBody.threadId = threadId;
 
   const res = await gmail.users.messages.send({

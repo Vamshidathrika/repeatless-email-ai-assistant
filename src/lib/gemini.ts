@@ -13,15 +13,13 @@ export interface SummaryResult {
 
 // Helper to resolve model names based on availability
 function resolveModelName(modelName: string): string {
-  // Map invalid/unavailable model names to gemini-2.0-flash-lite (correct free-tier model)
+  // Map invalid/unavailable model names to gemini-2.5-flash (correct free-tier model)
   if (
-    modelName === "gemini-3.5-flash" ||
-    modelName === "gemini-2.5-flash" ||
-    modelName === "gemini-2.5-flash-lite" ||
+    modelName === "gemini-2.0-flash-lite" ||
     modelName === "gemini-1.5-flash" ||
     !modelName
   ) {
-    return "gemini-2.0-flash-lite";
+    return "gemini-2.5-flash";
   }
   return modelName;
 }
@@ -30,9 +28,10 @@ function resolveModelName(modelName: string): string {
 async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 4, delay = 1000): Promise<T> {
   try {
     return await fn();
-  } catch (error: any) {
-    const errorMsg = error?.message || String(error);
-    const status = error?.status;
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    const status = (error as { status?: number })?.status;
+    const errorMsg = err.message;
     const isRateLimit = 
       status === 429 || 
       status === 503 ||
