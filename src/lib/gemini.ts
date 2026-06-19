@@ -15,7 +15,7 @@ export interface DraftResult {
 // Helper to resolve model names based on Groq availability
 function resolveModelName(modelName: string): string {
   if (!modelName) {
-    return "llama-3.3-70b-versatile";
+    return "llama-3.1-8b-instant";
   }
   
   const nameLower = modelName.toLowerCase();
@@ -23,22 +23,22 @@ function resolveModelName(modelName: string): string {
   // Map standard/old Gemini models to their Groq equivalents
   if (
     nameLower.includes("gemini") ||
+    nameLower.includes("llama-3.1") ||
+    nameLower.includes("instant") ||
+    nameLower.includes("gemma") ||
+    nameLower.includes("qwen") ||
+    nameLower.includes("mistral") ||
+    nameLower.includes("mixtral")
+  ) {
+    return "llama-3.1-8b-instant";
+  }
+  
+  if (
     nameLower.includes("llama-3.3") ||
-    nameLower.includes("70b")
+    nameLower.includes("70b") ||
+    nameLower.includes("versatile")
   ) {
     return "llama-3.3-70b-versatile";
-  }
-  
-  if (nameLower.includes("gemma")) {
-    return "gemma2-9b-it";
-  }
-  
-  if (nameLower.includes("qwen") || nameLower.includes("llama3-8b") || nameLower.includes("8b")) {
-    return "llama3-8b-8192";
-  }
-  
-  if (nameLower.includes("mistral") || nameLower.includes("mixtral") || nameLower.includes("8x7b")) {
-    return "mixtral-8x7b-32768";
   }
   
   return modelName;
@@ -66,10 +66,10 @@ async function fetchGroq(messages: { role: string; content: string }[], activeMo
   // Define the chain of Groq models to try in sequence if a failure occurs
   const modelsToTry = [activeModel];
   const fallbackList = [
+    "llama-3.1-8b-instant",
     "llama-3.3-70b-versatile",
-    "gemma2-9b-it",
-    "llama3-8b-8192",
-    "mixtral-8x7b-32768"
+    "openai/gpt-oss-20b",
+    "groq/compound-mini"
   ];
   
   for (const model of fallbackList) {
@@ -156,7 +156,7 @@ export async function summarizeThreadEmail(
   sender: string,
   body: string,
   threadContext: string,
-  modelName: string = "llama-3.3-70b-versatile"
+  modelName: string = "llama-3.1-8b-instant"
 ): Promise<SummaryResult> {
   const activeModel = resolveModelName(modelName);
   
@@ -217,7 +217,7 @@ export async function askAgentAboutEmails(
   query: string,
   emailContext: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
-  modelName: string = "llama-3.3-70b-versatile",
+  modelName: string = "llama-3.1-8b-instant",
   isNewsletterQuery: boolean = false
 ): Promise<string> {
   const activeModel = resolveModelName(modelName);
@@ -278,7 +278,7 @@ export async function draftReply(
   threadContext: string,
   userInstruction: string,
   userName: string = "User",
-  modelName: string = "llama-3.3-70b-versatile"
+  modelName: string = "llama-3.1-8b-instant"
 ): Promise<DraftResult> {
   const activeModel = resolveModelName(modelName);
   

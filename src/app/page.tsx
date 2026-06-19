@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { 
   Inbox, Sparkles, RefreshCw, LogOut, Send, Search, CheckSquare, 
   MessageSquare, User, AlertCircle, ChevronRight, Mail, Reply, ArrowRight, UserCheck, Star, Trash2,
-  BarChart2, Calendar, ShieldCheck, MailOpen, AlertTriangle
+  BarChart2, Calendar, ShieldCheck, MailOpen, AlertTriangle, X
 } from "lucide-react";
 
 interface EmailSummary {
@@ -136,8 +136,8 @@ export default function Home() {
   const [totalFreedBytes, setTotalFreedBytes] = useState<number>(0);
 
   useEffect(() => {
-    const savedCount = localStorage.getItem("repeatless_cleared_count");
-    const savedBytes = localStorage.getItem("repeatless_freed_bytes");
+    const savedCount = localStorage.getItem("aether_cleared_count");
+    const savedBytes = localStorage.getItem("aether_freed_bytes");
     if (savedCount) setTotalClearedCount(parseInt(savedCount, 10));
     if (savedBytes) setTotalFreedBytes(parseInt(savedBytes, 10));
   }, []);
@@ -145,19 +145,19 @@ export default function Home() {
   const updateCleanupStats = (count: number, bytes: number) => {
     setTotalClearedCount(prev => {
       const newVal = prev + count;
-      localStorage.setItem("repeatless_cleared_count", newVal.toString());
+      localStorage.setItem("aether_cleared_count", newVal.toString());
       return newVal;
     });
     setTotalFreedBytes(prev => {
       const newVal = prev + bytes;
-      localStorage.setItem("repeatless_freed_bytes", newVal.toString());
+      localStorage.setItem("aether_freed_bytes", newVal.toString());
       return newVal;
     });
   };
 
   // Chat state
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
-    { role: "assistant", content: "Hi! I am your Gemini assistant. Ask me anything about your synced emails, e.g., 'Summarize my week' or 'Do I have any action items?'" }
+    { role: "assistant", content: "Hi! I'm your Personal Assistant. Ask me anything about your synced emails, e.g., 'Summarize my week' or 'Do I have any action items?'" }
   ]);
   const [chatInput, setChatInput] = useState<string>("");
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
@@ -174,6 +174,34 @@ export default function Home() {
   const [showReplyForNotification, setShowReplyForNotification] = useState<boolean>(false);
   const [isResummarizing, setIsResummarizing] = useState<boolean>(false);
   const [attemptedSummaries, setAttemptedSummaries] = useState<Record<string, boolean>>({});
+  
+  // Floating Chat Toggle States
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
+  const [showPaTooltip, setShowPaTooltip] = useState<boolean>(false);
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem("aether_pa_tooltip_dismissed");
+    if (!dismissed) {
+      setShowPaTooltip(true);
+    }
+  }, []);
+
+  const toggleChat = () => {
+    setIsChatOpen(prev => {
+      const nextVal = !prev;
+      if (nextVal) {
+        setShowPaTooltip(false);
+        localStorage.setItem("aether_pa_tooltip_dismissed", "true");
+      }
+      return nextVal;
+    });
+  };
+
+  const dismissTooltip = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowPaTooltip(false);
+    localStorage.setItem("aether_pa_tooltip_dismissed", "true");
+  };
 
   // Compose window fields (CC / BCC / Forward)
   const [ccField, setCcField] = useState<string>("");
@@ -402,7 +430,7 @@ export default function Home() {
     setIsDrafting(true);
     setDraftSubject("");
     setDraftBody("");
-    setReplyStatus("Orchestrating Gemini writer...");
+    setReplyStatus("Crafting reply...");
     try {
       const res = await fetch("/api/reply", {
         method: "POST",
@@ -1022,8 +1050,8 @@ export default function Home() {
             </h1>
 
             <p className="left-sub">
-              Repeatless uses AI to summarize emails, compose smart replies,
-              and eliminate newsletter clutter — so you can focus on what matters.
+              Aether brings absolute clarity to your inbox. It synthesizes messages,
+              crafts context-rich replies, and handles clutter — so you can focus on what matters.
             </p>
 
             <div className="feature-grid">
@@ -1068,7 +1096,7 @@ export default function Home() {
               <Inbox size={26} />
             </div>
 
-            <h2 className="right-title">Welcome to Repeatless</h2>
+            <h2 className="right-title">Welcome to Aether</h2>
             <p className="right-sub">
               Sign in with Google to access your intelligent Gmail workspace.
               Your data stays private — always.
@@ -2047,16 +2075,119 @@ export default function Home() {
         }
 
         /* Chat Copilot panel styling */
+        /* Chat Copilot panel styling */
         .chat-column {
-          width: 320px;
+          position: fixed;
+          bottom: 92px;
+          right: 24px;
+          width: 360px;
+          height: 620px;
+          max-height: calc(100vh - 135px);
           display: flex;
           flex-direction: column;
           background: var(--bg-secondary);
           border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
+          border-radius: var(--radius-lg);
           overflow: hidden;
-          flex-shrink: 0;
-          min-height: 0;
+          z-index: 1000;
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+          animation: chatSlideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes chatSlideUp {
+          from {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        
+        /* Floating Chat Button & Tooltip */
+        .floating-chat-container {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          z-index: 1001;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 8px;
+        }
+        
+        .pa-floating-button {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-sky) 100%);
+          border: none;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pa-floating-button:hover {
+          transform: scale(1.08) translateY(-2px);
+          box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+        }
+        .pa-floating-button.active {
+          background: #374151;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          transform: rotate(90deg);
+        }
+        
+        .pa-tooltip-bubble {
+          position: relative;
+          background: var(--accent-indigo);
+          color: #ffffff;
+          padding: 0.6rem 1rem;
+          border-radius: 12px;
+          font-size: 0.76rem;
+          font-weight: 600;
+          white-space: nowrap;
+          box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+          animation: floatBounce 2.5s infinite ease-in-out;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 4px;
+        }
+        
+        .pa-tooltip-bubble::after {
+          content: "";
+          position: absolute;
+          bottom: -6px;
+          right: 22px;
+          border-width: 6px 6px 0;
+          border-style: solid;
+          border-color: var(--accent-indigo) transparent;
+          display: block;
+          width: 0;
+        }
+        
+        .pa-tooltip-close {
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.7);
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 700;
+          padding: 0 0 0 4px;
+          line-height: 1;
+          transition: color 0.2s;
+        }
+        .pa-tooltip-close:hover {
+          color: #ffffff;
+        }
+        
+        @keyframes floatBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
         }
         
         .chat-header {
@@ -2422,7 +2553,7 @@ export default function Home() {
         <div>
           <div className="sidebar-brand">
             <Inbox size={18} />
-            <span>Repeatless</span>
+            <span>Aether</span>
           </div>
 
           <button 
@@ -3555,69 +3686,98 @@ export default function Home() {
       </div>
 
       {/* 3. Right Panel: Copilot Chat */}
-      <div className="chat-column">
-        <div className="chat-header">
-          <div className="chat-header-left">
-            <MessageSquare size={14} style={{ color: "var(--accent-sky)" }} />
-            <span>Gemini Assistant</span>
+      {isChatOpen && (
+        <div className="chat-column">
+          <div className="chat-header">
+            <div className="chat-header-left">
+              <MessageSquare size={14} style={{ color: "var(--accent-sky)" }} />
+              <span>Personal Assistant</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <div className="chat-status-dot" />
+              <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginRight: "0.5rem" }}>Online</span>
+              <button 
+                onClick={() => setIsChatOpen(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "2px"
+                }}
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-            <div className="chat-status-dot" />
-            <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>Online</span>
+
+          <div className="chat-messages">
+            {chatMessages.map((msg, idx) => (
+              <div key={idx} className={`chat-msg ${msg.role}`}>
+                {renderMessageContent(msg.content)}
+              </div>
+            ))}
+            {isChatLoading && (
+              <div className="chat-msg assistant" style={{ fontStyle: "italic", display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                <RefreshCw size={11} className="animate-spin" />
+                <span>Compiling context...</span>
+              </div>
+            )}
+            <div ref={chatEndRef} />
           </div>
-        </div>
 
-        <div className="chat-messages">
-          {chatMessages.map((msg, idx) => (
-            <div key={idx} className={`chat-msg ${msg.role}`}>
-              {renderMessageContent(msg.content)}
-            </div>
-          ))}
-          {isChatLoading && (
-            <div className="chat-msg assistant" style={{ fontStyle: "italic", display: "flex", gap: "0.4rem", alignItems: "center" }}>
-              <RefreshCw size={11} className="animate-spin" />
-              <span>Gemini is compiling context...</span>
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
+          {/* Suggestion Chips */}
+          <div className="chat-suggestions">
+            {suggestions.map((sug, idx) => (
+              <div key={idx} className="suggestion-chip" onClick={() => handleSendChat(sug.title)}>
+                <span style={{ fontSize: "0.74rem", fontWeight: "700", color: "var(--text-primary)" }}>{sug.title}</span>
+                <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{sug.desc}</span>
+              </div>
+            ))}
+          </div>
 
-        {/* Suggestion Chips */}
-        <div className="chat-suggestions">
-          {suggestions.map((sug, idx) => (
-            <div key={idx} className="suggestion-chip" onClick={() => handleSendChat(sug.title)}>
-              <span style={{ fontSize: "0.74rem", fontWeight: "700", color: "var(--text-primary)" }}>{sug.title}</span>
-              <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{sug.desc}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Send panel */}
-        <div className="chat-input-container">
-          <input 
-            type="text" 
-            className="chat-input"
-            placeholder="Query mailbox (e.g. 'Summarize my week')..."
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
+          {/* Send panel */}
+          <div className="chat-input-container">
+            <input 
+              type="text" 
+              className="chat-input"
+              placeholder="Query mailbox (e.g. 'Summarize my week')..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSendChat(chatInput);
+                  setChatInput("");
+                }
+              }}
+            />
+            <button 
+              className="btn-chat-send"
+              onClick={() => {
                 handleSendChat(chatInput);
                 setChatInput("");
-              }
-            }}
-          />
-          <button 
-            className="btn-chat-send"
-            onClick={() => {
-              handleSendChat(chatInput);
-              setChatInput("");
-            }}
-            disabled={isChatLoading || !chatInput.trim()}
-          >
-            <Send size={12} />
-          </button>
+              }}
+              disabled={isChatLoading || !chatInput.trim()}
+            >
+              <Send size={12} />
+            </button>
+          </div>
         </div>
+      )}
+
+      {/* Floating Chat Button (FAB) & Personal Assistant Tooltip */}
+      <div className="floating-chat-container">
+        {showPaTooltip && (
+          <div className="pa-tooltip-bubble">
+            <span>Use me, I'm your PA!</span>
+            <button className="pa-tooltip-close" onClick={dismissTooltip}>×</button>
+          </div>
+        )}
+        <button className={`pa-floating-button ${isChatOpen ? "active" : ""}`} onClick={toggleChat}>
+          {isChatOpen ? <X size={22} /> : <MessageSquare size={22} />}
+        </button>
       </div>
 
       {/* 4. Cleanup Strategy Modal */}

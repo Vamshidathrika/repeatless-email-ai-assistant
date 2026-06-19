@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Repeatless — AI-Powered Gmail Intelligence Platform",
-  description: "Your inbox, finally intelligent. Repeatless uses AI to summarize emails, compose smart replies, deduplicate newsletters, and provide priority scoring — all in a premium Gmail workspace.",
+  title: "Aether — Focused Gmail Workspace",
+  description: "Breathe clarity into your inbox. Aether synthesizes email threads, drafts context-aware replies, filters clutter, and scores priority — creating a premium workspace for deep work.",
 };
 
 import { Providers } from "@/components/Providers";
