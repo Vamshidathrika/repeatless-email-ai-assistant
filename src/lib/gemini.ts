@@ -56,68 +56,137 @@ function cleanJsonResponse(text: string): string {
   return cleaned.trim();
 }
 
-// Helper to make requests to Groq's API with an automated model fallback chain
-async function fetchGroq(messages: { role: string; content: string }[], activeModel: string, jsonMode = false) {
-  const apiKey = process.env.GROQ_API_KEY || process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Neither GROQ_API_KEY, OPENROUTER_API_KEY, nor GEMINI_API_KEY is configured in your environment.");
+// Helper to make requests to NVIDIA NIM or Groq's API with an automated model fallback chain
+async function fetchLLM(messages: { role: string; content: string }[], activeModel: string, jsonMode = false) {
+  const nvidiaApiKey = process.env.NVIDIA_API_KEY;
+  const groqApiKey = process.env.GROQ_API_KEY || process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+
+  if (!nvidiaApiKey && !groqApiKey) {
+    throw new Error("Neither NVIDIA_API_KEY nor GROQ_API_KEY is configured in your environment.");
   }
 
-  // Define the chain of Groq models to try in sequence if a failure occurs
-  const modelsToTry = [activeModel];
-  const fallbackList = [
-    "llama-3.1-8b-instant",
-    "llama-3.3-70b-versatile",
-    "openai/gpt-oss-20b",
-    "groq/compound-mini"
-  ];
-  
-  for (const model of fallbackList) {
-    if (!modelsToTry.includes(model)) {
-      modelsToTry.push(model);
+  // 1. If NVIDIA NIM is configured, route there first
+  if (nvidiaApiKey) {
+    const nimBaseUrl = process.env.NVIDIA_NIM_BASE_URL || "https://integrate.api.nvidia.com/v1";
+    
+    // Resolve/map standard model names to NVIDIA NIM model names
+    let nimModel = activeModel;
+    if (
+      activeModel.includes("llama-3.1-8b") ||
+      activeModel.includes("gemini") ||
+      activeModel.includes("instant") ||
+      activeModel.includes("gemma")
+    ) {
+      nimModel = "meta/llama-3.1-8b-instruct";
+    } else if (
+      activeModel.includes("llama-3.3") ||
+      activeModel.includes("70b") ||
+      activeModel.includes("versatile")
+    ) {
+      nimModel = "meta/llama-3.3-70b-instruct";
+    }
+
+    const modelsToTry = [nimModel, "meta/llama-3.1-8b-instruct", "meta/llama-3.3-70b-instruct"];
+    let lastError: Error | null = null;
+
+    for (const model of modelsToTry) {
+      try {
+        console.log(`[NVIDIA NIM] Attempting generation with model: ${model} via ${nimBaseUrl}`);
+        
+        const response = await fetch(`${nimBaseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${nvidiaApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: messages,
+            response_format: jsonMode ? { type: "json_object" } : undefined,
+            temperature: jsonMode ? 0.1 : 0.3,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`NVIDIA NIM API error (status ${response.status}): ${errorText}`);
+        }
+
+        const data = await response.json();
+        if (!data.choices || data.choices.length === 0) {
+          throw new Error("No completion choices returned from NVIDIA NIM.");
+        }
+
+        const content = data.choices[0].message.content || "";
+        console.log(`[NVIDIA NIM] Successfully generated response using model: ${model}`);
+        return content;
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.warn(`[NVIDIA NIM] Model ${model} failed: ${errorMsg}. Trying next fallback model...`);
+        lastError = err instanceof Error ? err : new Error(errorMsg);
+      }
+    }
+
+    if (groqApiKey) {
+      console.warn("[NVIDIA NIM] All NIM fallback models failed. Cascading to Groq...");
+    } else {
+      throw lastError || new Error("All NVIDIA NIM fallback models failed.");
     }
   }
 
-  let lastError: Error | null = null;
-
-  for (const model of modelsToTry) {
-    try {
-      console.log(`[Groq] Attempting generation with model: ${model}`);
-      
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: messages,
-          response_format: jsonMode ? { type: "json_object" } : undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API error (status ${response.status}): ${errorText}`);
-      }
-
-      const data = await response.json();
-      if (!data.choices || data.choices.length === 0) {
-        throw new Error("No completion choices returned.");
-      }
-
-      const content = data.choices[0].message.content || "";
-      console.log(`[Groq] Successfully generated response using model: ${model}`);
-      return content;
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      console.warn(`[Groq] Model ${model} failed: ${errorMsg}. Trying next fallback model...`);
-      lastError = err instanceof Error ? err : new Error(errorMsg);
+  // 2. Fallback to Groq API
+  if (groqApiKey) {
+    let groqModel = activeModel;
+    if (activeModel.includes("meta/llama-3.1-8b") || activeModel.includes("meta/llama3-8b")) {
+      groqModel = "llama-3.1-8b-instant";
+    } else if (activeModel.includes("70b") || activeModel.includes("llama-3.3")) {
+      groqModel = "llama-3.3-70b-versatile";
     }
+
+    const modelsToTry = [groqModel, "llama-3.1-8b-instant", "llama-3.3-70b-versatile"];
+    let lastError: Error | null = null;
+
+    for (const model of modelsToTry) {
+      try {
+        console.log(`[Groq] Attempting generation with model: ${model}`);
+        
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${groqApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: messages,
+            response_format: jsonMode ? { type: "json_object" } : undefined,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Groq API error (status ${response.status}): ${errorText}`);
+        }
+
+        const data = await response.json();
+        if (!data.choices || data.choices.length === 0) {
+          throw new Error("No completion choices returned.");
+        }
+
+        const content = data.choices[0].message.content || "";
+        console.log(`[Groq] Successfully generated response using model: ${model}`);
+        return content;
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.warn(`[Groq] Model ${model} failed: ${errorMsg}. Trying next fallback model...`);
+        lastError = err instanceof Error ? err : new Error(errorMsg);
+      }
+    }
+
+    throw lastError || new Error("All Groq fallback models failed.");
   }
 
-  throw lastError || new Error("All fallback models failed.");
+  throw new Error("No API key configured for NVIDIA NIM or Groq.");
 }
 
 // Resilient API calling with backoff
@@ -184,7 +253,7 @@ You MUST respond with a JSON object containing the following keys (do not includ
 
   try {
     const responseText = await retryWithBackoff(() =>
-      fetchGroq(
+      fetchLLM(
         [
           { role: "system", content: systemInstruction },
           { role: "user", content: prompt }
@@ -195,7 +264,7 @@ You MUST respond with a JSON object containing the following keys (do not includ
     );
 
     if (!responseText) {
-      throw new Error("Empty response from Groq API");
+      throw new Error("Empty response from AI model");
     }
 
     const cleaned = cleanJsonResponse(responseText);
@@ -327,12 +396,12 @@ User Query: ${query}
 
   try {
     const responseText = await retryWithBackoff(() =>
-      fetchGroq(messages, activeModel, false)
+      fetchLLM(messages, activeModel, false)
     );
 
     return responseText || "I was unable to generate an answer.";
   } catch (error) {
-    console.error("Groq Chat Agent failed after retries:", error);
+    console.error("AI Chat Agent failed after retries:", error);
     return "Error: I encountered a problem communicating with the AI agent.";
   }
 }
@@ -366,7 +435,7 @@ You MUST respond with a JSON object containing (do not include any conversationa
 
   try {
     const responseText = await retryWithBackoff(() =>
-      fetchGroq(
+      fetchLLM(
         [
           { role: "system", content: systemInstruction },
           { role: "user", content: prompt }
@@ -377,7 +446,7 @@ You MUST respond with a JSON object containing (do not include any conversationa
     );
 
     if (!responseText) {
-      throw new Error("Empty response from Groq API");
+      throw new Error("Empty response from AI model");
     }
 
     const cleaned = cleanJsonResponse(responseText);
