@@ -1795,7 +1795,7 @@ export default function Home() {
         <div className="login-right">
           <div className="right-inner">
             <div className="logo-mark">
-              <Inbox size={26} />
+              <img src="/logo-white.png" alt="Aether Logo" style={{ width: "30px", height: "30px", objectFit: "contain" }} />
             </div>
 
             <h2 className="right-title">Welcome to Aether</h2>
@@ -1871,7 +1871,7 @@ export default function Home() {
       <div className={`sidebar-column ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="sidebar-brand">
           <div className="brand-logo-container">
-            <Inbox size={15} />
+            <img src="/logo-white.png" alt="Aether Logo" style={{ width: "16px", height: "16px", objectFit: "contain" }} />
           </div>
           {!sidebarCollapsed && <span className="brand-text">Aether</span>}
           <button className="sidebar-collapse-btn" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>

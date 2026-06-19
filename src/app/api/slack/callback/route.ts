@@ -245,7 +245,7 @@ export async function GET(req: Request) {
         <body>
           <div class="card">
             <div class="logo-row">
-              <div class="logo logo-repeatless">R</div>
+              <div class="logo logo-repeatless"><img src="/logo-white.png" alt="Aether Logo" style="width: 22px; height: 22px; object-fit: contain;" /></div>
               <div class="arrow">↔</div>
               <div class="logo logo-slack">
                 <div class="logo-slack-inner">
@@ -606,7 +606,7 @@ export async function GET(req: Request) {
           <p class="subtitle">Successfully connected to your Slack workspace.</p>
 
           <div class="connection-status">
-            <div class="logo logo-repeatless">R</div>
+            <div class="logo logo-repeatless"><img src="/logo-white.png" alt="Aether Logo" style="width: 22px; height: 22px; object-fit: contain;" /></div>
             <div class="connection-line">
               <div class="connection-line-active"></div>
             </div>
