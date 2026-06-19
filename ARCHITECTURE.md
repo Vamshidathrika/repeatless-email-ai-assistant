@@ -58,6 +58,12 @@ graph TB
         ChatRoute["/api/chat"]
         ReplyRoute["/api/reply"]
         CleanRoute["/api/clean"]
+        SlackRoute["/api/slack/**"]
+        JiraRoute["/api/jira/**"]
+        CalendarRoute["/api/calendar/book"]
+        WorkflowsRoute["/api/workflows/**"]
+        WebhooksRoute["/api/webhooks/**"]
+        CronRoute["/api/cron/workflows"]
     end
 
     subgraph Services["Service Layer (src/lib/)"]
@@ -65,12 +71,16 @@ graph TB
         DBSvc["db.ts"]
         GeminiSvc["gemini.ts"]
         GmailSvc["gmail.ts"]
+        CronSvc["cron.ts"]
+        CalendarSvc["calendar.ts"]
     end
 
     subgraph External["External Services"]
-        Google["Google OAuth 2.0"]
+        Google["Google Cloud & Calendar"]
         GmailAPI["Gmail API"]
         GeminiAPI["Gemini AI API"]
+        SlackAPI["Slack Web API"]
+        JiraAPI["Jira Platform API"]
     end
 
     DB[("PostgreSQL<br/>(Prisma ORM)")]
@@ -92,6 +102,12 @@ graph TB
 
     CleanRoute --> GmailSvc
     GmailSvc -->|"messages.trash"| GmailAPI
+
+    SlackRoute --> SlackAPI
+    JiraRoute --> JiraAPI
+    CalendarRoute --> CalendarSvc --> Google
+    WorkflowsRoute --> CronSvc
+    CronRoute --> CronSvc
 
     NextJS --> DBSvc
     DBSvc <--> DB
@@ -356,6 +372,42 @@ Uses **resilient batch trashing**: chunks of 1,000 messages with individual-fall
 
 ---
 
+#### `GET /api/slack/connect` & `GET /api/slack/callback`
+Manages the Slack OAuth 2.0 flow. `connect` redirects to Slack OAuth. `callback` exchanges the authorization code for a Bot User access token (`xoxb-...`), captures metadata (team ID, team name, scope), and upserts the `Account` table under provider `"slack"`.
+
+#### `GET /api/slack/status` & `GET /api/slack/channels` & `POST /api/slack/disconnect`
+* **`/api/slack/status`**: Checks database for a connected Slack account.
+* **`/api/slack/channels`**: Queries the Slack Web API (`conversations.list` and `conversations.join` if needed) to list available channels for sending summaries.
+* **`/api/slack/disconnect`**: Truncates/deletes the Slack provider credentials from the `Account` database.
+
+#### `GET /api/jira/connect` & `GET /api/jira/callback`
+Integrates with Jira OAuth 3LO (Three-Legged OAuth). On development mode (missing credentials), redirects to a sandbox demo page. In production, redirects to Atlassian OAuth and exchanges the callback code for a Jira access token.
+
+#### `GET /api/jira/status` & `GET /api/jira/projects` & `POST /api/jira/issue` & `POST /api/jira/disconnect`
+* **`/api/jira/status`**: Returns Jira connection state.
+* **`/api/jira/projects`**: Fetches projects from Atlassian's Cloud Platform.
+* **`/api/jira/issue`**: Receives an email summary action item, calls Jira's API (`/rest/api/3/issue`) to create a ticket, and returns the issue URL.
+* **`/api/jira/disconnect`**: Deletes the Jira OAuth record from database.
+
+#### `POST /api/calendar/book`
+Extracts meeting details (title, description, start time, end time) and calls the Google Calendar API (`events.insert`) to schedule meetings directly from action item/reply suggestion context.
+
+#### `/api/workflows` & `/api/workflows/[id]` & `/api/workflows/run`
+Handles automated workflows:
+- **`GET /api/workflows` & `POST /api/workflows`**: CRUD endpoints for configuring automated scheduling (cron patterns), trigger actions, and status trackers.
+- **`PUT/DELETE /api/workflows/[id]`**: Controls enabling/disabling or removing custom workflows.
+- **`POST /api/workflows/run`**: Triggers execution on-demand. Resolves actions (e.g. summarizing categories, posting to Slack, calling custom Webhooks).
+
+#### `GET/POST /api/cron/workflows`
+Cron entry point. Intended to be triggered regularly (e.g., every minute) by Vercel Cron. Checks for enabled workflows where `nextRunAt <= now()`, runs them sequentially via the `cron.ts` engine, logs the output, and updates the `nextRunAt` timestamps. Secured using `CRON_SECRET` validation.
+
+#### `/api/webhooks` & `/api/webhooks/[id]` & `/api/webhooks/test`
+Manages outbound webhooks:
+- **`POST /api/webhooks`**: Registers webhook targets with custom URLs, HTTP methods (POST/GET), emojis, and signing secrets.
+- **`POST /api/webhooks/test`**: Performs a test call with a signed HMAC payload if a secret is provided.
+
+---
+
 ### 5.2 Service Layer
 
 The service layer lives in `src/lib/` and encapsulates all business logic, external integrations, and data access.
@@ -363,6 +415,8 @@ The service layer lives in `src/lib/` and encapsulates all business logic, exter
 ```
 src/lib/
 ├── auth.ts      # NextAuth configuration & callbacks
+├── calendar.ts  # Google Calendar API helper
+├── cron.ts      # Workflow runner & webhook dispatcher
 ├── db.ts        # Prisma client singleton
 ├── gemini.ts    # Google Gemini AI integration
 └── gmail.ts     # Gmail API integration & sync engine
@@ -522,10 +576,64 @@ erDiagram
         datetime lastSyncAt
     }
 
+    WebhookConnection {
+        string id PK "CUID"
+        string userId FK
+        string name
+        string description "nullable"
+        string url
+        string method "default: POST"
+        string headers "nullable"
+        string emoji "default: 🔗"
+        string secret "nullable"
+        datetime lastTestedAt "nullable"
+        string lastTestStatus "nullable"
+        int lastTestCode "nullable"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Workflow {
+        string id PK "CUID"
+        string userId FK
+        string name
+        string description "nullable"
+        boolean enabled "default: true"
+        string schedule "cron expression"
+        string timezone "default: UTC"
+        string actions "JSON list"
+        datetime lastRunAt "nullable"
+        datetime nextRunAt "nullable"
+        string lastRunStatus "nullable"
+        string lastRunLog "nullable"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    QueryCache {
+        string id PK "CUID"
+        string userId
+        string queryHash "SHA-256"
+        string queryText
+        string answer
+        int hitCount "default: 0"
+        datetime createdAt
+        datetime expiresAt
+    }
+
+    RateLimit {
+        string id PK "CUID"
+        string userId UK
+        datetime windowStart
+        int requestCount "default: 0"
+    }
+
     User ||--o{ Account : "has"
     User ||--o{ Session : "has"
     User ||--o{ Email : "has"
     User ||--o| UserPreference : "has"
+    User ||--o{ Workflow : "schedules"
+    User ||--o{ WebhookConnection : "connects"
     Email ||--o| EmailSummary : "has"
 ```
 
@@ -541,6 +649,10 @@ erDiagram
 | **Email** | `id` = Gmail message ID (not auto-generated) | Indexed on `threadId` and `userId`. `bodyContent` stores raw plaintext; `htmlContent` optionally stores HTML. |
 | **EmailSummary** | `emailId` unique (1:1 with Email) | AI-generated structured data. `actionItems` and `replySuggestions` are JSON-stringified arrays. |
 | **SyncState** | `userId` unique | Tracks sync position for incremental sync via `lastHistoryId`. |
+| **WebhookConnection**| `id` primary key | Stores custom outbound HTTP endpoint details with an optional HMAC secret. |
+| **Workflow** | `id` primary key | Stores cron-scheduled task automations (actions is JSON list) and logs status. |
+| **QueryCache** | `(userId, queryHash)` unique | Cache table for RAG answers to minimize duplicate LLM invocation costs (TTL: 24h). |
+| **RateLimit** | `userId` unique | Tracks user requests within a sliding window (1 minute) for sliding window rate limiting. |
 
 ---
 

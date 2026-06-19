@@ -194,8 +194,40 @@ Dual-tab view for every email:
 
 | Tab | Content |
 |---|---|
-| **AI Summary** | Importance badge, action items list, reply suggestion chips, copy-to-clipboard |
+| **AI Summary** | Importance badge, action items list, reply suggestion chips, calendar booking, Jira issue creation, copy-to-clipboard |
 | **Original** | Sanitized HTML rendered in a secure iframe |
+
+### 🔌 Slack Notification Hub
+
+Allows real-time syncing and alerts to Slack channels:
+- **OAuth 2.0 Flow**: Seamless connection and workspace validation via the Slack Web API.
+- **Auto-Join**: Option to list and automatically join selected public channels.
+- **Workflow Action**: Can be scheduled to post daily digests and notifications directly to designated channels.
+
+### 💼 Jira Issue Creator
+
+Direct integration with Atlassian Jira:
+- **OAuth 2.0 Connection**: Authenticate and select Jira workspaces and projects.
+- **One-click Ticket**: Convert action items from emails directly into Jira issues with structured descriptions, priorities, and status tracking.
+- **Sandbox Fallback**: Supports mock sandbox execution for local development without active credentials.
+
+### 📅 Calendar Scheduler
+
+Schedule meetings directly from email summaries:
+- **Gmail-to-Calendar Booking**: Analyzes action items and reply suggestions to automatically book events on Google Calendar.
+- **OAuth 2.0 Integration**: Uses Gmail API token permissions to create and reference calendar invites.
+
+### 🔁 Automated Workflows & Custom Webhooks
+
+Schedule repetitive actions and trigger downstream hooks:
+- **Cron Jobs**: Leverage Vercel Cron-triggered endpoints protected by a `CRON_SECRET` to execute recurring workflows (e.g. daily Slack summary).
+- **Webhooks**: POST or GET custom JSON payloads to third-party endpoints. Features optional HMAC signing keys (secrets) for payload verification.
+
+### 🛡️ Query Cache & Sliding-Window Rate Limiting
+
+Robust systems designed for resource safety and cost management:
+- **RAG Cache**: Caches semantic RAG answers using SHA-256 query hashes, avoiding redundant AI/LLM tokens (TTL: 24 hours).
+- **Rate Limiting**: Sliding window rate limits (sliding window counter) restrict the maximum requests per user per minute to ensure API safety.
 
 ---
 
@@ -204,7 +236,7 @@ Dual-tab view for every email:
 ```mermaid
 graph TB
     subgraph Client["🖥️ Browser"]
-        UI["React 19 SPA<br/>page.tsx (~3700 lines)"]
+        UI["React 19 SPA<br/>page.tsx (~4000 lines)"]
     end
 
     subgraph NextJS["⚡ Next.js 16 App Router"]
@@ -212,9 +244,14 @@ graph TB
         Sync["/api/sync<br/>Gmail Sync"]
         Emails["/api/emails<br/>Fetch & Filter"]
         Summarize["/api/emails/summarize<br/>Re-summarize"]
-        Chat["/api/chat<br/>Copilot"]
+        Chat["/api/chat<br/>Copilot RAG & Cache"]
         Reply["/api/reply<br/>Smart Reply"]
         Clean["/api/clean<br/>Bulk Trash"]
+        Slack["/api/slack/**<br/>OAuth & Channels"]
+        Jira["/api/jira/**<br/>OAuth & Tickets"]
+        Calendar["/api/calendar/**<br/>Google Calendar"]
+        Workflows["/api/workflows/**<br/>Automation & Cron"]
+        Webhooks["/api/webhooks/**<br/>Custom endpoints"]
     end
 
     subgraph Services["🔧 Core Services"]
@@ -222,16 +259,20 @@ graph TB
         GmailSvc["gmail.ts<br/>Gmail API Service"]
         AuthCfg["auth.ts<br/>NextAuth Config"]
         DB["db.ts<br/>Prisma Singleton"]
+        CronSvc["cron.ts<br/>Workflow Scheduler"]
+        CalendarSvc["calendar.ts<br/>Google Calendar API"]
     end
 
     subgraph External["☁️ External APIs"]
-        Google["Google OAuth 2.0"]
+        Google["Google OAuth & Calendar"]
         Gmail["Gmail API"]
+        SlackAPI["Slack Web API"]
+        JiraAPI["Jira Atlassian API"]
         Gemini["Gemini 2.0<br/>Flash Lite"]
         PG["PostgreSQL"]
     end
 
-    UI -->|API calls| Auth & Sync & Emails & Summarize & Chat & Reply & Clean
+    UI -->|API calls| NextJS
     Auth --> AuthCfg --> Google
     Sync --> GmailSvc --> Gmail
     Sync --> GeminiSvc --> Gemini
@@ -240,8 +281,11 @@ graph TB
     Reply --> GeminiSvc
     Reply --> GmailSvc
     Clean --> GmailSvc
-    Emails --> DB --> PG
-    Sync --> DB
+    Slack --> SlackAPI
+    Jira --> JiraAPI
+    Calendar --> CalendarSvc --> Google
+    Workflows --> CronSvc
+    NextJS --> DB --> PG
 ```
 
 > For a deeper dive, see [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -261,6 +305,7 @@ graph TB
 | **Database** | PostgreSQL via Prisma ORM | 6.19.3 |
 | **AI** | Google Gemini (`gemini-2.0-flash-lite`) via `@google/genai` | 2.8.0 |
 | **Email** | Gmail API via `googleapis` | v173 |
+| **Integrations** | Slack Web API, Atlassian Jira REST API, Google Calendar API | — |
 | **Hosting** | Vercel (recommended), Firebase App Hosting | — |
 
 ---
@@ -270,27 +315,37 @@ graph TB
 ```
 repeatless/
 ├── prisma/
-│   ├── schema.prisma              # Database schema (User, Email, Summary, etc.)
+│   ├── schema.prisma              # Database schema (User, Email, Workflow, QueryCache, etc.)
 │   └── migrations/                # Prisma migration history
 ├── src/
 │   ├── app/
 │   │   ├── api/
 │   │   │   ├── auth/[...nextauth]/route.ts   # NextAuth OAuth handler
+│   │   │   ├── calendar/                     # Calendar booking route
+│   │   │   │   └── book/route.ts
 │   │   │   ├── chat/route.ts                 # Gemini Copilot chat endpoint
 │   │   │   ├── clean/route.ts                # Bulk trash / storage saver
+│   │   │   ├── cron/                         # Background cron entrypoints
+│   │   │   │   └── workflows/route.ts
 │   │   │   ├── emails/route.ts               # Email fetch with filters
 │   │   │   ├── emails/summarize/route.ts     # On-the-fly re-summarization
+│   │   │   ├── jira/                         # Jira OAuth & ticket APIs
 │   │   │   ├── reply/route.ts                # AI draft & send via Gmail
-│   │   │   └── sync/route.ts                 # Gmail thread-first sync pipeline
+│   │   │   ├── slack/                        # Slack OAuth, channels, status APIs
+│   │   │   ├── sync/route.ts                 # Gmail thread-first sync pipeline
+│   │   │   ├── webhooks/                     # Webhooks connection management
+│   │   │   └── workflows/                    # Workflows CRUD & execution routes
 │   │   ├── globals.css             # Design system & global styles
 │   │   ├── layout.tsx              # Root layout with Providers wrapper
-│   │   └── page.tsx                # Main application UI (~3700 lines)
+│   │   └── page.tsx                # Main application UI (~3900 lines)
 │   ├── components/
 │   │   └── Providers.tsx           # NextAuth SessionProvider
 │   ├── generated/
 │   │   └── client/                 # Prisma generated client
 │   └── lib/
 │       ├── auth.ts                 # NextAuth configuration & callbacks
+│       ├── calendar.ts             # Google Calendar API helper
+│       ├── cron.ts                 # Workflow automation runner engine
 │       ├── db.ts                   # Prisma client singleton
 │       ├── gemini.ts               # Gemini AI service (summarize, chat, reply)
 │       └── gmail.ts                # Gmail API service (fetch, send, trash)
@@ -312,7 +367,7 @@ repeatless/
 | **Node.js** | v18+ |
 | **npm** | v9+ |
 | **PostgreSQL** | v14+ (or a hosted provider like [Neon](https://neon.tech) / [Supabase](https://supabase.com)) |
-| **Google Cloud Project** | With Gmail API enabled |
+| **Google Cloud Project** | With Gmail API and Google Calendar API enabled |
 | **Google AI Studio** | API key for Gemini |
 
 ### Installation
@@ -333,20 +388,21 @@ cp .env.example .env
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project (or select an existing one)
-3. **Enable the Gmail API**:
+3. **Enable APIs**:
    - Navigate to **APIs & Services → Library**
-   - Search for "Gmail API" and click **Enable**
+   - Search for **Gmail API** and click **Enable**
+   - Search for **Google Calendar API** and click **Enable**
 4. **Configure OAuth Consent Screen**:
    - Navigate to **APIs & Services → OAuth consent screen**
    - Choose **External** user type
    - Fill in the required app information
-   - Add scopes: `openid`, `email`, `profile`, `gmail.readonly`, `gmail.modify`, `gmail.send`
+   - Add scopes: `openid`, `email`, `profile`, `gmail.readonly`, `gmail.modify`, `gmail.send`, `https://www.googleapis.com/auth/calendar.events`
    - Add your email as a **test user**
 5. **Create OAuth Credentials**:
    - Navigate to **APIs & Services → Credentials**
    - Click **Create Credentials → OAuth Client ID**
    - Application type: **Web application**
-   - Add authorized redirect URI:
+   - Add authorized redirect URIs:
      ```
      http://localhost:3000/api/auth/callback/google
      ```
@@ -359,6 +415,7 @@ Create a `.env` file in the project root with the following variables:
 ```env
 # ── Database ──────────────────────────────────────────────
 DATABASE_URL="postgresql://user:password@host:5432/repeatless?sslmode=require"
+DIRECT_URL="postgresql://user:password@host:5432/repeatless"
 
 # ── NextAuth ──────────────────────────────────────────────
 NEXTAUTH_URL="http://localhost:3000"
@@ -370,16 +427,21 @@ GOOGLE_CLIENT_SECRET="your-client-secret"
 
 # ── Google Gemini AI ──────────────────────────────────────
 GEMINI_API_KEY="your-gemini-api-key"
-```
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string (Neon, Supabase, or local) |
-| `NEXTAUTH_URL` | Canonical URL of the app (`http://localhost:3000` for dev) |
-| `NEXTAUTH_SECRET` | Session encryption key — generate with `openssl rand -base64 32` |
-| `GOOGLE_CLIENT_ID` | OAuth Client ID from Google Cloud Console |
-| `GOOGLE_CLIENT_SECRET` | OAuth Client Secret from Google Cloud Console |
-| `GEMINI_API_KEY` | API key from [Google AI Studio](https://aistudio.google.com/apikey) |
+# ── Groq API fallback ─────────────────────────────────────
+GROQ_API_KEY="your-groq-api-key"
+
+# ── Slack OAuth Integration ────────────────────────────────
+SLACK_CLIENT_ID="your-slack-client-id"
+SLACK_CLIENT_SECRET="your-slack-client-secret"
+
+# ── Jira OAuth Integration (Optional) ─────────────────────
+JIRA_CLIENT_ID="your-jira-client-id"
+JIRA_CLIENT_SECRET="your-jira-client-secret"
+
+# ── Cron secret key ───────────────────────────────────────
+CRON_SECRET="your-cron-secret-key"
+```
 
 ### Database Setup
 
@@ -410,6 +472,8 @@ erDiagram
     User ||--o| UserPreference : has
     User ||--o{ Email : owns
     User ||--o| SyncState : tracks
+    User ||--o{ Workflow : schedules
+    User ||--o{ WebhookConnection : connects
     Email ||--o| EmailSummary : has
 
     User {
@@ -472,10 +536,55 @@ erDiagram
         string lastHistoryId
         datetime lastSyncAt
     }
-```
 
-> [!NOTE]
-> The `User`, `Account`, `Session`, and `VerificationToken` models follow the standard **NextAuth v4 Prisma adapter** schema. The full schema is defined in [`prisma/schema.prisma`](prisma/schema.prisma).
+    WebhookConnection {
+        string id PK
+        string userId FK
+        string name
+        string description
+        string url
+        string method
+        string headers
+        string emoji
+        string secret
+        datetime lastTestedAt
+        string lastTestStatus
+        int lastTestCode
+    }
+
+    Workflow {
+        string id PK
+        string userId FK
+        string name
+        string description
+        boolean enabled
+        string schedule
+        string timezone
+        string actions
+        datetime lastRunAt
+        datetime nextRunAt
+        string lastRunStatus
+        string lastRunLog
+    }
+
+    QueryCache {
+        string id PK
+        string userId
+        string queryHash
+        string queryText
+        string answer
+        int hitCount
+        datetime createdAt
+        datetime expiresAt
+    }
+
+    RateLimit {
+        string id PK
+        string userId
+        datetime windowStart
+        int requestCount
+    }
+```
 
 ---
 
@@ -483,16 +592,32 @@ erDiagram
 
 | Route | Method | Description |
 |---|---|---|
-| `/api/auth/[...nextauth]` | `GET` / `POST` | NextAuth Google OAuth handler — login, callback, session, and signout |
-| `/api/sync` | `POST` | Triggers the Gmail thread-first sync pipeline. Fetches threads, extracts bodies, parses headers, generates AI summaries, and detects duplicates |
-| `/api/emails` | `GET` | Fetch synced emails with support for `category`, `search`, and `isDuplicate` query filters |
-| `/api/emails/summarize` | `POST` | On-the-fly re-summarization of a single email via Gemini |
-| `/api/chat` | `POST` | Gemini Copilot — accepts a natural language query and returns a contextual response using thread-first RAG over synced emails |
-| `/api/reply` | `POST` | AI smart reply — `action=draft` generates a reply, `action=send` sends it via Gmail API with RFC 2822 threading headers |
-| `/api/clean` | `POST` | Bulk trash emails by strategy (`duplicates`, `promotions`, `both`), sender, or explicit email IDs |
-
-> [!TIP]
-> All API routes are **session-protected**. Requests without a valid NextAuth session will receive a `401 Unauthorized` response.
+| `/api/auth/[...nextauth]` | `GET` / `POST` | NextAuth Google OAuth lifecycle handler |
+| `/api/sync` | `POST` | Triggers thread-first Gmail sync, body extraction, duplicate detection, and summarization |
+| `/api/emails` | `GET` | Fetches saved emails with filter/search options |
+| `/api/emails/summarize` | `POST` | Performs on-demand re-summarization of an email |
+| `/api/chat` | `POST` | Gemini Copilot conversational assistant (with query caching and rate limits) |
+| `/api/reply` | `POST` | AI Smart Reply generation and direct Gmail reply execution |
+| `/api/clean` | `POST` | Resilient batch cleanup of duplicates, categories, or senders |
+| `/api/slack/connect` | `GET` | Initiates the Slack OAuth connection flow |
+| `/api/slack/callback` | `GET` | Slack OAuth callback exchange and database account credentials update |
+| `/api/slack/status` | `GET` | Returns details about whether Slack is connected for the user |
+| `/api/slack/channels` | `GET` | Retrieves accessible public and private Slack channels for posting digests |
+| `/api/slack/disconnect` | `POST` | Removes the Slack account reference from database |
+| `/api/jira/connect` | `GET` | Initiates the Jira OAuth connection flow |
+| `/api/jira/callback` | `GET` | Jira OAuth callback exchange and credentials update |
+| `/api/jira/status` | `GET` | Returns details about whether Jira is connected |
+| `/api/jira/projects` | `GET` | Lists available Atlassian Jira projects to host tickets |
+| `/api/jira/issue` | `POST` | Creates a structured Jira ticket from an email action item |
+| `/api/jira/disconnect` | `POST` | Removes the Jira account reference from database |
+| `/api/calendar/book` | `POST` | Schedules and creates an event in Google Calendar |
+| `/api/workflows` | `GET`/`POST` | Lists all workflows or creates a new automated workflow |
+| `/api/workflows/[id]` | `PUT`/`DELETE` | Updates or deletes an automated workflow config |
+| `/api/workflows/run` | `POST` | Manually triggers active workflow steps |
+| `/api/cron/workflows` | `GET`/`POST` | Chrono automation trigger protected by `CRON_SECRET` validation |
+| `/api/webhooks` | `GET`/`POST` | Lists all webhooks or connects a new webhook endpoint |
+| `/api/webhooks/[id]` | `PUT`/`DELETE` | Updates or deletes a webhook endpoint configuration |
+| `/api/webhooks/test` | `POST` | Triggers a test payload transmission to a webhook URL |
 
 ---
 
@@ -507,13 +632,12 @@ Follow these steps to verify a successful setup:
 | 3 | Authorize and return | Redirected to the main inbox view |
 | 4 | Click **Sync Inbox** in the sidebar | Emails are fetched, summarized, and displayed in threaded groups |
 | 5 | Click any email thread | AI Summary tab shows importance score, action items, and reply suggestions |
-| 6 | Click **Smart Reply**, type an instruction, click **Compose** | Gemini drafts a context-aware reply with subject and body |
-| 7 | Review the draft and click **Send** | Email is sent via Gmail with proper threading headers |
-| 8 | Open **Gemini Copilot** chat | Chat interface with text input appears |
-| 9 | Type *"Summarize my week"* | Copilot returns a natural language summary drawn from synced emails |
-| 10 | Switch to the **Priority Matrix** tab | Eisenhower 4-quadrant view with emails sorted by importance |
-| 11 | Switch to the **Unsubscribe Hub** | Senders grouped by count with trash and unsubscribe actions |
-| 12 | Click **Storage Saver** in the sidebar | Modal with strategy options for bulk cleanup |
+| 6 | Click **Book Event** next to a suggestion | Calendar schedule popup appears; booking registers directly in Google Calendar |
+| 7 | Click **Create Jira Ticket** on an action item | Populates ticket title/description, submits directly to select Jira project |
+| 8 | Navigate to **Integrations** / **Settings** | Slack Connection panels show Connect options. Complete Slack OAuth successfully |
+| 9 | Navigate to **Workflows & Webhooks** | Define a new workflow to post daily digests to Slack; execute a test run successfully |
+| 10 | Open **Gemini Copilot** chat | Chat interface with text input appears |
+| 11 | Type *"Summarize my week"* | Copilot returns a cached semantic summary or queries DB under sliding rate limits |
 
 ---
 
@@ -526,7 +650,7 @@ For detailed deployment instructions, production environment configuration, and 
 📘 **[DEPLOYMENT.md](DEPLOYMENT.md)**
 
 > [!TIP]
-> When deploying to production, remember to update `NEXTAUTH_URL` to your production domain and add the production callback URI to your Google OAuth credentials.
+> When deploying to production, remember to update `NEXTAUTH_URL` to your production domain and add the production callback URIs for Google, Slack, and Jira to their respective developer portals.
 
 ---
 

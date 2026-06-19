@@ -55,25 +55,56 @@ Vercel provides native, serverless optimization for Next.js App Router projects.
 
 1. Log in to [Vercel](https://vercel.com/) and click **Add New** → **Project**.
 2. Select and import your private GitHub repository.
-
 ### Step 2: Configure Environment Variables
 
 Under the **Environment Variables** accordion, add the following variables:
 
-| Variable Name          | Description / Value                                                                                                                                                                                                                  |
-| :--------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Variable Name          | Description / Value |
+| :--------------------- | :------------------ |
 | `DATABASE_URL`         | Your production PostgreSQL connection string. *Note: If using connection pooling (e.g. Supabase Session mode on port 5432 or 6543), append `?pgbouncer=true` to prevent Prisma from running out of connections in serverless functions.* |
-| `NEXTAUTH_SECRET`      | A secure random string used to sign cookies. Generate one by running `openssl rand -base64 32` in your terminal.                                                                                                                     |
-| `NEXTAUTH_URL`         | Your production deployment URL (e.g., `https://your-app-name.vercel.app`).                                                                                                                                                          |
-| `GOOGLE_CLIENT_ID`     | Your Google Cloud OAuth Client ID.                                                                                                                                                                                                   |
-| `GOOGLE_CLIENT_SECRET` | Your Google Cloud OAuth Client Secret.                                                                                                                                                                                               |
-| `GEMINI_API_KEY`       | Your Gemini API Key from Google AI Studio.                                                                                                                                                                                           |
+| `DIRECT_URL`           | Direct PostgreSQL connection URL (e.g. Supabase port 5432 without pooling). |
+| `NEXTAUTH_SECRET`      | A secure random string used to sign cookies. Generate one by running `openssl rand -base64 32` in your terminal. |
+| `NEXTAUTH_URL`         | Your production deployment URL (e.g., `https://repeatless-email-ai-assistant.vercel.app`). |
+| `GOOGLE_CLIENT_ID`     | Your Google Cloud OAuth Client ID. |
+| `GOOGLE_CLIENT_SECRET` | Your Google Cloud OAuth Client Secret. |
+| `GEMINI_API_KEY`       | Your Gemini API Key from Google AI Studio. |
+| `GROQ_API_KEY`         | Your Groq API Key for model failover. |
+| `SLACK_CLIENT_ID`      | Your Slack App Client ID. |
+| `SLACK_CLIENT_SECRET`  | Your Slack App Client Secret. |
+| `JIRA_CLIENT_ID`       | Your Jira OAuth Client ID (Optional). |
+| `JIRA_CLIENT_SECRET`   | Your Jira OAuth Client Secret (Optional). |
+| `CRON_SECRET`          | Secure key to protect cron workflow runner triggers (e.g. `b3A5OW5iMjdkNDIyNWI4ZDJiYjJiZTcwNjg1OQ==`). |
 
 ### Step 3: Deploy
 
 1. Click **Deploy**. Vercel will automatically compile, build, and deploy your serverless endpoints.
 2. Once complete, click the deployment link to access your live application!
 
+### Step 4: Configure Integrations & Cron Jobs
+
+#### 🔔 Slack Public Distribution
+Since Repeatless will be installed by users in different workspaces, you **must enable public distribution** in the Slack app:
+1. Go to the [Slack App Console](https://api.slack.com/apps) and click your app.
+2. Select **OAuth & Permissions**:
+   - Add Redirect URL: `https://your-domain.vercel.app/api/slack/callback`
+   - Add Bot Token Scopes: `chat:write`, `channels:read`, `channels:join`, `groups:read`, `im:read`, `mpim:read`.
+3. Select **Manage Distribution**:
+   - Verify the checklists under "Remove Hard Coded Information" and "Use HTTPS For Your Features" are green.
+   - Click the green **Activate Public Distribution** button.
+
+#### 💼 Jira OAuth Configuration
+1. Go to the [Atlassian Developer Console](https://developer.atlassian.com/console/myapps/).
+2. Create/edit your OAuth 2.0 app.
+3. Under **OAuth 2.0 (3LO)**:
+   - Add callback URL: `https://your-domain.vercel.app/api/jira/callback`
+   - Enable Jira Platform REST API scopes: `read:jira-user`, `read:jira-work`, `write:jira-work`, and `offline_access`.
+
+#### 📅 Google Calendar API
+1. Enable the **Google Calendar API** in your Google Cloud Console project.
+2. Update your OAuth Consent Screen scopes to include `https://www.googleapis.com/auth/calendar.events` so users can authorize calendar booking.
+
+#### ⏱️ Vercel Cron Jobs
+Repeatless schedules workflows using Vercel Cron. The `vercel.json` file triggers `/api/cron/workflows` automatically. Ensure you have added the `CRON_SECRET` variable under your Vercel Environment Variables so Vercel can run the cron jobs securely.
 ---
 
 ## 3. Deploying to Firebase App Hosting
