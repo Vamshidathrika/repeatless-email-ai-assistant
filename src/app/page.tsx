@@ -6,7 +6,7 @@ import {
   Inbox, Sparkles, RefreshCw, LogOut, Send, Search, CheckSquare, 
   MessageSquare, User, AlertCircle, ChevronRight, Mail, Reply, ArrowRight, UserCheck, Star, Trash2,
   BarChart2, Calendar, ShieldCheck, MailOpen, X, Sun, Moon, PanelLeftClose, PanelLeft, Folder, Tag, Users,
-  Briefcase, Zap, Link2, Play, Pause, Trash, Plus, Clock
+  Briefcase, Zap, Link2, Play, Pause, Trash, Plus, Clock, ToggleLeft, ToggleRight
 } from "lucide-react";
 
 interface EmailSummary {
@@ -792,12 +792,17 @@ export default function Home() {
         }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        alert(`Error: ${data.error || "Failed to save workflow"}`);
+        return;
+      }
       if (data.workflow) {
         setWorkflows((prev) => [data.workflow, ...prev]);
         resetWorkflowForm();
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to save workflow", e);
+      alert(`Error: ${e.message || "An unexpected error occurred while saving the workflow."}`);
     } finally {
       setIsSavingWorkflow(false);
     }
@@ -3378,8 +3383,15 @@ export default function Home() {
                               className="wf-toggle-btn"
                               onClick={() => handleToggleWorkflow(wf.id, wf.enabled)}
                               title={wf.enabled ? "Pause" : "Resume"}
+                              style={{ 
+                                border: "none", 
+                                background: "transparent", 
+                                color: wf.enabled ? "var(--google-green)" : "var(--text-dim)",
+                                width: "32px",
+                                height: "32px"
+                              }}
                             >
-                              {wf.enabled ? <Pause size={13} /> : <Play size={13} />}
+                              {wf.enabled ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                             </button>
                             <button
                               className="wf-delete-btn"

@@ -70,7 +70,14 @@ export async function PUT(req: Request, context: RouteContext) {
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (timezone !== undefined) updateData.timezone = timezone;
-    if (enabled !== undefined) updateData.enabled = enabled;
+    if (enabled !== undefined) {
+      updateData.enabled = enabled;
+      if (enabled) {
+        // Recompute nextRunAt when resuming workflow
+        const tz = timezone ?? existing.timezone;
+        updateData.nextRunAt = computeNextRun(schedule ?? existing.schedule, tz);
+      }
+    }
 
     if (actions !== undefined) {
       if (typeof actions === "string") {
