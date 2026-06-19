@@ -70,7 +70,8 @@ graph TB
         DBSvc["db.ts"]
         AISvc["gemini.ts<br/>Groq AI Service"]
         GmailSvc["gmail.ts"]
-        CronSvc["cron.ts"]
+        CronSvc["cron.ts<br/>Cron Scheduler"]
+        WorkflowSvc["workflow.ts<br/>Workflow Engine"]
         CalendarSvc["calendar.ts"]
     end
 
@@ -322,10 +323,11 @@ The service layer lives in `src/lib/` and encapsulates business logic.
 src/lib/
 ├── auth.ts      # NextAuth configuration & callbacks
 ├── calendar.ts  # Google Calendar API helper
-├── cron.ts      # Workflow runner & webhook dispatcher
+├── cron.ts      # Workflow cron schedule nextRunAt helper
 ├── db.ts        # Prisma client singleton
 ├── gemini.ts    # Groq AI service layer (legacy filename)
-└── gmail.ts     # Gmail API integration & sync engine
+├── gmail.ts     # Gmail API integration & sync engine
+└── workflow.ts  # Workflow execution engine (sync, summarize, Slack/Webhook dispatcher)
 ```
 
 ---
