@@ -1158,7 +1158,7 @@ export default function Home() {
   };
 
   // Perform bulk unsubscribe redirection inside the Unsubscribe Hub
-  const handleUnsubscribeSelectedSenders = () => {
+  const handleUnsubscribeSelectedSenders = async () => {
     const selectedList = Object.keys(selectedSenders).filter(email => selectedSenders[email]);
     if (selectedList.length === 0) return;
 
@@ -1171,13 +1171,85 @@ export default function Home() {
       return;
     }
 
-    urlsToOpen.forEach((url, index) => {
-      setTimeout(() => {
-        window.open(url, "_blank", "noopener,noreferrer");
-      }, index * 200);
-    });
+    setSyncMessage("Processing unsubscribe requests...");
+    try {
+      const response = await fetch("/api/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urls: urlsToOpen }),
+      });
 
-    setSyncMessage(`Opening ${urlsToOpen.length} unsubscribe pages in new tabs... Please allow popups if blocked.`);
+      if (!response.ok) {
+        throw new Error("API request failed");
+      }
+
+      const data = await response.json();
+      if (data.success && Array.isArray(data.results)) {
+        const succeeded = data.results.filter((r: any) => r.success);
+        const toOpenManual = data.results.filter((r: any) => r.openUrl);
+
+        let msg = `Successfully unsubscribed from ${succeeded.length} sender(s) directly.`;
+        
+        if (toOpenManual.length > 0) {
+          msg += ` Opening ${toOpenManual.length} pages in new tabs that require manual verification...`;
+          toOpenManual.forEach((res: any, index: number) => {
+            setTimeout(() => {
+              window.open(res.url, "_blank", "noopener,noreferrer");
+            }, index * 250);
+          });
+        }
+        
+        setSyncMessage(msg);
+      } else {
+        throw new Error(data.error || "Unknown error");
+      }
+    } catch (err: any) {
+      console.error("Bulk unsubscribe error:", err);
+      // Fallback to opening all manually if API fails
+      urlsToOpen.forEach((url, index) => {
+        setTimeout(() => {
+          window.open(url, "_blank", "noopener,noreferrer");
+        }, index * 250);
+      });
+      setSyncMessage("Unsubscribe API failed, opened pages in new tabs instead.");
+    }
+    setTimeout(() => setSyncMessage(""), 6000);
+  };
+
+  const handleSingleUnsubscribe = async (url: string, name: string) => {
+    if (!url) return;
+
+    setSyncMessage(`Unsubscribing from ${name}...`);
+    try {
+      const response = await fetch("/api/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urls: [url] }),
+      });
+
+      if (!response.ok) {
+        throw new Error("API request failed");
+      }
+
+      const data = await response.json();
+      if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+        const res = data.results[0];
+        if (res.success) {
+          setSyncMessage(`Successfully unsubscribed from ${name} directly.`);
+        } else if (res.openUrl) {
+          setSyncMessage(`Opening unsubscribe page for ${name}...`);
+          window.open(res.url, "_blank", "noopener,noreferrer");
+        } else {
+          throw new Error(res.error || "Unknown error");
+        }
+      } else {
+        throw new Error(data.error || "Unknown error");
+      }
+    } catch (err: any) {
+      console.error("Single unsubscribe error:", err);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setSyncMessage(`Opened unsubscribe page for ${name} in a new tab.`);
+    }
     setTimeout(() => setSyncMessage(""), 5000);
   };
 
@@ -2328,10 +2400,8 @@ export default function Home() {
                                       </p>
                                       {emailContextType.unsubscribeUrl && (
                                         <div style={{ display: "flex", gap: "0.5rem" }}>
-                                          <a 
-                                            href={emailContextType.unsubscribeUrl} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
+                                          <button 
+                                            onClick={() => handleSingleUnsubscribe(emailContextType.unsubscribeUrl!, selectedEmail?.sender || "Sender")}
                                             className="chip-btn" 
                                             style={{ 
                                               margin: 0, 
@@ -2340,14 +2410,14 @@ export default function Home() {
                                               color: "#f87171", 
                                               border: "1px solid rgba(239, 68, 68, 0.25)",
                                               borderRadius: "4px",
-                                              textDecoration: "none",
                                               fontSize: "0.76rem",
                                               display: "inline-flex",
-                                              alignItems: "center"
+                                              alignItems: "center",
+                                              cursor: "pointer"
                                             }}
                                           >
                                             Unsubscribe from Sender
-                                          </a>
+                                          </button>
                                         </div>
                                       )}
                                     </div>
@@ -3698,10 +3768,8 @@ export default function Home() {
                             <td className="actions-cell" style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
                               <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
                                 {senderInfo.unsubscribeUrl && (
-                                  <a 
-                                    href={senderInfo.unsubscribeUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <button 
+                                    onClick={() => handleSingleUnsubscribe(senderInfo.unsubscribeUrl!, senderInfo.name)}
                                     className="btn-unsub-link"
                                     style={{
                                       display: "inline-flex",
@@ -3714,12 +3782,11 @@ export default function Home() {
                                       color: "var(--text-secondary)",
                                       fontSize: "0.74rem",
                                       cursor: "pointer",
-                                      textDecoration: "none",
                                       transition: "all 0.2s ease",
                                     }}
                                   >
                                     <span>Unsubscribe</span>
-                                  </a>
+                                  </button>
                                 )}
                                 <button 
                                   className="btn-trash-sender"
