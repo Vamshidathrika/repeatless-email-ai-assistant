@@ -25,6 +25,13 @@ export async function executeActions(
   }
 
   const logLines: string[] = [];
+  const processedEmails: Array<{
+    subject: string;
+    sender: string;
+    importanceScore: number;
+    shortSummary: string;
+    actionItems: string[];
+  }> = [];
 
   for (const action of actions) {
     const type: string = action.type || action.action || "";
@@ -102,6 +109,15 @@ export async function executeActions(
                   replySuggestions: JSON.stringify(summary.replySuggestions),
                 }
               });
+
+              processedEmails.push({
+                subject: email.subject,
+                sender: email.sender,
+                importanceScore: summary.importanceScore,
+                shortSummary: summary.shortSummary,
+                actionItems: summary.actionItems,
+              });
+
               summarizedCount++;
             } catch (err: any) {
               console.error(`[Workflow Engine] Summarization failed for email ${email.id}:`, err.message);
@@ -126,22 +142,50 @@ export async function executeActions(
             !process.env.SLACK_CLIENT_ID ||
             (slackAccount.access_token?.startsWith("xoxb-sandbox") ?? false);
 
-          // Extract count from prior sync logs
-          const syncEntry = logLines.find((l) => l.includes("sync_emails"));
-          const newEmailsCount = syncEntry
-            ? syncEntry.match(/synced (\d+) new/)?.[1] || "0"
-            : "0";
+          // Find emails to report
+          let emailsToReport = processedEmails;
+          if (emailsToReport.length === 0) {
+            // Fallback: fetch the 5 most recent summarized emails for this user
+            const recentEmails = await db.email.findMany({
+              where: { userId, isDuplicate: false, NOT: { summary: null } },
+              orderBy: { date: "desc" },
+              take: 5,
+              include: { summary: true }
+            });
+            emailsToReport = recentEmails.map(e => ({
+              subject: e.subject,
+              sender: e.sender,
+              importanceScore: e.summary?.importanceScore || 5,
+              shortSummary: e.summary?.shortSummary || "",
+              actionItems: e.summary?.actionItems ? JSON.parse(e.summary.actionItems) : []
+            }));
+          }
 
-          const summarizeEntry = logLines.find((l) => l.includes("summarize_emails"));
-          const summarizedCount = summarizeEntry
-            ? summarizeEntry.match(/summarized (\d+) of/)?.[1] || "0"
-            : "0";
+          const attachments = [];
+          for (const email of emailsToReport) {
+            // Check if urgent (importanceScore >= 8)
+            const isUrgent = email.importanceScore >= 8;
+            const borderColor = isUrgent ? "#ef4444" : "#3b82f6"; // Red for urgent, Blue for normal
+            
+            const summaryBullet = email.shortSummary ? `• ${email.shortSummary}` : "• No summary generated.";
+            let actionItemsBullet = "";
+            if (email.actionItems && email.actionItems.length > 0) {
+              actionItemsBullet = `\n*Action Items*:\n` + email.actionItems.map((item: string) => `  - ${item}`).join("\n");
+            }
 
-          const digestText = `*📧 Email Workflow Digest — ${workflow.name}*\n\n• *Synced*: ${newEmailsCount} new email(s)\n• *Summarized*: ${summarizedCount} email(s)\n• *Timestamp*: ${new Date().toLocaleTimeString()}\n\nStatus: Complete.`;
+            attachments.push({
+              color: borderColor,
+              title: `${isUrgent ? "🚨 *URGENT* · " : ""}*${email.subject}*`,
+              text: `*From:* ${email.sender}\n${summaryBullet}${actionItemsBullet}`,
+              mrkdwn_in: ["text", "title"]
+            });
+          }
+
+          const headerText = `📧 *Aether Email Digest — ${workflow.name}*`;
 
           if (isSandbox) {
-            console.log(`[Sandbox] Would post to Slack #${channelName}: ${digestText}`);
-            logLines.push(`✔ send_to_slack (sandbox): would post digest to #${channelName}.`);
+            console.log(`[Sandbox] Would post to Slack #${channelName} with ${attachments.length} attachment(s).`);
+            logLines.push(`✔ send_to_slack (sandbox): would post digest with ${attachments.length} summary blocks to #${channelName}.`);
           } else {
             const slackRes = await fetch("https://slack.com/api/chat.postMessage", {
               method: "POST",
@@ -151,19 +195,17 @@ export async function executeActions(
               },
               body: JSON.stringify({
                 channel: channelId,
-                text: digestText,
-                blocks: [
-                  {
-                    type: "section",
-                    text: { type: "mrkdwn", text: digestText },
-                  },
-                ],
+                text: headerText,
+                attachments: attachments.length > 0 ? attachments : [{
+                  color: "#d1d5db",
+                  text: "🎉 No recent emails summarized. Your inbox is clean!"
+                }]
               }),
             });
 
             const slackData = await slackRes.json();
             if (slackData.ok) {
-              logLines.push(`✔ send_to_slack: posted digest to #${channelName}.`);
+              logLines.push(`✔ send_to_slack: posted digest with ${attachments.length} summary blocks to #${channelName}.`);
             } else {
               logLines.push(`✘ send_to_slack: ${slackData.error || "Unknown error"}`);
             }

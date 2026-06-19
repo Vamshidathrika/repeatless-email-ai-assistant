@@ -174,11 +174,11 @@ Body content:
 ${body.slice(0, 10000)}
 
 You MUST respond with a JSON object containing the following keys (do not include any conversational intro/outro text, just the raw JSON):
-- "shortSummary": A one-sentence summary (max 15 words) of the email.
-- "detailedSummary": A short paragraph or bullet points detailing the key context and points.
-- "actionItems": A list of actionable steps or questions directed at the recipient (array of strings, e.g., ["Send invoice details"]). Empty array [] if none.
+- "shortSummary": A short, sweet, simple one-sentence summary (max 12 words) of the email, written in plain language.
+- "detailedSummary": A bullet-pointed list of 2-3 short, clear key points (e.g. "• Item 1\n• Item 2"). Do not use long paragraphs.
+- "actionItems": A list of actionable next steps directed at the recipient (array of strings, keep them short and concise, e.g. ["Call client at 3pm"]). Empty array [] if none.
 - "category": The primary category for this email based on its intent. Choose exactly one: "Newsletters", "Job / Recruitment", "Finance", "Notifications", "Personal", "Work / Professional".
-- "importanceScore": An urgency/importance rating from 1 (lowest) to 10 (highest).
+- "importanceScore": An urgency/importance rating from 1 (lowest) to 10 (highest). Rate it 8+ if it is highly urgent (requires immediate attention today).
 - "replySuggestions": 3-4 contextual, short reply action options tailored specifically to this email (e.g. ["Confirm attendance", "Decline invitation"]). Max 4 options.
 `;
 
