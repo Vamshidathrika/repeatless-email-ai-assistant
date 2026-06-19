@@ -211,33 +211,19 @@ export default function Home() {
   const [attemptedSummaries, setAttemptedSummaries] = useState<Record<string, boolean>>({});
 
   // Integrations States
-  const [activeIntegrationTab, setActiveIntegrationTab] = useState<"meet" | "jira" | null>(null);
+  const [activeIntegrationTab, setActiveIntegrationTab] = useState<"meet" | null>(null);
   const [meetTitle, setMeetTitle] = useState<string>("");
   const [meetDateTime, setMeetDateTime] = useState<string>("");
   const [meetDuration, setMeetDuration] = useState<number>(30);
   const [isBookingMeet, setIsBookingMeet] = useState<boolean>(false);
   const [meetResult, setMeetResult] = useState<any>(null);
   const [meetError, setMeetError] = useState<string>("");
-  
-  const [jiraConnected, setJiraConnected] = useState<boolean>(false);
-  const [jiraSandbox, setJiraSandbox] = useState<boolean>(true);
-  const [jiraSiteUrl, setJiraSiteUrl] = useState<string>("");
 
   // Slack Integration States
   const [slackConnected, setSlackConnected] = useState<boolean>(false);
   const [slackSandbox, setSlackSandbox] = useState<boolean>(true);
   const [slackWorkspace, setSlackWorkspace] = useState<string>("");
   const [slackBotName, setSlackBotName] = useState<string>("");
-  const [jiraLoadingStatus, setJiraLoadingStatus] = useState<boolean>(false);
-  const [jiraProjects, setJiraProjects] = useState<any[]>([]);
-  const [jiraIssueTypes, setJiraIssueTypes] = useState<any[]>([]);
-  const [selectedJiraProject, setSelectedJiraProject] = useState<string>("");
-  const [selectedJiraIssueType, setSelectedJiraIssueType] = useState<string>("");
-  const [jiraSummary, setJiraSummary] = useState<string>("");
-  const [jiraDescription, setJiraDescription] = useState<string>("");
-  const [isCreatingJiraIssue, setIsCreatingJiraIssue] = useState<boolean>(false);
-  const [jiraResult, setJiraResult] = useState<any>(null);
-  const [jiraError, setJiraError] = useState<string>("");
   
   // Connections tab — Workflow states
   const [workflows, setWorkflows] = useState<any[]>([]);
@@ -249,8 +235,7 @@ export default function Home() {
   const [wfTimezone, setWfTimezone] = useState<string>("UTC");
   const [wfActionSync, setWfActionSync] = useState<boolean>(true);
   const [wfActionSummarize, setWfActionSummarize] = useState<boolean>(true);
-  const [wfActionJira, setWfActionJira] = useState<boolean>(false);
-  const [wfJiraProjectId, setWfJiraProjectId] = useState<string>("");
+  const [wfActionSlack, setWfActionSlack] = useState<boolean>(false);
   const [wfSlackChannelId, setWfSlackChannelId] = useState<string>("");
   const [wfSlackChannelName, setWfSlackChannelName] = useState<string>("");
   const [wfActionWebhook, setWfActionWebhook] = useState<boolean>(false);
@@ -592,7 +577,7 @@ export default function Home() {
     }
   };
 
-  // Prefill Meeting and Jira ticket details when selectedEmail changes
+  // Prefill Meeting details when selectedEmail changes
   useEffect(() => {
     if (selectedEmail) {
       setMeetTitle(`Follow-up: ${selectedEmail.subject.replace(/^(Re:|Fwd:)\s*/gi, "")}`);
@@ -607,79 +592,16 @@ export default function Home() {
       const formatted = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T${pad(tomorrow.getHours())}:${pad(tomorrow.getMinutes())}`;
       setMeetDateTime(formatted);
 
-      // Reset meeting & Jira results
+      // Reset meeting results
       setMeetResult(null);
       setMeetError("");
-      setJiraResult(null);
-      setJiraError("");
       setActiveIntegrationTab(null);
-
-      // Prefill Jira
-      setJiraSummary(`Email: ${selectedEmail.subject.replace(/^(Re:|Fwd:)\s*/gi, "")}`);
-      setJiraDescription(`Issue logged from Repeatless client email thread.\nSender: ${selectedEmail.sender}\nSubject: ${selectedEmail.subject}\nSnippet: ${selectedEmail.bodySnippet}`);
     }
   }, [selectedEmail]);
-
-  // Listen for Jira OAuth connection message from popup
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data === "jira-connected") {
-        setJiraConnected(true);
-        fetchJiraProjects();
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
-  // Fetch Jira connection status
-  const fetchJiraStatus = async () => {
-    try {
-      const res = await fetch("/api/jira/status");
-      const data = await res.json();
-      if (data) {
-        setJiraConnected(data.connected);
-        setJiraSandbox(data.sandbox);
-        if (data.connected) {
-          fetchJiraProjects();
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching Jira status:", err);
-    }
-  };
-
-  // Fetch Jira projects
-  const fetchJiraProjects = async () => {
-    setJiraLoadingStatus(true);
-    setJiraError("");
-    try {
-      const res = await fetch("/api/jira/projects");
-      const data = await res.json();
-      if (data && data.success) {
-        setJiraProjects(data.projects || []);
-        setJiraIssueTypes(data.issueTypes || []);
-        setJiraSiteUrl(data.siteUrl || "");
-        if (data.projects && data.projects.length > 0) {
-          setSelectedJiraProject(data.projects[0].id);
-        }
-        if (data.issueTypes && data.issueTypes.length > 0) {
-          setSelectedJiraIssueType(data.issueTypes[0].id);
-        }
-      } else {
-        setJiraError(data.error || "Failed to load Jira projects");
-      }
-    } catch (err) {
-      setJiraError("Failed to fetch projects");
-    } finally {
-      setJiraLoadingStatus(false);
-    }
-  };
 
   // Trigger check on session load
   useEffect(() => {
     if (session) {
-      fetchJiraStatus();
       fetchWorkflows();
       fetchSlackStatus();
       fetchWebhooks();
@@ -831,7 +753,7 @@ export default function Home() {
     setWfTimezone("UTC");
     setWfActionSync(true);
     setWfActionSummarize(true);
-    setWfActionJira(false);
+    setWfActionSlack(false);
     setWfActionWebhook(false);
     setWfSlackChannelId("");
     setWfSlackChannelName("");
@@ -846,7 +768,7 @@ export default function Home() {
     const actions: any[] = [];
     if (wfActionSync) actions.push({ type: "sync_emails" });
     if (wfActionSummarize) actions.push({ type: "summarize_emails", hoursBack: 24 });
-    if (wfActionJira && wfSlackChannelId) actions.push({
+    if (wfActionSlack && wfSlackChannelId) actions.push({
       type: "send_to_slack",
       channelId: wfSlackChannelId,
       channelName: wfSlackChannelName,
@@ -980,74 +902,8 @@ export default function Home() {
     }
   };
 
-  // Open Jira OAuth popup
-  const handleJiraConnect = () => {
-    const width = 600;
-    const height = 700;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    
-    const popup = window.open(
-      "/api/jira/connect",
-      "Connect Jira",
-      `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes`
-    );
-    
-    if (popup) popup.focus();
-  };
 
-  // Disconnect Jira integration
-  const handleJiraDisconnect = async () => {
-    try {
-      const res = await fetch("/api/jira/disconnect", { method: "POST" });
-      if (res.ok) {
-        setJiraConnected(false);
-        setJiraProjects([]);
-        setJiraIssueTypes([]);
-        setJiraResult(null);
-        setJiraError("");
-      }
-    } catch (err) {
-      console.error("Failed to disconnect Jira:", err);
-    }
-  };
 
-  // Create Jira Issue
-  const handleCreateJiraIssue = async () => {
-    if (!selectedEmail) return;
-    setIsCreatingJiraIssue(true);
-    setJiraError("");
-    setJiraResult(null);
-
-    const project = jiraProjects.find(p => p.id === selectedJiraProject);
-    const projectKey = project ? project.key : "MOCK";
-
-    try {
-      const res = await fetch("/api/jira/issue", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: selectedJiraProject,
-          projectKey,
-          issueTypeId: selectedJiraIssueType,
-          summary: jiraSummary,
-          description: jiraDescription,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setJiraResult(data);
-        setReplyStatus(`Jira ticket ${data.key} created!`);
-      } else {
-        setJiraError(data.details || data.error || "Failed to create Jira ticket.");
-      }
-    } catch (error) {
-      setJiraError("Network error. Failed to create Jira ticket.");
-    } finally {
-      setIsCreatingJiraIssue(false);
-    }
-  };
 
   const handleGenerateDraft = async () => {
     if (!selectedEmail || !replyInstruction.trim()) return;
@@ -2635,19 +2491,6 @@ export default function Home() {
                                                 <Calendar size={12} />
                                                 <span>Book Google Meet</span>
                                               </button>
-                                              <button
-                                                type="button"
-                                                className={`integration-tab-btn ${activeIntegrationTab === "jira" ? "active" : ""}`}
-                                                onClick={() => {
-                                                  setActiveIntegrationTab(activeIntegrationTab === "jira" ? null : "jira");
-                                                  if (!jiraConnected) {
-                                                    fetchJiraStatus();
-                                                  }
-                                                }}
-                                              >
-                                                <Briefcase size={12} />
-                                                <span>Log Jira Issue</span>
-                                              </button>
                                             </div>
                                           </div>
 
@@ -2748,132 +2591,7 @@ export default function Home() {
                                                 </div>
                                               )}
 
-                                              {activeIntegrationTab === "jira" && (
-                                                <div className="integration-subpanel">
-                                                  <div className="panel-header">
-                                                    <h4>
-                                                      Jira Workspace Issue Logger
-                                                      {jiraConnected && <span className="site-badge">{jiraSiteUrl} {jiraSandbox && "(Sandbox)"}</span>}
-                                                    </h4>
-                                                    <button type="button" className="panel-close-btn" onClick={() => setActiveIntegrationTab(null)}><X size={14} /></button>
-                                                  </div>
 
-                                                  {!jiraConnected ? (
-                                                    <div className="connect-prompt-container">
-                                                      <div className="connect-info">
-                                                        <p>Connect your Atlassian Jira workspace to log tasks, bugs, or updates directly from your email drafts.</p>
-                                                        <span className="sandbox-notice">
-                                                          {jiraSandbox 
-                                                            ? "⚡ Running in sandbox mode. Authorize with a mock site instantly." 
-                                                            : "✓ Production OAuth credentials detected."
-                                                          }
-                                                        </span>
-                                                      </div>
-                                                      <button 
-                                                        type="button"
-                                                        className="btn-primary connect-jira-btn" 
-                                                        onClick={handleJiraConnect}
-                                                      >
-                                                        Connect Atlassian Jira
-                                                      </button>
-                                                    </div>
-                                                  ) : jiraResult ? (
-                                                    <div className="integration-success-card">
-                                                      <div className="success-icon" style={{ background: "rgba(0,82,204,0.15)", color: "#0052cc" }}>✓</div>
-                                                      <div className="success-content">
-                                                        <h5>Jira Ticket Logged!</h5>
-                                                        <p>Successfully created issue under <strong>{jiraProjects.find(p => p.id === selectedJiraProject)?.name || "selected project"}</strong>.</p>
-                                                        <div className="success-links">
-                                                          <a href={jiraResult.url} target="_blank" rel="noopener noreferrer" className="meet-url-badge" style={{ background: "#0052cc", borderColor: "#0052cc" }}>
-                                                            View Issue ({jiraResult.key})
-                                                          </a>
-                                                        </div>
-                                                      </div>
-                                                    </div>
-                                                  ) : (
-                                                    <div className="integration-form">
-                                                      {jiraError && (
-                                                        <div className="integration-error-card">
-                                                          <AlertCircle size={14} />
-                                                          <span>{jiraError}</span>
-                                                        </div>
-                                                      )}
-
-                                                      {jiraLoadingStatus ? (
-                                                        <div className="jira-loading-state">Loading Jira projects...</div>
-                                                      ) : (
-                                                        <>
-                                                          <div className="form-grid">
-                                                            <div className="form-group-row">
-                                                              <div className="form-group">
-                                                                <label>Project</label>
-                                                                <select 
-                                                                  value={selectedJiraProject} 
-                                                                  onChange={(e) => setSelectedJiraProject(e.target.value)}
-                                                                >
-                                                                  {jiraProjects.map((p) => (
-                                                                    <option key={p.id} value={p.id}>[{p.key}] {p.name}</option>
-                                                                  ))}
-                                                                </select>
-                                                              </div>
-                                                              <div className="form-group">
-                                                                <label>Issue Type</label>
-                                                                <select 
-                                                                  value={selectedJiraIssueType} 
-                                                                  onChange={(e) => setSelectedJiraIssueType(e.target.value)}
-                                                                >
-                                                                  {jiraIssueTypes.map((t) => (
-                                                                    <option key={t.id} value={t.id}>{t.name}</option>
-                                                                  ))}
-                                                                </select>
-                                                              </div>
-                                                            </div>
-                                                            <div className="form-group">
-                                                              <label>Issue Title</label>
-                                                              <input 
-                                                                type="text" 
-                                                                value={jiraSummary} 
-                                                                onChange={(e) => setJiraSummary(e.target.value)}
-                                                                placeholder="Ticket summary..."
-                                                              />
-                                                            </div>
-                                                            <div className="form-group">
-                                                              <label>Description</label>
-                                                              <textarea 
-                                                                value={jiraDescription} 
-                                                                onChange={(e) => setJiraDescription(e.target.value)}
-                                                                rows={3}
-                                                                placeholder="Ticket details..."
-                                                                style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-color)", color: "white", padding: "0.4rem 0.6rem", borderRadius: "4px", fontSize: "0.78rem" }}
-                                                              />
-                                                            </div>
-                                                          </div>
-                                                          
-                                                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem" }}>
-                                                            <button 
-                                                              type="button"
-                                                              className="btn-secondary" 
-                                                              style={{ padding: "0.35rem 0.6rem", fontSize: "0.7rem", color: "var(--google-red)", border: "1px solid rgba(248,113,113,0.2)" }}
-                                                              onClick={handleJiraDisconnect}
-                                                            >
-                                                              Disconnect
-                                                            </button>
-                                                            <button 
-                                                              type="button"
-                                                              className="btn-primary btn-panel-submit" 
-                                                              onClick={handleCreateJiraIssue}
-                                                              disabled={isCreatingJiraIssue || !jiraSummary}
-                                                              style={{ background: "#0052cc", borderColor: "#0052cc" }}
-                                                            >
-                                                              {isCreatingJiraIssue ? "Creating Ticket..." : "Create Issue"}
-                                                            </button>
-                                                          </div>
-                                                        </>
-                                                      )}
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              )}
                                             </div>
                                           )}
 
@@ -3542,10 +3260,10 @@ export default function Home() {
                           </label>
                         </div>
 
-                        <div className={`wf-step-item ${wfActionJira ? "active" : ""}`}>
+                        <div className={`wf-step-item ${wfActionSlack ? "active" : ""}`}>
                           <label className="wf-step-toggle">
-                            <input type="checkbox" checked={wfActionJira} onChange={e => {
-                              setWfActionJira(e.target.checked);
+                            <input type="checkbox" checked={wfActionSlack} onChange={e => {
+                              setWfActionSlack(e.target.checked);
                               if (e.target.checked && slackConnected && slackChannels.length === 0) fetchSlackChannels();
                             }} />
                             <div className="wf-step-info">
@@ -3559,10 +3277,10 @@ export default function Home() {
                               </div>
                             </div>
                           </label>
-                          {wfActionJira && (
+                          {wfActionSlack && (
                             <div className="wf-step-config">
                               {!slackConnected ? (
-                                <div className="wf-jira-not-connected">
+                                <div className="wf-slack-not-connected">
                                   <AlertCircle size={13} />
                                   <span>Slack not connected. <button type="button" onClick={handleSlackConnect} style={{ background: "none", border: "none", color: "var(--accent-sky)", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Connect now</button></span>
                                 </div>

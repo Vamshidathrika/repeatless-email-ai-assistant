@@ -194,7 +194,7 @@ Dual-tab view for every email:
 
 | Tab | Content |
 |---|---|
-| **AI Summary** | Importance badge, action items list, reply suggestion chips, calendar booking, Jira issue creation, copy-to-clipboard |
+| **AI Summary** | Importance badge, action items list, reply suggestion chips, calendar booking, copy-to-clipboard |
 | **Original** | Sanitized HTML rendered in a secure iframe |
 
 ### 🔌 Slack Notification Hub
@@ -203,13 +203,6 @@ Allows real-time syncing and alerts to Slack channels:
 - **OAuth 2.0 Flow**: Seamless connection and workspace validation via the Slack Web API.
 - **Auto-Join**: Option to list and automatically join selected public channels.
 - **Workflow Action**: Can be scheduled to post daily digests and notifications directly to designated channels.
-
-### 💼 Jira Issue Creator
-
-Direct integration with Atlassian Jira:
-- **OAuth 2.0 Connection**: Authenticate and select Jira workspaces and projects.
-- **One-click Ticket**: Convert action items from emails directly into Jira issues with structured descriptions, priorities, and status tracking.
-- **Sandbox Fallback**: Supports mock sandbox execution for local development without active credentials.
 
 ### 📅 Calendar Scheduler
 
@@ -236,7 +229,7 @@ Robust systems designed for resource safety and cost management:
 ```mermaid
 graph TB
     subgraph Client["🖥️ Browser"]
-        UI["React 19 SPA<br/>page.tsx (~4000 lines)"]
+        UI["React 19 SPA<br/>page.tsx (~3900 lines)"]
     end
 
     subgraph NextJS["⚡ Next.js 16 App Router"]
@@ -248,7 +241,6 @@ graph TB
         Reply["/api/reply<br/>Smart Reply"]
         Clean["/api/clean<br/>Bulk Trash"]
         Slack["/api/slack/**<br/>OAuth & Channels"]
-        Jira["/api/jira/**<br/>OAuth & Tickets"]
         Calendar["/api/calendar/**<br/>Google Calendar"]
         Workflows["/api/workflows/**<br/>Automation & Cron"]
         Webhooks["/api/webhooks/**<br/>Custom endpoints"]
@@ -267,7 +259,6 @@ graph TB
         Google["Google OAuth & Calendar"]
         Gmail["Gmail API"]
         SlackAPI["Slack Web API"]
-        JiraAPI["Jira Atlassian API"]
         Gemini["Gemini 2.0<br/>Flash Lite"]
         PG["PostgreSQL"]
     end
@@ -282,7 +273,6 @@ graph TB
     Reply --> GmailSvc
     Clean --> GmailSvc
     Slack --> SlackAPI
-    Jira --> JiraAPI
     Calendar --> CalendarSvc --> Google
     Workflows --> CronSvc
     NextJS --> DB --> PG
@@ -305,7 +295,7 @@ graph TB
 | **Database** | PostgreSQL via Prisma ORM | 6.19.3 |
 | **AI** | Google Gemini (`gemini-2.0-flash-lite`) via `@google/genai` | 2.8.0 |
 | **Email** | Gmail API via `googleapis` | v173 |
-| **Integrations** | Slack Web API, Atlassian Jira REST API, Google Calendar API | — |
+| **Integrations** | Slack Web API, Google Calendar API | — |
 | **Hosting** | Vercel (recommended), Firebase App Hosting | — |
 
 ---
@@ -329,7 +319,6 @@ repeatless/
 │   │   │   │   └── workflows/route.ts
 │   │   │   ├── emails/route.ts               # Email fetch with filters
 │   │   │   ├── emails/summarize/route.ts     # On-the-fly re-summarization
-│   │   │   ├── jira/                         # Jira OAuth & ticket APIs
 │   │   │   ├── reply/route.ts                # AI draft & send via Gmail
 │   │   │   ├── slack/                        # Slack OAuth, channels, status APIs
 │   │   │   ├── sync/route.ts                 # Gmail thread-first sync pipeline
@@ -434,10 +423,6 @@ GROQ_API_KEY="your-groq-api-key"
 # ── Slack OAuth Integration ────────────────────────────────
 SLACK_CLIENT_ID="your-slack-client-id"
 SLACK_CLIENT_SECRET="your-slack-client-secret"
-
-# ── Jira OAuth Integration (Optional) ─────────────────────
-JIRA_CLIENT_ID="your-jira-client-id"
-JIRA_CLIENT_SECRET="your-jira-client-secret"
 
 # ── Cron secret key ───────────────────────────────────────
 CRON_SECRET="your-cron-secret-key"
