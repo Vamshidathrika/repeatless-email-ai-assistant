@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { 
   Inbox, Sparkles, RefreshCw, LogOut, Send, Search, CheckSquare, 
   MessageSquare, User, AlertCircle, ChevronRight, Mail, Reply, ArrowRight, UserCheck, Star, Trash2,
-  BarChart2, Calendar, ShieldCheck, MailOpen, AlertTriangle, X
+  BarChart2, Calendar, ShieldCheck, MailOpen, X
 } from "lucide-react";
 
 interface EmailSummary {
@@ -1167,6 +1167,7 @@ export default function Home() {
       <style jsx>{`
         .dashboard-container {
           display: flex;
+          flex-direction: column;
           height: 100vh;
           width: 100vw;
           overflow: hidden;
@@ -1175,136 +1176,249 @@ export default function Home() {
           gap: 0.75rem;
         }
         
-        /* Sidebar styling */
-        .sidebar {
-          width: 250px;
+        /* Top Navigation Bar Styling */
+        .top-navbar {
           display: flex;
-          flex-direction: column;
+          align-items: center;
           justify-content: space-between;
-          padding: 1.25rem 0.5rem;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          padding: 0.5rem 1.25rem;
+          height: 56px;
           flex-shrink: 0;
-          background: transparent;
-          border: none;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         
-        .sidebar-brand {
+        .navbar-left {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+        }
+        
+        .navbar-brand {
           display: flex;
           align-items: center;
           gap: 0.65rem;
           font-weight: 800;
           font-size: 1.15rem;
           color: var(--text-primary);
-          padding-left: 0.5rem;
-          margin-bottom: 1.5rem;
           letter-spacing: -0.5px;
           font-family: var(--font-display);
         }
-        .sidebar-brand :global(svg) {
+        
+        .navbar-brand :global(svg) {
           color: var(--accent-indigo);
         }
         
-        .nav-section {
-          display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-          margin-bottom: 1.25rem;
-        }
-        .nav-title {
-          font-size: 0.68rem;
-          text-transform: uppercase;
-          letter-spacing: 1.25px;
-          color: var(--text-muted);
-          font-weight: 700;
-          padding-left: 0.5rem;
-          margin-bottom: 0.25rem;
-        }
-
-        .nav-pill {
+        .navbar-tabs {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          padding: 0.6rem 0.75rem;
+          gap: 0.35rem;
+        }
+        
+        .navbar-tab-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.45rem 0.85rem;
           border-radius: var(--radius-pill);
           font-size: 0.8rem;
           color: var(--text-secondary);
           background: transparent;
-          width: 100%;
-          text-align: left;
-          transition: all var(--transition-fast);
           border: none;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+          font-weight: 600;
         }
-        .nav-pill:hover {
+        
+        .navbar-tab-btn:hover {
           background: var(--bg-surface-hover);
           color: var(--text-primary);
         }
-        .nav-pill.active {
+        
+        .navbar-tab-btn.active {
           background: var(--border-accent);
           color: #041e49;
-          font-weight: 600;
         }
-        .nav-pill-left {
+        
+        .navbar-tab-badge {
+          font-size: 0.68rem;
+          background: rgba(0, 0, 0, 0.06);
+          color: var(--text-muted);
+          padding: 0.1rem 0.35rem;
+          border-radius: var(--radius-xs);
+          font-weight: 700;
+          margin-left: 0.25rem;
+        }
+        
+        .navbar-tab-btn.active .navbar-tab-badge {
+          background: rgba(0, 0, 0, 0.09);
+          color: #041e49;
+        }
+        
+        .navbar-right {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+        
+        .btn-navbar-clean {
+          background: rgba(239, 68, 68, 0.06);
+          border: 1px solid rgba(239, 68, 68, 0.15);
+          color: var(--google-red);
+          font-size: 0.74rem;
+          font-weight: 600;
+          padding: 0.45rem 0.85rem;
+          border-radius: var(--radius-pill);
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+        .btn-navbar-clean:hover {
+          background: var(--google-red);
+          color: #ffffff;
+          border-color: var(--google-red);
+        }
+        
+        .btn-navbar-sync {
+          background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-sky) 100%);
+          border: none;
+          color: #ffffff;
+          font-size: 0.74rem;
+          font-weight: 600;
+          padding: 0.45rem 0.85rem;
+          border-radius: var(--radius-pill);
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+        }
+        .btn-navbar-sync:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        }
+        .btn-navbar-sync:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
+        .navbar-profile-widget {
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          padding-left: 0.5rem;
+          border-left: 1px solid var(--border-color);
         }
         
-        .badge-count {
-          font-size: 0.68rem;
-          background: rgba(0, 0, 0, 0.05);
-          color: var(--text-muted);
-          padding: 0.1rem 0.4rem;
-          border-radius: var(--radius-xs);
-        }
-        .nav-pill.active .badge-count {
-          background: rgba(0, 0, 0, 0.08);
-          color: #041e49;
-        }
-
-        /* Storage agent widget */
-        .storage-widget {
-          background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
-          border: 1px solid rgba(239, 68, 68, 0.12);
-          border-radius: var(--radius-sm);
-          padding: 0.85rem;
-          margin-top: auto;
-          margin-bottom: 1rem;
-        }
-         .storage-title {
-          font-size: 0.74rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-          margin-bottom: 0.35rem;
-        }
-        .storage-title :global(svg) {
-          color: var(--google-red);
-        }
-        .storage-desc {
-          font-size: 0.7rem;
-          color: var(--text-muted);
-          line-height: 1.4;
-          margin-bottom: 0.65rem;
-        }
-        .btn-clean-trigger {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.2);
-          color: var(--google-red);
-          font-size: 0.74rem;
-          font-weight: 600;
-          padding: 0.4rem;
-          border-radius: var(--radius-xs);
-          width: 100%;
+        .navbar-avatar {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: var(--bg-surface-hover);
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 0.35rem;
+          overflow: hidden;
+          border: 1px solid var(--border-color);
+        }
+        
+        .navbar-avatar img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        
+        .navbar-profile-info {
+          display: flex;
+          flex-direction: column;
+          max-width: 100px;
+        }
+        
+        .navbar-username {
+          font-size: 0.76rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .navbar-logout-btn {
+          background: transparent;
+          border: none;
+          color: var(--text-muted);
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          border-radius: 4px;
           transition: all var(--transition-fast);
         }
-        .btn-clean-trigger:hover {
-          background: var(--google-red);
-          color: #ffffff;
+        
+        .navbar-logout-btn:hover {
+          color: var(--google-red);
+          background: rgba(239, 68, 68, 0.05);
+        }
+
+        /* Horizontal Category Filters */
+        .category-scroll-bar {
+          display: flex;
+          gap: 0.35rem;
+          padding: 0.5rem 1.25rem;
+          border-bottom: 1px solid var(--border-color);
+          overflow-x: auto;
+          background: var(--bg-primary);
+          scrollbar-width: none;
+        }
+        
+        .category-scroll-bar::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .category-pill {
+          display: flex;
+          align-items: center;
+          gap: 0.3rem;
+          padding: 0.35rem 0.65rem;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-pill);
+          color: var(--text-secondary);
+          font-size: 0.72rem;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all var(--transition-fast);
+        }
+        
+        .category-pill:hover {
+          background: var(--bg-surface-hover);
+          color: var(--text-primary);
+        }
+        
+        .category-pill.active {
+          background: rgba(99, 102, 241, 0.08);
+          border-color: var(--accent-indigo);
+          color: var(--accent-indigo);
+        }
+        
+        .category-badge {
+          font-size: 0.64rem;
+          background: rgba(0, 0, 0, 0.04);
+          color: var(--text-muted);
+          padding: 0.05rem 0.3rem;
+          border-radius: 4px;
+          font-weight: 700;
+        }
+        
+        .category-pill.active .category-badge {
+          background: rgba(99, 102, 241, 0.15);
+          color: var(--accent-indigo);
         }
 
         /* Main panels layout */
@@ -2548,133 +2662,83 @@ export default function Home() {
         }
       `}</style>
 
-      {/* 1. Sidebar Nav */}
-      <div className="sidebar">
-        <div>
-          <div className="sidebar-brand">
+      {/* 1. Top Navigation Bar */}
+      <div className="top-navbar">
+        <div className="navbar-left">
+          <div className="navbar-brand">
             <Inbox size={18} />
             <span>Aether</span>
           </div>
-
-          <button 
-            className="btn-primary"
-            onClick={triggerSync}
-            disabled={isSyncing}
-            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "1.25rem" }}
-          >
-            <RefreshCw size={13} className={isSyncing ? "animate-spin" : ""} />
-            <span>{isSyncing ? "Syncing..." : "Sync Inbox"}</span>
-          </button>
-
-          {/* Tab switches */}
-          <div className="nav-section">
-            <div className="nav-title">WORKSPACE HUB</div>
-            <button className={`nav-pill ${activeTab === "inbox" ? "active" : ""}`} onClick={() => setActiveTab("inbox")}>
-              <div className="nav-pill-left">
-                <Inbox size={14} />
-                <span>Inbox Reader</span>
-              </div>
-              <span className="badge-count">{threads.length}</span>
+          <div className="navbar-tabs">
+            <button className={`navbar-tab-btn ${activeTab === "inbox" ? "active" : ""}`} onClick={() => setActiveTab("inbox")}>
+              <Inbox size={13} style={{ opacity: activeTab === "inbox" ? 1 : 0.75 }} />
+              <span>Inbox Reader</span>
+              <span className="navbar-tab-badge">{threads.length}</span>
             </button>
-            <button className={`nav-pill ${activeTab === "matrix" ? "active" : ""}`} onClick={() => setActiveTab("matrix")}>
-              <div className="nav-pill-left">
-                <BarChart2 size={14} />
-                <span>Priority Matrix</span>
-              </div>
-              <span className="badge-count">{matrixData.doFirst.length}</span>
+            <button className={`navbar-tab-btn ${activeTab === "matrix" ? "active" : ""}`} onClick={() => setActiveTab("matrix")}>
+              <BarChart2 size={13} style={{ opacity: activeTab === "matrix" ? 1 : 0.75 }} />
+              <span>Priority Matrix</span>
+              <span className="navbar-tab-badge">{matrixData.doFirst.length}</span>
             </button>
-            <button className={`nav-pill ${activeTab === "brief" ? "active" : ""}`} onClick={() => setActiveTab("brief")}>
-              <div className="nav-pill-left">
-                <Calendar size={14} />
-                <span>Executive Brief</span>
-              </div>
+            <button className={`navbar-tab-btn ${activeTab === "brief" ? "active" : ""}`} onClick={() => setActiveTab("brief")}>
+              <Calendar size={13} style={{ opacity: activeTab === "brief" ? 1 : 0.75 }} />
+              <span>Executive Brief</span>
             </button>
-            <button className={`nav-pill ${activeTab === "unsubscribe" ? "active" : ""}`} onClick={() => setActiveTab("unsubscribe")}>
-              <div className="nav-pill-left">
-                <ShieldCheck size={14} />
-                <span>Unsubscribe Hub</span>
-              </div>
-              <span className="badge-count" style={{ background: "rgba(239,68,68,0.1)", color: "var(--google-red)" }}>
-                {newsletterSenders.length}
-              </span>
+            <button className={`navbar-tab-btn ${activeTab === "unsubscribe" ? "active" : ""}`} onClick={() => setActiveTab("unsubscribe")}>
+              <ShieldCheck size={13} style={{ opacity: activeTab === "unsubscribe" ? 1 : 0.75 }} />
+              <span>Unsubscribe Hub</span>
+              <span className="navbar-tab-badge" style={{ color: "var(--google-red)" }}>{newsletterSenders.length}</span>
             </button>
           </div>
-
-          {/* Cognitive Category Filters (Only visible in Inbox tab) */}
-          {activeTab === "inbox" && (
-            <div className="nav-section">
-              <div className="nav-title">COGNITIVE FILTERS</div>
-              {categories.map((cat) => {
-                const count = cat === "All" 
-                  ? threads.length 
-                  : threads.filter(t => t.latestEmail.summary?.category === cat).length;
-                return (
-                  <button 
-                    key={cat} 
-                    className={`nav-pill ${categoryFilter === cat ? "active" : ""}`}
-                    onClick={() => setCategoryFilter(cat)}
-                  >
-                    <div className="nav-pill-left">
-                      <MailOpen size={14} style={{ opacity: categoryFilter === cat ? 1 : 0.7 }} />
-                      <span>{cat}</span>
-                    </div>
-                    <span className="badge-count">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
 
-        {/* Storage Cleaner Trigger */}
-        <div className="storage-widget">
-          <div className="storage-title">
-            <AlertTriangle size={14} />
-            <span>Storage Saver</span>
-          </div>
-          <p className="storage-desc">
-            Clean newsletters & promotions straight to your Gmail Trash folder.
-          </p>
+        <div className="navbar-right">
+          {/* Storage Cleaner Trigger */}
           <button 
-            className="btn-clean-trigger"
+            className="btn-navbar-clean"
             onClick={() => {
               setCleanResult(null);
               setIsCleanModalOpen(true);
             }}
+            title="Clean newsletters & promotions straight to your Gmail Trash folder"
           >
             <Trash2 size={12} />
             <span>Clean Inbox</span>
           </button>
-        </div>
 
-        {/* User profile */}
-        {session?.user && (
-          <div className="user-profile-widget" style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem", borderTop: "1px solid var(--border-color)", paddingTop: "1rem" }}>
-            <div className="avatar avatar-glow" style={{ width: "28px", height: "28px", borderRadius: "50%", background: "var(--border-hover)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-              {session.user.image ? (
-                <img src={session.user.image} alt={session.user.name || "User"} style={{ width: "100%", height: "100%" }} />
-              ) : (
-                <User size={12} style={{ color: "var(--text-secondary)" }} />
-              )}
+          {/* Sync Trigger */}
+          <button 
+            className="btn-navbar-sync"
+            onClick={triggerSync}
+            disabled={isSyncing}
+          >
+            <RefreshCw size={12} className={isSyncing ? "animate-spin" : ""} />
+            <span>{isSyncing ? "Syncing..." : "Sync Inbox"}</span>
+          </button>
+
+          {/* User profile */}
+          {session?.user && (
+            <div className="navbar-profile-widget">
+              <div className="navbar-avatar" title={session.user.email || ""}>
+                {session.user.image ? (
+                  <img src={session.user.image} alt={session.user.name || "User"} />
+                ) : (
+                  <User size={12} />
+                )}
+              </div>
+              <div className="navbar-profile-info">
+                <span className="navbar-username">{session.user.name || "Logged User"}</span>
+              </div>
+              <button 
+                onClick={() => signOut()}
+                className="navbar-logout-btn"
+                title="Sign Out"
+              >
+                <LogOut size={13} />
+              </button>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", width: "110px" }}>
-              <span style={{ fontSize: "0.78rem", fontWeight: "600", color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {session.user.name || "Logged User"}
-              </span>
-              <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {session.user.email}
-              </span>
-            </div>
-            <button 
-              onClick={() => signOut()}
-              className="action-icon-btn"
-              style={{ marginLeft: "auto", background: "transparent", color: "var(--text-muted)", display: "flex", alignItems: "center" }}
-              title="Sign Out"
-            >
-              <LogOut size={14} />
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* 2. Workspace Views */}
@@ -2706,6 +2770,26 @@ export default function Home() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </form>
+                </div>
+
+                {/* Horizontal Category Filters */}
+                <div className="category-scroll-bar">
+                  {categories.map((cat) => {
+                    const count = cat === "All" 
+                      ? threads.length 
+                      : threads.filter(t => t.latestEmail.summary?.category === cat).length;
+                    const isActive = categoryFilter === cat;
+                    return (
+                      <button 
+                        key={cat} 
+                        className={`category-pill ${isActive ? "active" : ""}`}
+                        onClick={() => setCategoryFilter(cat)}
+                      >
+                        <span>{cat}</span>
+                        <span className="category-badge">{count}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="emails-list">
