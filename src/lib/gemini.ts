@@ -15,9 +15,9 @@ export interface DraftResult {
 // Helper to resolve model names based on OpenRouter availability
 function resolveModelName(modelName: string): string {
   if (!modelName) {
-    return "google/gemini-2.5-flash";
+    return "google/gemini-2.5-flash:free";
   }
-  // Map standard/old Gemini models to their OpenRouter equivalents
+  // Map standard/old Gemini models to their OpenRouter free equivalents
   if (
     modelName === "gemini-3.5-flash" ||
     modelName === "gemini-2.5-flash-lite" ||
@@ -25,53 +25,97 @@ function resolveModelName(modelName: string): string {
     modelName === "gemini-2.0-flash-lite" ||
     modelName === "gemini-1.5-flash"
   ) {
-    return "google/gemini-2.5-flash";
+    return "google/gemini-2.5-flash:free";
   }
   
-  // If it's a short name without provider, default to google/
+  // If it's a short name without provider, default to google/ and free
   if (modelName.startsWith("gemini-")) {
-    return `google/${modelName}`;
+    return `google/${modelName}:free`;
   }
   return modelName;
 }
 
-// Helper to make direct requests to OpenRouter's API
+// Helper to clean JSON responses in case models wrap output in markdown code blocks
+function cleanJsonResponse(text: string): string {
+  let cleaned = text.trim();
+  if (cleaned.startsWith("```")) {
+    // Remove starting code block syntax (e.g. ```json or ```)
+    cleaned = cleaned.replace(/^```[a-zA-Z]*\s*/, "");
+    // Remove ending code block syntax (```)
+    cleaned = cleaned.replace(/\s*```$/, "");
+  }
+  return cleaned.trim();
+}
+
+// Helper to make requests to OpenRouter's API with an automated model fallback chain
 async function fetchOpenRouter(messages: { role: string; content: string }[], activeModel: string, jsonMode = false) {
   const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("Neither OPENROUTER_API_KEY nor GEMINI_API_KEY is configured in your environment.");
   }
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "https://repeatless.vercel.app",
-      "X-Title": "Repeatless Email Assistant",
-    },
-    body: JSON.stringify({
-      model: activeModel,
-      messages: messages,
-      response_format: jsonMode ? { type: "json_object" } : undefined,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenRouter API error (status ${response.status}): ${errorText}`);
+  // Define the chain of free models to try in sequence if a failure occurs
+  const modelsToTry = [activeModel];
+  const fallbackList = [
+    "google/gemini-2.5-flash:free",
+    "google/gemma-2-9b-it:free",
+    "qwen/qwen-2.5-72b-instruct:free",
+    "mistralai/mistral-7b-instruct:free"
+  ];
+  
+  for (const model of fallbackList) {
+    if (!modelsToTry.includes(model)) {
+      modelsToTry.push(model);
+    }
   }
 
-  const data = await response.json();
-  if (!data.choices || data.choices.length === 0) {
-    throw new Error("No completion choices returned by OpenRouter.");
+  let lastError: Error | null = null;
+
+  for (const model of modelsToTry) {
+    try {
+      console.log(`[OpenRouter] Attempting generation with model: ${model}`);
+      
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://repeatless.vercel.app",
+          "X-Title": "Repeatless Email Assistant",
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: messages,
+          // Only pass response_format if the model isn't gemma/mistral to avoid strict format errors
+          response_format: jsonMode && !model.includes("gemma") && !model.includes("mistral") ? { type: "json_object" } : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API error (status ${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error("No completion choices returned.");
+      }
+
+      const content = data.choices[0].message.content || "";
+      console.log(`[OpenRouter] Successfully generated response using model: ${model}`);
+      return content;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.warn(`[OpenRouter] Model ${model} failed: ${errorMsg}. Trying next fallback model...`);
+      lastError = err instanceof Error ? err : new Error(errorMsg);
+    }
   }
 
-  return data.choices[0].message.content || "";
+  throw lastError || new Error("All fallback models failed.");
 }
 
 // Resilient API calling with backoff
-async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 4, delay = 1000): Promise<T> {
+async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
   try {
     return await fn();
   } catch (error) {
@@ -93,7 +137,7 @@ async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 4, delay = 10
       errorMsg.includes("insufficient");
 
     if (retries > 0 && isRateLimit && !isQuotaExceeded) {
-      console.warn(`OpenRouter API rate limited/unavailable. Retrying in ${delay}ms... (${retries} retries left)`);
+      console.warn(`OpenRouter request rate limited/unavailable. Retrying in ${delay}ms... (${retries} retries left)`);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return retryWithBackoff(fn, retries - 1, delay * 2.5); // Exponential backoff
     }
@@ -106,7 +150,7 @@ export async function summarizeThreadEmail(
   sender: string,
   body: string,
   threadContext: string,
-  modelName: string = "google/gemini-2.5-flash"
+  modelName: string = "google/gemini-2.5-flash:free"
 ): Promise<SummaryResult> {
   const activeModel = resolveModelName(modelName);
   
@@ -123,7 +167,7 @@ Subject: ${subject}
 Body content:
 ${body.slice(0, 10000)}
 
-You MUST respond with a JSON object containing the following keys:
+You MUST respond with a JSON object containing the following keys (do not include any conversational intro/outro text, just the raw JSON):
 - "shortSummary": A one-sentence summary (max 15 words) of the email.
 - "detailedSummary": A short paragraph or bullet points detailing the key context and points.
 - "actionItems": A list of actionable steps or questions directed at the recipient (array of strings, e.g., ["Send invoice details"]). Empty array [] if none.
@@ -148,7 +192,8 @@ You MUST respond with a JSON object containing the following keys:
       throw new Error("Empty response from OpenRouter API");
     }
 
-    return JSON.parse(responseText) as SummaryResult;
+    const cleaned = cleanJsonResponse(responseText);
+    return JSON.parse(cleaned) as SummaryResult;
   } catch (error) {
     console.error("OpenRouter summarization failed after retries:", error);
     return {
@@ -166,7 +211,7 @@ export async function askAgentAboutEmails(
   query: string,
   emailContext: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
-  modelName: string = "google/gemini-2.5-flash",
+  modelName: string = "google/gemini-2.5-flash:free",
   isNewsletterQuery: boolean = false
 ): Promise<string> {
   const activeModel = resolveModelName(modelName);
@@ -227,7 +272,7 @@ export async function draftReply(
   threadContext: string,
   userInstruction: string,
   userName: string = "User",
-  modelName: string = "google/gemini-2.5-flash"
+  modelName: string = "google/gemini-2.5-flash:free"
 ): Promise<DraftResult> {
   const activeModel = resolveModelName(modelName);
   
@@ -243,7 +288,7 @@ ${userInstruction}
 User's Name (for signature/regards):
 ${userName}
 
-You MUST respond with a JSON object containing:
+You MUST respond with a JSON object containing (do not include any conversational intro/outro text, just the raw JSON):
 - "subject": A suitable reply subject line (usually starts with Re:).
 - "body": The complete email body content, ending with a professional sign-off (e.g. Regards, [User's Name]).
 `;
@@ -264,7 +309,8 @@ You MUST respond with a JSON object containing:
       throw new Error("Empty response from OpenRouter API");
     }
 
-    return JSON.parse(responseText) as DraftResult;
+    const cleaned = cleanJsonResponse(responseText);
+    return JSON.parse(cleaned) as DraftResult;
   } catch (error) {
     console.error("OpenRouter Draft Writer failed after retries:", error);
     return {
