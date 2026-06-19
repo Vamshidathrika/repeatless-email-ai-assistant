@@ -1,12 +1,14 @@
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
 }
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/client"
+  provider        = "prisma-client-js"
+  output          = "../src/generated/client"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 model Account {
@@ -110,10 +112,10 @@ model UserPreference {
 }
 
 model Email {
-  id             String   @id // Gmail message ID
+  id             String                       @id // Gmail message ID
   threadId       String // Gmail thread ID
   userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
   subject        String
   sender         String
   receiver       String
@@ -123,8 +125,9 @@ model Email {
   htmlContent    String? // Stored HTML body if available
   unsubscribeUrl String? // Link or mailto for unsubscribing
   labels         String // Comma-separated labels from Gmail
-  isDuplicate    Boolean  @default(false)
+  isDuplicate    Boolean                      @default(false)
   dedupHash      String? // The hash for dedup checks
+  embedding      Unsupported("vector(1024)")?
 
   summary EmailSummary?
 

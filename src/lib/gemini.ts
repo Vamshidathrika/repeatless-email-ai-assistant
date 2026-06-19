@@ -459,3 +459,92 @@ You MUST respond with a JSON object containing (do not include any conversationa
     };
   }
 }
+
+export async function getEmbedding(text: string): Promise<number[]> {
+  const nvidiaApiKey = process.env.NVIDIA_API_KEY;
+  const geminiApiKey = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
+
+  if (!nvidiaApiKey && !geminiApiKey) {
+    throw new Error("Neither NVIDIA_API_KEY nor GEMINI_API_KEY is configured in your environment.");
+  }
+
+  // Clean text and clip it to avoid context tokens limit
+  const cleanText = text.replace(/\s+/g, " ").trim().slice(0, 8000);
+
+  // 1. NVIDIA NIM Embedding
+  if (nvidiaApiKey) {
+    const nimBaseUrl = process.env.NVIDIA_NIM_BASE_URL || "https://integrate.api.nvidia.com/v1";
+    try {
+      console.log(`[NVIDIA NIM] Generating embedding for text (${cleanText.length} chars) using nvidia/llama-3.2-nv-embedqa-1b-v2`);
+      const response = await fetch(`${nimBaseUrl}/embeddings`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${nvidiaApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          input: [cleanText],
+          model: "nvidia/llama-3.2-nv-embedqa-1b-v2",
+          encoding_format: "float",
+          input_type: "query",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`NVIDIA NIM Embeddings API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      if (data.data && data.data[0] && data.data[0].embedding) {
+        console.log(`[NVIDIA NIM] Successfully generated embedding with ${data.data[0].embedding.length} dimensions`);
+        return data.data[0].embedding;
+      }
+      throw new Error("Invalid response format from NVIDIA embeddings API.");
+    } catch (err) {
+      console.warn(`[NVIDIA NIM] Embedding generation failed: ${err}. Trying Gemini fallback...`);
+    }
+  }
+
+  // 2. Gemini/Groq Embedding Fallback
+  if (geminiApiKey) {
+    try {
+      console.log(`[Gemini] Generating embedding for text (${cleanText.length} chars) using text-embedding-004 (1024 dims)`);
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${geminiApiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "models/text-embedding-004",
+            content: {
+              parts: [{ text: cleanText }],
+            },
+            outputDimensionality: 1024,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Gemini Embeddings API error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      if (data.embedding && data.embedding.values) {
+        console.log(`[Gemini] Successfully generated embedding with ${data.embedding.values.length} dimensions`);
+        return data.embedding.values;
+      }
+      throw new Error("Invalid response format from Gemini embeddings API.");
+    } catch (err) {
+      console.error(`[Gemini] Embedding generation failed: ${err}`);
+    }
+  }
+
+  // Final resilient fallback: 1024-dimension zero vector
+  console.warn("[AI] All embedding APIs failed. Returning 1024-dimension zero-vector fallback.");
+  return new Array(1024).fill(0);
+}
+

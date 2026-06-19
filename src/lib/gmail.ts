@@ -1,6 +1,6 @@
 import { google, gmail_v1 } from "googleapis";
 import { db } from "./db";
-import { summarizeThreadEmail } from "./gemini";
+import { summarizeThreadEmail, getEmbedding } from "./gemini";
 import crypto from "crypto";
 
 // Dynamically resolve NEXTAUTH_URL on Vercel deployments to prevent redirect URI mismatch
@@ -266,6 +266,20 @@ export async function syncEmails(userId: string, limit: number = 20) {
             dedupHash,
           },
         });
+
+        // 4. Generate and save vector embedding for RAG semantic search (non-duplicates only)
+        if (!isDuplicate) {
+          try {
+            const embedding = await getEmbedding(bodyContent);
+            await db.$executeRaw`
+              UPDATE "Email"
+              SET embedding = ${embedding}::vector
+              WHERE id = ${email.id};
+            `;
+          } catch (embedError) {
+            console.error(`Failed to generate/save embedding for email ${email.id}:`, embedError);
+          }
+        }
 
         // 4. Summarization step (only if not a duplicate)
         if (!isDuplicate) {

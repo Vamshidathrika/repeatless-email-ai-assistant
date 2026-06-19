@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { askAgentAboutEmails } from "@/lib/gemini";
+import { askAgentAboutEmails, getEmbedding } from "@/lib/gemini";
 import crypto from "crypto";
 
 // ─── Rate Limit Config ────────────────────────────────────────────────────────
@@ -190,48 +190,99 @@ export async function POST(req: Request) {
     const stopWords = new Set(["what", "show", "from", "with", "have", "about", "your", "mail", "email", "the", "and", "for", "that", "this", "are", "can", "you", "tell", "give", "me"]);
     const keywords = lowerQuery.split(/\s+/).filter((w) => w.length > 3 && !stopWords.has(w));
 
-    // Fetch in parallel for speed
-    const [recentEmails, searchEmails, categoryEmails] = await Promise.all([
-      // A. Recent emails (capped at 10 — use summaries where possible)
-      db.email.findMany({
-        where: { userId, isDuplicate: false },
-        include: { summary: true },
-        orderBy: { date: "desc" },
-        take: 10,
-      }),
+    // 1. Fetch recent emails (always needed for recency context)
+    const recentEmails = await db.email.findMany({
+      where: { userId, isDuplicate: false },
+      include: { summary: true },
+      orderBy: { date: "desc" },
+      take: 10,
+    });
 
-      // B. Keyword search (capped at 8)
-      keywords.length > 0
-        ? db.email.findMany({
-            where: {
-              userId, isDuplicate: false,
-              OR: keywords.slice(0, 3).map((w) => ({
-                OR: [
-                  { subject: { contains: w, mode: "insensitive" } },
-                  { sender: { contains: w, mode: "insensitive" } },
-                ],
-              })),
-            },
-            include: { summary: true },
-            orderBy: { date: "desc" },
-            take: 8,
-          })
-        : Promise.resolve([]),
+    // 2. Perform semantic search using pgvector (if possible)
+    let semanticEmails: any[] = [];
+    let usedSemanticSearch = false;
 
-      // C. Category emails (capped at 8)
-      targetCategory
-        ? db.email.findMany({
-            where: { userId, isDuplicate: false, summary: { category: targetCategory } },
-            include: { summary: true },
-            orderBy: { date: "desc" },
-            take: 8,
-          })
-        : Promise.resolve([]),
-    ]);
+    try {
+      const queryEmbedding = await getEmbedding(query);
+      const rawResults = await db.$queryRaw<any[]>`
+        SELECT 
+          e.id, e."threadId", e."userId", e.subject, e.sender, e.receiver, e.date, 
+          e."bodySnippet", e."bodyContent", e.labels, e."unsubscribeUrl",
+          s.id as "summary_id", s."shortSummary", s."detailedSummary", 
+          s."actionItems", s.category, s."importanceScore", s."replySuggestions"
+        FROM "Email" e
+        LEFT JOIN "EmailSummary" s ON e.id = s."emailId"
+        WHERE e."userId" = ${userId} AND e."isDuplicate" = false AND e.embedding IS NOT NULL
+        ORDER BY e.embedding <=> ${queryEmbedding}::vector
+        LIMIT 10;
+      `;
+
+      if (rawResults && rawResults.length > 0) {
+        semanticEmails = rawResults.map(row => ({
+          id: row.id,
+          threadId: row.threadId,
+          userId: row.userId,
+          subject: row.subject,
+          sender: row.sender,
+          receiver: row.receiver,
+          date: row.date,
+          bodySnippet: row.bodySnippet,
+          bodyContent: row.bodyContent,
+          labels: row.labels,
+          unsubscribeUrl: row.unsubscribeUrl,
+          summary: row.summary_id ? {
+            id: row.summary_id,
+            shortSummary: row.shortSummary,
+            detailedSummary: row.detailedSummary,
+            actionItems: row.actionItems,
+            category: row.category,
+            importanceScore: row.importanceScore,
+            replySuggestions: row.replySuggestions,
+          } : null
+        }));
+        usedSemanticSearch = true;
+        console.log(`[RAG] Retrieved ${semanticEmails.length} semantically relevant emails via pgvector`);
+      }
+    } catch (embedErr) {
+      console.warn("[RAG] Cosine similarity search failed or pgvector not set up. Falling back to keyword search...", embedErr);
+    }
+
+    // 3. Fall back to Keyword & Category Search if semantic search was not used or yielded nothing
+    let fallbackEmails: any[] = [];
+    if (!usedSemanticSearch) {
+      const [searchEmails, categoryEmails] = await Promise.all([
+        keywords.length > 0
+          ? db.email.findMany({
+              where: {
+                userId, isDuplicate: false,
+                OR: keywords.slice(0, 3).map((w) => ({
+                  OR: [
+                    { subject: { contains: w, mode: "insensitive" } },
+                    { sender: { contains: w, mode: "insensitive" } },
+                  ],
+                })),
+              },
+              include: { summary: true },
+              orderBy: { date: "desc" },
+              take: 8,
+            })
+          : Promise.resolve([]),
+
+        targetCategory
+          ? db.email.findMany({
+              where: { userId, isDuplicate: false, summary: { category: targetCategory } },
+              include: { summary: true },
+              orderBy: { date: "desc" },
+              take: 8,
+            })
+          : Promise.resolve([]),
+      ]);
+      fallbackEmails = [...searchEmails, ...categoryEmails];
+    }
 
     // Deduplicate by email ID and enforce MAX_EMAILS_IN_CONTEXT
     const emailMap = new Map<string, typeof recentEmails[0]>();
-    [...recentEmails, ...searchEmails, ...categoryEmails].forEach((e) => emailMap.set(e.id, e));
+    [...recentEmails, ...semanticEmails, ...fallbackEmails].forEach((e: any) => emailMap.set(e.id, e));
     const allEmails = Array.from(emailMap.values()).slice(0, MAX_EMAILS_IN_CONTEXT);
 
     // ── 6. Build Compact Context (prefer AI summaries over raw body) ──────────

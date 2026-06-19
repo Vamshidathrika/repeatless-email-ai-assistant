@@ -1,12 +1,14 @@
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
 }
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/client"
+  provider        = "prisma-client-js"
+  output          = "../src/generated/client"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 model Account {
@@ -125,6 +127,7 @@ model Email {
   labels      String   // Comma-separated labels from Gmail
   isDuplicate Boolean  @default(false)
   dedupHash   String?  // The hash for dedup checks
+  embedding   Unsupported("vector(1024)")?
   
   summary     EmailSummary?
   
