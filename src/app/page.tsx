@@ -230,6 +230,7 @@ export default function Home() {
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState<boolean>(false);
   const [showNewWorkflow, setShowNewWorkflow] = useState<boolean>(false);
   const [editingWorkflowId, setEditingWorkflowId] = useState<string | null>(null);
+  const [expandedLogs, setExpandedLogs] = useState<Record<string, boolean>>({});
   const [wfName, setWfName] = useState<string>("");
   const [wfDescription, setWfDescription] = useState<string>("");
   const [wfSchedule, setWfSchedule] = useState<string>("0 8 * * *");
@@ -3422,7 +3423,47 @@ export default function Home() {
                                 <div className="wf-last-run">
                                   Last run: {new Date(wf.lastRunAt).toLocaleString()} ·{" "}
                                   <span className={`wf-run-status ${wf.lastRunStatus}`}>{wf.lastRunStatus}</span>
+                                  {wf.lastRunLog && (
+                                    <button 
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExpandedLogs(prev => ({ ...prev, [wf.id]: !prev[wf.id] }));
+                                      }}
+                                      style={{ 
+                                        background: "none", 
+                                        border: "none", 
+                                        color: "var(--accent-sky)", 
+                                        cursor: "pointer", 
+                                        fontSize: "0.68rem", 
+                                        marginLeft: "0.55rem", 
+                                        padding: 0,
+                                        textDecoration: "underline"
+                                      }}
+                                    >
+                                      {expandedLogs[wf.id] ? "Hide Log" : "Show Log"}
+                                    </button>
+                                  )}
                                 </div>
+                              )}
+                              {expandedLogs[wf.id] && wf.lastRunLog && (
+                                <pre style={{ 
+                                  background: "rgba(255, 255, 255, 0.03)", 
+                                  border: "1px solid var(--border-color)", 
+                                  padding: "0.5rem 0.75rem", 
+                                  borderRadius: "6px", 
+                                  fontSize: "0.72rem", 
+                                  fontFamily: "monospace", 
+                                  whiteSpace: "pre-wrap", 
+                                  marginTop: "0.4rem",
+                                  color: "var(--text-secondary)",
+                                  maxHeight: "150px",
+                                  overflowY: "auto",
+                                  textAlign: "left",
+                                  width: "100%"
+                                }}>
+                                  {wf.lastRunLog}
+                                </pre>
                               )}
                               {wf.nextRunAt && wf.enabled && (
                                 <div className="wf-next-run">Next run: {new Date(wf.nextRunAt).toLocaleString()}</div>
