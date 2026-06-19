@@ -1,6 +1,6 @@
-# Repeatless — Deployment Guide
+# Aether — Deployment Guide
 
-**Repeatless** is an AI-powered Gmail intelligence platform that connects to your inbox via Google OAuth 2.0, syncs and deduplicates emails into a PostgreSQL database, and generates intelligent summaries, action items, and draft replies using Google Gemini. This guide walks you through deploying Repeatless to a production environment using either **Vercel** (recommended) or **Firebase App Hosting**.
+**Aether** is a focused, AI-powered Gmail workspace that connects to your inbox via Google OAuth 2.0, syncs and deduplicates emails into a PostgreSQL database, and generates summaries, action items, and replies using Groq. This guide walks you through deploying Aether to a production environment using either **Vercel** (recommended) or **Firebase App Hosting**.
 
 ---
 
@@ -25,8 +25,8 @@ Before deploying, ensure you have:
 
 1. A **GitHub repository** containing your pushed code.
 2. A **PostgreSQL database** connection URL (e.g., from [Supabase](https://supabase.com/) or [Neon](https://neon.tech/)).
-3. An active **Gemini API Key** from [Google AI Studio](https://aistudio.google.com/).
-4. A **Google Cloud Console Project** with the Gmail API enabled and OAuth consent screen configured.
+3. A **Groq API Key** from the Groq console.
+4. A **Google Cloud Console Project** with the Gmail API and Google Calendar API enabled, and OAuth consent screen configured.
 
 ---
 
@@ -55,6 +55,7 @@ Vercel provides native, serverless optimization for Next.js App Router projects.
 
 1. Log in to [Vercel](https://vercel.com/) and click **Add New** → **Project**.
 2. Select and import your private GitHub repository.
+
 ### Step 2: Configure Environment Variables
 
 Under the **Environment Variables** accordion, add the following variables:
@@ -64,14 +65,15 @@ Under the **Environment Variables** accordion, add the following variables:
 | `DATABASE_URL`         | Your production PostgreSQL connection string. *Note: If using connection pooling (e.g. Supabase Session mode on port 5432 or 6543), append `?pgbouncer=true` to prevent Prisma from running out of connections in serverless functions.* |
 | `DIRECT_URL`           | Direct PostgreSQL connection URL (e.g. Supabase port 5432 without pooling). |
 | `NEXTAUTH_SECRET`      | A secure random string used to sign cookies. Generate one by running `openssl rand -base64 32` in your terminal. |
-| `NEXTAUTH_URL`         | Your production deployment URL (e.g., `https://repeatless-email-ai-assistant.vercel.app`). |
+| `NEXTAUTH_URL`         | Your production deployment URL (e.g., `https://aether-email-assistant.vercel.app`). |
 | `GOOGLE_CLIENT_ID`     | Your Google Cloud OAuth Client ID. |
 | `GOOGLE_CLIENT_SECRET` | Your Google Cloud OAuth Client Secret. |
-| `GEMINI_API_KEY`       | Your Gemini API Key from Google AI Studio. |
-| `GROQ_API_KEY`         | Your Groq API Key for model failover. |
+| `GROQ_API_KEY`         | Your Groq API Key. |
+| `OPENROUTER_API_KEY`   | *(Optional)* OpenRouter API Key fallback. |
+| `GEMINI_API_KEY`       | *(Optional)* Google Gemini API Key fallback. |
 | `SLACK_CLIENT_ID`      | Your Slack App Client ID. |
 | `SLACK_CLIENT_SECRET`  | Your Slack App Client Secret. |
-| `CRON_SECRET`          | Secure key to protect cron workflow runner triggers (e.g. `b3A5OW5iMjdkNDIyNWI4ZDJiYjJiZTcwNjg1OQ==`). |
+| `CRON_SECRET`          | Secure key to protect cron workflow runner triggers. |
 
 ### Step 3: Deploy
 
@@ -81,7 +83,7 @@ Under the **Environment Variables** accordion, add the following variables:
 ### Step 4: Configure Integrations & Cron Jobs
 
 #### 🔔 Slack Public Distribution
-Since Repeatless will be installed by users in different workspaces, you **must enable public distribution** in the Slack app:
+Since Aether will be installed by users in different workspaces, you **must enable public distribution** in the Slack app:
 1. Go to the [Slack App Console](https://api.slack.com/apps) and click your app.
 2. Select **OAuth & Permissions**:
    - Add Redirect URL: `https://your-domain.vercel.app/api/slack/callback`
@@ -95,7 +97,8 @@ Since Repeatless will be installed by users in different workspaces, you **must 
 2. Update your OAuth Consent Screen scopes to include `https://www.googleapis.com/auth/calendar.events` so users can authorize calendar booking.
 
 #### ⏱️ Vercel Cron Jobs
-Repeatless schedules workflows using Vercel Cron. The `vercel.json` file triggers `/api/cron/workflows` automatically. Ensure you have added the `CRON_SECRET` variable under your Vercel Environment Variables so Vercel can run the cron jobs securely.
+Aether schedules workflows using Vercel Cron. The `vercel.json` file triggers `/api/cron/workflows` automatically. Ensure you have added the `CRON_SECRET` variable under your Vercel Environment Variables so Vercel can run the cron jobs securely.
+
 ---
 
 ## 3. Deploying to Firebase App Hosting
@@ -125,7 +128,7 @@ npm install -g firebase-tools
 ### Step 3: Environment Variables
 
 1. Navigate to the **Firebase Console** → **App Hosting** → **Select your Backend** → **Settings**.
-2. Add your environment variables (`DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GEMINI_API_KEY`).
+2. Add your environment variables (`DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GROQ_API_KEY`).
 3. App Hosting will inject these into the container build securely.
 
 ---
@@ -147,20 +150,20 @@ This updates your database tables without wiping existing records.
 
 ## 5. Post-Deployment Verification
 
-After deploying, walk through the following checklist to confirm Repeatless is fully operational:
+After deploying, walk through the following checklist to confirm Aether is fully operational:
 
 ### Connectivity Checks
 
 | Step | Action                                             | Expected Result                                                                 |
 | :--: | :------------------------------------------------- | :------------------------------------------------------------------------------ |
-|  1   | Open the production URL in a browser               | The Repeatless login page loads without errors                                  |
+|  1   | Open the production URL in a browser               | The Aether login page loads without errors                                  |
 |  2   | Click **Connect Google Account**                   | Google OAuth consent screen appears with correct scopes                         |
 |  3   | Complete the OAuth flow and grant permissions       | Redirected back to the dashboard; session is active                             |
-|  4   | Click **Sync Inbox** in the sidebar                | Emails are fetched, processed, and displayed; status updates in real-time       |
+|  4   | Click **Sync Inbox** in the top navbar             | Emails are fetched, processed, and displayed; status updates in real-time       |
 |  5   | Click an email card to view the AI summary         | Summary, action items, importance score, and reply suggestions are rendered     |
-|  6   | Compose a reply using an instruction chip          | Gemini generates a contextual draft reply                                       |
-|  7   | Open the **Gemini Copilot** chat panel             | Chat responds to natural language queries (e.g., *"Summarize my week"*)        |
-|  8   | Run the **Clean Inbox** feature from the sidebar   | Duplicate newsletters are identified and moved to Trash                         |
+|  6   | Compose a reply using an instruction chip          | AI generates a contextual draft reply                                       |
+|  7   | Open the **Personal Assistant** chat panel         | Chat responds to natural language queries (e.g., *"Summarize my week"*)        |
+|  8   | Run the **Clean Inbox** feature from the top navbar| Duplicate newsletters are identified and moved to Trash                         |
 
 ### Health Indicators
 
@@ -172,16 +175,16 @@ After deploying, walk through the following checklist to confirm Repeatless is f
 
 ## Environment Variable Reference
 
-The complete set of environment variables required by Repeatless:
+The complete set of environment variables required by Aether:
 
 | Variable               | Required | Description                                                                                                  | Example Value                                                  |
 | :--------------------- | :------: | :----------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
 | `DATABASE_URL`         |    ✅     | PostgreSQL connection string. URL-encode any `@` in the password as `%40`. Append `?pgbouncer=true` if using connection pooling. | `postgresql://user:pass@host:5432/db`                          |
-| `NEXTAUTH_URL`         |    ✅     | The canonical, publicly accessible URL of your deployment.                                                   | `https://repeatless.vercel.app`                                |
+| `NEXTAUTH_URL`         |    ✅     | The canonical, publicly accessible URL of your deployment.                                                   | `https://aether-app.vercel.app`                                |
 | `NEXTAUTH_SECRET`      |    ✅     | A cryptographically random string for signing session cookies. Generate with `openssl rand -base64 32`.       | `k8Jd3mPz...` (32+ characters)                                |
 | `GOOGLE_CLIENT_ID`     |    ✅     | OAuth 2.0 Client ID from the Google Cloud Console (Web Application type).                                    | `123456789.apps.googleusercontent.com`                         |
 | `GOOGLE_CLIENT_SECRET` |    ✅     | OAuth 2.0 Client Secret from the Google Cloud Console.                                                       | `GOCSPX-xxxxxxxxxxxx`                                          |
-| `GEMINI_API_KEY`       |    ✅     | Google Gemini API key obtained from [Google AI Studio](https://aistudio.google.com/).                        | `AIzaSyxxxxxxxxxxxx`                                           |
+| `GROQ_API_KEY`         |    ✅     | Groq API key obtained from Groq console.                                                                     | `gsk_xxxxxxxxxxxx`                                             |
 
 > [!TIP]
 > Store sensitive values using your platform's secrets manager (Vercel Environment Variables, Firebase Secret Manager) rather than committing them to version control. Never include secrets in `.env` files pushed to GitHub.
@@ -223,21 +226,21 @@ The complete set of environment variables required by Repeatless:
 
 ---
 
-### Gemini API Rate Limiting
+### Groq API Rate Limiting
 
-**Symptom**: `429 Too Many Requests`, `RESOURCE_EXHAUSTED`, or `503 UNAVAILABLE` errors during email summarization.
+**Symptom**: `429 Too Many Requests`, `RESOURCE_EXHAUSTED`, or connection timeouts during email summarization.
 
-**Cause**: Google Gemini API free-tier quota exceeded.
+**Cause**: Groq API rate limits exceeded.
 
-**Built-in mitigation**: Repeatless includes a resilient retry mechanism with **4 retries and exponential backoff** (starting at 1 second, multiplied by 2.5× per attempt). The system automatically handles:
+**Built-in mitigation**: Aether includes a resilient retry mechanism with **3 retries and exponential backoff** (starting at 1 second, multiplied by 2.5× per attempt). The system automatically handles:
 - `429` rate limit errors
 - `503` service unavailable errors
-- `RESOURCE_EXHAUSTED` quota errors
+- `RESOURCE_EXHAUSTED` errors
+- Automatic failover sequence trying `llama-3.1-8b-instant`, `llama-3.3-70b-versatile`, `openai/gpt-oss-20b`, and `groq/compound-mini`.
 
 **Additional steps if persistent**:
-1. Check your [Gemini API quota dashboard](https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas) for current usage.
+1. Check your Groq console dashboard for current limits and request quotas.
 2. Reduce the sync batch size by syncing fewer emails at a time.
-3. Consider upgrading to a paid Gemini API tier for higher rate limits.
 
 ---
 
@@ -252,7 +255,8 @@ The complete set of environment variables required by Repeatless:
    - `https://www.googleapis.com/auth/gmail.readonly`
    - `https://www.googleapis.com/auth/gmail.modify`
    - `https://www.googleapis.com/auth/gmail.send`
-2. Revoke the existing token: the user should go to [Google Account Permissions](https://myaccount.google.com/permissions), remove Repeatless, and sign in again to re-grant scopes.
+   - `https://www.googleapis.com/auth/calendar.events`
+2. Revoke the existing token: the user should go to [Google Account Permissions](https://myaccount.google.com/permissions), remove Aether, and sign in again to re-grant scopes.
 3. Ensure the Gmail API is **enabled** in your Google Cloud project under APIs & Services.
 
 ---
@@ -267,7 +271,7 @@ The complete set of environment variables required by Repeatless:
 
 | Reason                                       | Fix                                                                                                  |
 | :------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| User revoked access in Google Account settings | User must sign out and re-authenticate through the Repeatless OAuth flow.                            |
+| User revoked access in Google Account settings | User must sign out and re-authenticate through the Aether OAuth flow.                            |
 | Refresh token expired (6-month inactivity)    | User must re-authenticate. No server-side fix.                                                       |
 | App is in "Testing" mode (max 7-day tokens)   | Publish your OAuth consent screen to **Production** in Google Cloud Console for long-lived tokens.   |
 | `GOOGLE_CLIENT_SECRET` was rotated            | Update the `GOOGLE_CLIENT_SECRET` environment variable and redeploy. Existing tokens will be invalid. |
@@ -281,7 +285,7 @@ The complete set of environment variables required by Repeatless:
 
 ### Serverless Cold Starts
 
-Repeatless API routes run as serverless functions on Vercel (or Cloud Run on Firebase). The first request after a period of inactivity may take 1–3 seconds longer due to a cold start. To minimize impact:
+Aether API routes run as serverless functions on Vercel (or Cloud Run on Firebase). The first request after a period of inactivity may take 1–3 seconds longer due to a cold start. To minimize impact:
 
 - Keep function bundles lean by avoiding unnecessary dependencies.
 - On Vercel Pro/Enterprise plans, use [Fluid Compute](https://vercel.com/docs/functions/fluid-compute) to reduce cold-start latency.
@@ -302,20 +306,18 @@ DATABASE_URL="postgresql://user:pass@db.xxxxx.supabase.co:6543/postgres?pgbounce
 | Neon      | Built-in connection pooler | Use the pooled connection string from the dashboard |
 | Self-hosted | Install PgBouncer     | Point `DATABASE_URL` at the PgBouncer endpoint |
 
-### Gemini API Rate Limits
+### Groq API Rate Limits
 
-The Gemini free tier enforces per-minute request quotas. Repeatless mitigates this with built-in retry logic:
+The Groq API enforces per-minute request quotas. Aether mitigates this with built-in retry logic and model failover sequence:
 
 ```
-Retry Strategy: 4 retries, exponential backoff
+Retry Strategy: 3 retries, exponential backoff
   Attempt 1 → wait 1.0s
   Attempt 2 → wait 2.5s
   Attempt 3 → wait 6.25s
-  Attempt 4 → wait 15.6s
 ```
 
 If you encounter persistent `429` errors at scale:
-- Upgrade to a paid Gemini API tier.
 - Implement request queuing at the application level.
 - Reduce the number of emails synced per batch.
 
