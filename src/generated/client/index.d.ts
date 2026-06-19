@@ -29,6 +29,16 @@ export type Session = $Result.DefaultSelection<Prisma.$SessionPayload>
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 /**
+ * Model WebhookConnection
+ * 
+ */
+export type WebhookConnection = $Result.DefaultSelection<Prisma.$WebhookConnectionPayload>
+/**
+ * Model Workflow
+ * 
+ */
+export type Workflow = $Result.DefaultSelection<Prisma.$WorkflowPayload>
+/**
  * Model VerificationToken
  * 
  */
@@ -53,6 +63,17 @@ export type EmailSummary = $Result.DefaultSelection<Prisma.$EmailSummaryPayload>
  * 
  */
 export type SyncState = $Result.DefaultSelection<Prisma.$SyncStatePayload>
+/**
+ * Model QueryCache
+ * RAG Query Cache — stores normalized query hashes → AI answers per user
+ * Avoids re-calling LLM for semantically identical queries (TTL: 24h default)
+ */
+export type QueryCache = $Result.DefaultSelection<Prisma.$QueryCachePayload>
+/**
+ * Model RateLimit
+ * Per-user rate limiting state — sliding window counters
+ */
+export type RateLimit = $Result.DefaultSelection<Prisma.$RateLimitPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -203,6 +224,26 @@ export class PrismaClient<
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
 
   /**
+   * `prisma.webhookConnection`: Exposes CRUD operations for the **WebhookConnection** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more WebhookConnections
+    * const webhookConnections = await prisma.webhookConnection.findMany()
+    * ```
+    */
+  get webhookConnection(): Prisma.WebhookConnectionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.workflow`: Exposes CRUD operations for the **Workflow** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Workflows
+    * const workflows = await prisma.workflow.findMany()
+    * ```
+    */
+  get workflow(): Prisma.WorkflowDelegate<ExtArgs, ClientOptions>;
+
+  /**
    * `prisma.verificationToken`: Exposes CRUD operations for the **VerificationToken** model.
     * Example usage:
     * ```ts
@@ -251,6 +292,26 @@ export class PrismaClient<
     * ```
     */
   get syncState(): Prisma.SyncStateDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.queryCache`: Exposes CRUD operations for the **QueryCache** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more QueryCaches
+    * const queryCaches = await prisma.queryCache.findMany()
+    * ```
+    */
+  get queryCache(): Prisma.QueryCacheDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.rateLimit`: Exposes CRUD operations for the **RateLimit** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RateLimits
+    * const rateLimits = await prisma.rateLimit.findMany()
+    * ```
+    */
+  get rateLimit(): Prisma.RateLimitDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -695,11 +756,15 @@ export namespace Prisma {
     Account: 'Account',
     Session: 'Session',
     User: 'User',
+    WebhookConnection: 'WebhookConnection',
+    Workflow: 'Workflow',
     VerificationToken: 'VerificationToken',
     UserPreference: 'UserPreference',
     Email: 'Email',
     EmailSummary: 'EmailSummary',
-    SyncState: 'SyncState'
+    SyncState: 'SyncState',
+    QueryCache: 'QueryCache',
+    RateLimit: 'RateLimit'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -718,7 +783,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "account" | "session" | "user" | "verificationToken" | "userPreference" | "email" | "emailSummary" | "syncState"
+      modelProps: "account" | "session" | "user" | "webhookConnection" | "workflow" | "verificationToken" | "userPreference" | "email" | "emailSummary" | "syncState" | "queryCache" | "rateLimit"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -941,6 +1006,154 @@ export namespace Prisma {
           count: {
             args: Prisma.UserCountArgs<ExtArgs>
             result: $Utils.Optional<UserCountAggregateOutputType> | number
+          }
+        }
+      }
+      WebhookConnection: {
+        payload: Prisma.$WebhookConnectionPayload<ExtArgs>
+        fields: Prisma.WebhookConnectionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.WebhookConnectionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.WebhookConnectionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload>
+          }
+          findFirst: {
+            args: Prisma.WebhookConnectionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.WebhookConnectionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload>
+          }
+          findMany: {
+            args: Prisma.WebhookConnectionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload>[]
+          }
+          create: {
+            args: Prisma.WebhookConnectionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload>
+          }
+          createMany: {
+            args: Prisma.WebhookConnectionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.WebhookConnectionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload>[]
+          }
+          delete: {
+            args: Prisma.WebhookConnectionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload>
+          }
+          update: {
+            args: Prisma.WebhookConnectionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload>
+          }
+          deleteMany: {
+            args: Prisma.WebhookConnectionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.WebhookConnectionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.WebhookConnectionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload>[]
+          }
+          upsert: {
+            args: Prisma.WebhookConnectionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WebhookConnectionPayload>
+          }
+          aggregate: {
+            args: Prisma.WebhookConnectionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateWebhookConnection>
+          }
+          groupBy: {
+            args: Prisma.WebhookConnectionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<WebhookConnectionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.WebhookConnectionCountArgs<ExtArgs>
+            result: $Utils.Optional<WebhookConnectionCountAggregateOutputType> | number
+          }
+        }
+      }
+      Workflow: {
+        payload: Prisma.$WorkflowPayload<ExtArgs>
+        fields: Prisma.WorkflowFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.WorkflowFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.WorkflowFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload>
+          }
+          findFirst: {
+            args: Prisma.WorkflowFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.WorkflowFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload>
+          }
+          findMany: {
+            args: Prisma.WorkflowFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload>[]
+          }
+          create: {
+            args: Prisma.WorkflowCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload>
+          }
+          createMany: {
+            args: Prisma.WorkflowCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.WorkflowCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload>[]
+          }
+          delete: {
+            args: Prisma.WorkflowDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload>
+          }
+          update: {
+            args: Prisma.WorkflowUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload>
+          }
+          deleteMany: {
+            args: Prisma.WorkflowDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.WorkflowUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.WorkflowUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload>[]
+          }
+          upsert: {
+            args: Prisma.WorkflowUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkflowPayload>
+          }
+          aggregate: {
+            args: Prisma.WorkflowAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateWorkflow>
+          }
+          groupBy: {
+            args: Prisma.WorkflowGroupByArgs<ExtArgs>
+            result: $Utils.Optional<WorkflowGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.WorkflowCountArgs<ExtArgs>
+            result: $Utils.Optional<WorkflowCountAggregateOutputType> | number
           }
         }
       }
@@ -1314,6 +1527,154 @@ export namespace Prisma {
           }
         }
       }
+      QueryCache: {
+        payload: Prisma.$QueryCachePayload<ExtArgs>
+        fields: Prisma.QueryCacheFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.QueryCacheFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.QueryCacheFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload>
+          }
+          findFirst: {
+            args: Prisma.QueryCacheFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.QueryCacheFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload>
+          }
+          findMany: {
+            args: Prisma.QueryCacheFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload>[]
+          }
+          create: {
+            args: Prisma.QueryCacheCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload>
+          }
+          createMany: {
+            args: Prisma.QueryCacheCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.QueryCacheCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload>[]
+          }
+          delete: {
+            args: Prisma.QueryCacheDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload>
+          }
+          update: {
+            args: Prisma.QueryCacheUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload>
+          }
+          deleteMany: {
+            args: Prisma.QueryCacheDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.QueryCacheUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.QueryCacheUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload>[]
+          }
+          upsert: {
+            args: Prisma.QueryCacheUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$QueryCachePayload>
+          }
+          aggregate: {
+            args: Prisma.QueryCacheAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateQueryCache>
+          }
+          groupBy: {
+            args: Prisma.QueryCacheGroupByArgs<ExtArgs>
+            result: $Utils.Optional<QueryCacheGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.QueryCacheCountArgs<ExtArgs>
+            result: $Utils.Optional<QueryCacheCountAggregateOutputType> | number
+          }
+        }
+      }
+      RateLimit: {
+        payload: Prisma.$RateLimitPayload<ExtArgs>
+        fields: Prisma.RateLimitFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RateLimitFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RateLimitFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload>
+          }
+          findFirst: {
+            args: Prisma.RateLimitFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RateLimitFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload>
+          }
+          findMany: {
+            args: Prisma.RateLimitFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload>[]
+          }
+          create: {
+            args: Prisma.RateLimitCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload>
+          }
+          createMany: {
+            args: Prisma.RateLimitCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.RateLimitCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload>[]
+          }
+          delete: {
+            args: Prisma.RateLimitDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload>
+          }
+          update: {
+            args: Prisma.RateLimitUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload>
+          }
+          deleteMany: {
+            args: Prisma.RateLimitDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RateLimitUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.RateLimitUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload>[]
+          }
+          upsert: {
+            args: Prisma.RateLimitUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RateLimitPayload>
+          }
+          aggregate: {
+            args: Prisma.RateLimitAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRateLimit>
+          }
+          groupBy: {
+            args: Prisma.RateLimitGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RateLimitGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RateLimitCountArgs<ExtArgs>
+            result: $Utils.Optional<RateLimitCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1413,11 +1774,15 @@ export namespace Prisma {
     account?: AccountOmit
     session?: SessionOmit
     user?: UserOmit
+    webhookConnection?: WebhookConnectionOmit
+    workflow?: WorkflowOmit
     verificationToken?: VerificationTokenOmit
     userPreference?: UserPreferenceOmit
     email?: EmailOmit
     emailSummary?: EmailSummaryOmit
     syncState?: SyncStateOmit
+    queryCache?: QueryCacheOmit
+    rateLimit?: RateLimitOmit
   }
 
   /* Types for Logging */
@@ -1501,12 +1866,16 @@ export namespace Prisma {
     accounts: number
     sessions: number
     emails: number
+    workflows: number
+    webhooks: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | UserCountOutputTypeCountAccountsArgs
     sessions?: boolean | UserCountOutputTypeCountSessionsArgs
     emails?: boolean | UserCountOutputTypeCountEmailsArgs
+    workflows?: boolean | UserCountOutputTypeCountWorkflowsArgs
+    webhooks?: boolean | UserCountOutputTypeCountWebhooksArgs
   }
 
   // Custom InputTypes
@@ -1539,6 +1908,20 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountEmailsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: EmailWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountWorkflowsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WorkflowWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountWebhooksArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WebhookConnectionWhereInput
   }
 
 
@@ -3942,6 +4325,8 @@ export namespace Prisma {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     emails?: boolean | User$emailsArgs<ExtArgs>
     preferences?: boolean | User$preferencesArgs<ExtArgs>
+    workflows?: boolean | User$workflowsArgs<ExtArgs>
+    webhooks?: boolean | User$webhooksArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -3975,6 +4360,8 @@ export namespace Prisma {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     emails?: boolean | User$emailsArgs<ExtArgs>
     preferences?: boolean | User$preferencesArgs<ExtArgs>
+    workflows?: boolean | User$workflowsArgs<ExtArgs>
+    webhooks?: boolean | User$webhooksArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -3987,6 +4374,8 @@ export namespace Prisma {
       sessions: Prisma.$SessionPayload<ExtArgs>[]
       emails: Prisma.$EmailPayload<ExtArgs>[]
       preferences: Prisma.$UserPreferencePayload<ExtArgs> | null
+      workflows: Prisma.$WorkflowPayload<ExtArgs>[]
+      webhooks: Prisma.$WebhookConnectionPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -4392,6 +4781,8 @@ export namespace Prisma {
     sessions<T extends User$sessionsArgs<ExtArgs> = {}>(args?: Subset<T, User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     emails<T extends User$emailsArgs<ExtArgs> = {}>(args?: Subset<T, User$emailsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EmailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     preferences<T extends User$preferencesArgs<ExtArgs> = {}>(args?: Subset<T, User$preferencesArgs<ExtArgs>>): Prisma__UserPreferenceClient<$Result.GetResult<Prisma.$UserPreferencePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    workflows<T extends User$workflowsArgs<ExtArgs> = {}>(args?: Subset<T, User$workflowsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    webhooks<T extends User$webhooksArgs<ExtArgs> = {}>(args?: Subset<T, User$webhooksArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4905,6 +5296,54 @@ export namespace Prisma {
   }
 
   /**
+   * User.workflows
+   */
+  export type User$workflowsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    where?: WorkflowWhereInput
+    orderBy?: WorkflowOrderByWithRelationInput | WorkflowOrderByWithRelationInput[]
+    cursor?: WorkflowWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WorkflowScalarFieldEnum | WorkflowScalarFieldEnum[]
+  }
+
+  /**
+   * User.webhooks
+   */
+  export type User$webhooksArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    where?: WebhookConnectionWhereInput
+    orderBy?: WebhookConnectionOrderByWithRelationInput | WebhookConnectionOrderByWithRelationInput[]
+    cursor?: WebhookConnectionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WebhookConnectionScalarFieldEnum | WebhookConnectionScalarFieldEnum[]
+  }
+
+  /**
    * User without action
    */
   export type UserDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4920,6 +5359,2390 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: UserInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model WebhookConnection
+   */
+
+  export type AggregateWebhookConnection = {
+    _count: WebhookConnectionCountAggregateOutputType | null
+    _avg: WebhookConnectionAvgAggregateOutputType | null
+    _sum: WebhookConnectionSumAggregateOutputType | null
+    _min: WebhookConnectionMinAggregateOutputType | null
+    _max: WebhookConnectionMaxAggregateOutputType | null
+  }
+
+  export type WebhookConnectionAvgAggregateOutputType = {
+    lastTestCode: number | null
+  }
+
+  export type WebhookConnectionSumAggregateOutputType = {
+    lastTestCode: number | null
+  }
+
+  export type WebhookConnectionMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    name: string | null
+    description: string | null
+    url: string | null
+    method: string | null
+    headers: string | null
+    emoji: string | null
+    secret: string | null
+    lastTestedAt: Date | null
+    lastTestStatus: string | null
+    lastTestCode: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type WebhookConnectionMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    name: string | null
+    description: string | null
+    url: string | null
+    method: string | null
+    headers: string | null
+    emoji: string | null
+    secret: string | null
+    lastTestedAt: Date | null
+    lastTestStatus: string | null
+    lastTestCode: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type WebhookConnectionCountAggregateOutputType = {
+    id: number
+    userId: number
+    name: number
+    description: number
+    url: number
+    method: number
+    headers: number
+    emoji: number
+    secret: number
+    lastTestedAt: number
+    lastTestStatus: number
+    lastTestCode: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type WebhookConnectionAvgAggregateInputType = {
+    lastTestCode?: true
+  }
+
+  export type WebhookConnectionSumAggregateInputType = {
+    lastTestCode?: true
+  }
+
+  export type WebhookConnectionMinAggregateInputType = {
+    id?: true
+    userId?: true
+    name?: true
+    description?: true
+    url?: true
+    method?: true
+    headers?: true
+    emoji?: true
+    secret?: true
+    lastTestedAt?: true
+    lastTestStatus?: true
+    lastTestCode?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type WebhookConnectionMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    name?: true
+    description?: true
+    url?: true
+    method?: true
+    headers?: true
+    emoji?: true
+    secret?: true
+    lastTestedAt?: true
+    lastTestStatus?: true
+    lastTestCode?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type WebhookConnectionCountAggregateInputType = {
+    id?: true
+    userId?: true
+    name?: true
+    description?: true
+    url?: true
+    method?: true
+    headers?: true
+    emoji?: true
+    secret?: true
+    lastTestedAt?: true
+    lastTestStatus?: true
+    lastTestCode?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type WebhookConnectionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WebhookConnection to aggregate.
+     */
+    where?: WebhookConnectionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WebhookConnections to fetch.
+     */
+    orderBy?: WebhookConnectionOrderByWithRelationInput | WebhookConnectionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: WebhookConnectionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WebhookConnections from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WebhookConnections.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned WebhookConnections
+    **/
+    _count?: true | WebhookConnectionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: WebhookConnectionAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: WebhookConnectionSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: WebhookConnectionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: WebhookConnectionMaxAggregateInputType
+  }
+
+  export type GetWebhookConnectionAggregateType<T extends WebhookConnectionAggregateArgs> = {
+        [P in keyof T & keyof AggregateWebhookConnection]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateWebhookConnection[P]>
+      : GetScalarType<T[P], AggregateWebhookConnection[P]>
+  }
+
+
+
+
+  export type WebhookConnectionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WebhookConnectionWhereInput
+    orderBy?: WebhookConnectionOrderByWithAggregationInput | WebhookConnectionOrderByWithAggregationInput[]
+    by: WebhookConnectionScalarFieldEnum[] | WebhookConnectionScalarFieldEnum
+    having?: WebhookConnectionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: WebhookConnectionCountAggregateInputType | true
+    _avg?: WebhookConnectionAvgAggregateInputType
+    _sum?: WebhookConnectionSumAggregateInputType
+    _min?: WebhookConnectionMinAggregateInputType
+    _max?: WebhookConnectionMaxAggregateInputType
+  }
+
+  export type WebhookConnectionGroupByOutputType = {
+    id: string
+    userId: string
+    name: string
+    description: string | null
+    url: string
+    method: string
+    headers: string | null
+    emoji: string
+    secret: string | null
+    lastTestedAt: Date | null
+    lastTestStatus: string | null
+    lastTestCode: number | null
+    createdAt: Date
+    updatedAt: Date
+    _count: WebhookConnectionCountAggregateOutputType | null
+    _avg: WebhookConnectionAvgAggregateOutputType | null
+    _sum: WebhookConnectionSumAggregateOutputType | null
+    _min: WebhookConnectionMinAggregateOutputType | null
+    _max: WebhookConnectionMaxAggregateOutputType | null
+  }
+
+  type GetWebhookConnectionGroupByPayload<T extends WebhookConnectionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<WebhookConnectionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof WebhookConnectionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], WebhookConnectionGroupByOutputType[P]>
+            : GetScalarType<T[P], WebhookConnectionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type WebhookConnectionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    name?: boolean
+    description?: boolean
+    url?: boolean
+    method?: boolean
+    headers?: boolean
+    emoji?: boolean
+    secret?: boolean
+    lastTestedAt?: boolean
+    lastTestStatus?: boolean
+    lastTestCode?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["webhookConnection"]>
+
+  export type WebhookConnectionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    name?: boolean
+    description?: boolean
+    url?: boolean
+    method?: boolean
+    headers?: boolean
+    emoji?: boolean
+    secret?: boolean
+    lastTestedAt?: boolean
+    lastTestStatus?: boolean
+    lastTestCode?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["webhookConnection"]>
+
+  export type WebhookConnectionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    name?: boolean
+    description?: boolean
+    url?: boolean
+    method?: boolean
+    headers?: boolean
+    emoji?: boolean
+    secret?: boolean
+    lastTestedAt?: boolean
+    lastTestStatus?: boolean
+    lastTestCode?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["webhookConnection"]>
+
+  export type WebhookConnectionSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    name?: boolean
+    description?: boolean
+    url?: boolean
+    method?: boolean
+    headers?: boolean
+    emoji?: boolean
+    secret?: boolean
+    lastTestedAt?: boolean
+    lastTestStatus?: boolean
+    lastTestCode?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type WebhookConnectionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "description" | "url" | "method" | "headers" | "emoji" | "secret" | "lastTestedAt" | "lastTestStatus" | "lastTestCode" | "createdAt" | "updatedAt", ExtArgs["result"]["webhookConnection"]>
+  export type WebhookConnectionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type WebhookConnectionIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type WebhookConnectionIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $WebhookConnectionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "WebhookConnection"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      name: string
+      description: string | null
+      url: string
+      method: string
+      headers: string | null
+      emoji: string
+      secret: string | null
+      lastTestedAt: Date | null
+      lastTestStatus: string | null
+      lastTestCode: number | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["webhookConnection"]>
+    composites: {}
+  }
+
+  type WebhookConnectionGetPayload<S extends boolean | null | undefined | WebhookConnectionDefaultArgs> = $Result.GetResult<Prisma.$WebhookConnectionPayload, S>
+
+  type WebhookConnectionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<WebhookConnectionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: WebhookConnectionCountAggregateInputType | true
+    }
+
+  export interface WebhookConnectionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['WebhookConnection'], meta: { name: 'WebhookConnection' } }
+    /**
+     * Find zero or one WebhookConnection that matches the filter.
+     * @param {WebhookConnectionFindUniqueArgs} args - Arguments to find a WebhookConnection
+     * @example
+     * // Get one WebhookConnection
+     * const webhookConnection = await prisma.webhookConnection.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends WebhookConnectionFindUniqueArgs>(args: SelectSubset<T, WebhookConnectionFindUniqueArgs<ExtArgs>>): Prisma__WebhookConnectionClient<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one WebhookConnection that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {WebhookConnectionFindUniqueOrThrowArgs} args - Arguments to find a WebhookConnection
+     * @example
+     * // Get one WebhookConnection
+     * const webhookConnection = await prisma.webhookConnection.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends WebhookConnectionFindUniqueOrThrowArgs>(args: SelectSubset<T, WebhookConnectionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__WebhookConnectionClient<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WebhookConnection that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebhookConnectionFindFirstArgs} args - Arguments to find a WebhookConnection
+     * @example
+     * // Get one WebhookConnection
+     * const webhookConnection = await prisma.webhookConnection.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends WebhookConnectionFindFirstArgs>(args?: SelectSubset<T, WebhookConnectionFindFirstArgs<ExtArgs>>): Prisma__WebhookConnectionClient<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WebhookConnection that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebhookConnectionFindFirstOrThrowArgs} args - Arguments to find a WebhookConnection
+     * @example
+     * // Get one WebhookConnection
+     * const webhookConnection = await prisma.webhookConnection.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends WebhookConnectionFindFirstOrThrowArgs>(args?: SelectSubset<T, WebhookConnectionFindFirstOrThrowArgs<ExtArgs>>): Prisma__WebhookConnectionClient<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more WebhookConnections that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebhookConnectionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all WebhookConnections
+     * const webhookConnections = await prisma.webhookConnection.findMany()
+     * 
+     * // Get first 10 WebhookConnections
+     * const webhookConnections = await prisma.webhookConnection.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const webhookConnectionWithIdOnly = await prisma.webhookConnection.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends WebhookConnectionFindManyArgs>(args?: SelectSubset<T, WebhookConnectionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a WebhookConnection.
+     * @param {WebhookConnectionCreateArgs} args - Arguments to create a WebhookConnection.
+     * @example
+     * // Create one WebhookConnection
+     * const WebhookConnection = await prisma.webhookConnection.create({
+     *   data: {
+     *     // ... data to create a WebhookConnection
+     *   }
+     * })
+     * 
+     */
+    create<T extends WebhookConnectionCreateArgs>(args: SelectSubset<T, WebhookConnectionCreateArgs<ExtArgs>>): Prisma__WebhookConnectionClient<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many WebhookConnections.
+     * @param {WebhookConnectionCreateManyArgs} args - Arguments to create many WebhookConnections.
+     * @example
+     * // Create many WebhookConnections
+     * const webhookConnection = await prisma.webhookConnection.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends WebhookConnectionCreateManyArgs>(args?: SelectSubset<T, WebhookConnectionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many WebhookConnections and returns the data saved in the database.
+     * @param {WebhookConnectionCreateManyAndReturnArgs} args - Arguments to create many WebhookConnections.
+     * @example
+     * // Create many WebhookConnections
+     * const webhookConnection = await prisma.webhookConnection.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many WebhookConnections and only return the `id`
+     * const webhookConnectionWithIdOnly = await prisma.webhookConnection.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends WebhookConnectionCreateManyAndReturnArgs>(args?: SelectSubset<T, WebhookConnectionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a WebhookConnection.
+     * @param {WebhookConnectionDeleteArgs} args - Arguments to delete one WebhookConnection.
+     * @example
+     * // Delete one WebhookConnection
+     * const WebhookConnection = await prisma.webhookConnection.delete({
+     *   where: {
+     *     // ... filter to delete one WebhookConnection
+     *   }
+     * })
+     * 
+     */
+    delete<T extends WebhookConnectionDeleteArgs>(args: SelectSubset<T, WebhookConnectionDeleteArgs<ExtArgs>>): Prisma__WebhookConnectionClient<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one WebhookConnection.
+     * @param {WebhookConnectionUpdateArgs} args - Arguments to update one WebhookConnection.
+     * @example
+     * // Update one WebhookConnection
+     * const webhookConnection = await prisma.webhookConnection.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends WebhookConnectionUpdateArgs>(args: SelectSubset<T, WebhookConnectionUpdateArgs<ExtArgs>>): Prisma__WebhookConnectionClient<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more WebhookConnections.
+     * @param {WebhookConnectionDeleteManyArgs} args - Arguments to filter WebhookConnections to delete.
+     * @example
+     * // Delete a few WebhookConnections
+     * const { count } = await prisma.webhookConnection.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends WebhookConnectionDeleteManyArgs>(args?: SelectSubset<T, WebhookConnectionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WebhookConnections.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebhookConnectionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many WebhookConnections
+     * const webhookConnection = await prisma.webhookConnection.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends WebhookConnectionUpdateManyArgs>(args: SelectSubset<T, WebhookConnectionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WebhookConnections and returns the data updated in the database.
+     * @param {WebhookConnectionUpdateManyAndReturnArgs} args - Arguments to update many WebhookConnections.
+     * @example
+     * // Update many WebhookConnections
+     * const webhookConnection = await prisma.webhookConnection.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more WebhookConnections and only return the `id`
+     * const webhookConnectionWithIdOnly = await prisma.webhookConnection.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends WebhookConnectionUpdateManyAndReturnArgs>(args: SelectSubset<T, WebhookConnectionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one WebhookConnection.
+     * @param {WebhookConnectionUpsertArgs} args - Arguments to update or create a WebhookConnection.
+     * @example
+     * // Update or create a WebhookConnection
+     * const webhookConnection = await prisma.webhookConnection.upsert({
+     *   create: {
+     *     // ... data to create a WebhookConnection
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the WebhookConnection we want to update
+     *   }
+     * })
+     */
+    upsert<T extends WebhookConnectionUpsertArgs>(args: SelectSubset<T, WebhookConnectionUpsertArgs<ExtArgs>>): Prisma__WebhookConnectionClient<$Result.GetResult<Prisma.$WebhookConnectionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of WebhookConnections.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebhookConnectionCountArgs} args - Arguments to filter WebhookConnections to count.
+     * @example
+     * // Count the number of WebhookConnections
+     * const count = await prisma.webhookConnection.count({
+     *   where: {
+     *     // ... the filter for the WebhookConnections we want to count
+     *   }
+     * })
+    **/
+    count<T extends WebhookConnectionCountArgs>(
+      args?: Subset<T, WebhookConnectionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], WebhookConnectionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a WebhookConnection.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebhookConnectionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends WebhookConnectionAggregateArgs>(args: Subset<T, WebhookConnectionAggregateArgs>): Prisma.PrismaPromise<GetWebhookConnectionAggregateType<T>>
+
+    /**
+     * Group by WebhookConnection.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WebhookConnectionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends WebhookConnectionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: WebhookConnectionGroupByArgs['orderBy'] }
+        : { orderBy?: WebhookConnectionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, WebhookConnectionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetWebhookConnectionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the WebhookConnection model
+   */
+  readonly fields: WebhookConnectionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for WebhookConnection.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__WebhookConnectionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the WebhookConnection model
+   */
+  interface WebhookConnectionFieldRefs {
+    readonly id: FieldRef<"WebhookConnection", 'String'>
+    readonly userId: FieldRef<"WebhookConnection", 'String'>
+    readonly name: FieldRef<"WebhookConnection", 'String'>
+    readonly description: FieldRef<"WebhookConnection", 'String'>
+    readonly url: FieldRef<"WebhookConnection", 'String'>
+    readonly method: FieldRef<"WebhookConnection", 'String'>
+    readonly headers: FieldRef<"WebhookConnection", 'String'>
+    readonly emoji: FieldRef<"WebhookConnection", 'String'>
+    readonly secret: FieldRef<"WebhookConnection", 'String'>
+    readonly lastTestedAt: FieldRef<"WebhookConnection", 'DateTime'>
+    readonly lastTestStatus: FieldRef<"WebhookConnection", 'String'>
+    readonly lastTestCode: FieldRef<"WebhookConnection", 'Int'>
+    readonly createdAt: FieldRef<"WebhookConnection", 'DateTime'>
+    readonly updatedAt: FieldRef<"WebhookConnection", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * WebhookConnection findUnique
+   */
+  export type WebhookConnectionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    /**
+     * Filter, which WebhookConnection to fetch.
+     */
+    where: WebhookConnectionWhereUniqueInput
+  }
+
+  /**
+   * WebhookConnection findUniqueOrThrow
+   */
+  export type WebhookConnectionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    /**
+     * Filter, which WebhookConnection to fetch.
+     */
+    where: WebhookConnectionWhereUniqueInput
+  }
+
+  /**
+   * WebhookConnection findFirst
+   */
+  export type WebhookConnectionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    /**
+     * Filter, which WebhookConnection to fetch.
+     */
+    where?: WebhookConnectionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WebhookConnections to fetch.
+     */
+    orderBy?: WebhookConnectionOrderByWithRelationInput | WebhookConnectionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WebhookConnections.
+     */
+    cursor?: WebhookConnectionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WebhookConnections from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WebhookConnections.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WebhookConnections.
+     */
+    distinct?: WebhookConnectionScalarFieldEnum | WebhookConnectionScalarFieldEnum[]
+  }
+
+  /**
+   * WebhookConnection findFirstOrThrow
+   */
+  export type WebhookConnectionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    /**
+     * Filter, which WebhookConnection to fetch.
+     */
+    where?: WebhookConnectionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WebhookConnections to fetch.
+     */
+    orderBy?: WebhookConnectionOrderByWithRelationInput | WebhookConnectionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WebhookConnections.
+     */
+    cursor?: WebhookConnectionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WebhookConnections from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WebhookConnections.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WebhookConnections.
+     */
+    distinct?: WebhookConnectionScalarFieldEnum | WebhookConnectionScalarFieldEnum[]
+  }
+
+  /**
+   * WebhookConnection findMany
+   */
+  export type WebhookConnectionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    /**
+     * Filter, which WebhookConnections to fetch.
+     */
+    where?: WebhookConnectionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WebhookConnections to fetch.
+     */
+    orderBy?: WebhookConnectionOrderByWithRelationInput | WebhookConnectionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing WebhookConnections.
+     */
+    cursor?: WebhookConnectionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WebhookConnections from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WebhookConnections.
+     */
+    skip?: number
+    distinct?: WebhookConnectionScalarFieldEnum | WebhookConnectionScalarFieldEnum[]
+  }
+
+  /**
+   * WebhookConnection create
+   */
+  export type WebhookConnectionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    /**
+     * The data needed to create a WebhookConnection.
+     */
+    data: XOR<WebhookConnectionCreateInput, WebhookConnectionUncheckedCreateInput>
+  }
+
+  /**
+   * WebhookConnection createMany
+   */
+  export type WebhookConnectionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many WebhookConnections.
+     */
+    data: WebhookConnectionCreateManyInput | WebhookConnectionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WebhookConnection createManyAndReturn
+   */
+  export type WebhookConnectionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * The data used to create many WebhookConnections.
+     */
+    data: WebhookConnectionCreateManyInput | WebhookConnectionCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WebhookConnection update
+   */
+  export type WebhookConnectionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    /**
+     * The data needed to update a WebhookConnection.
+     */
+    data: XOR<WebhookConnectionUpdateInput, WebhookConnectionUncheckedUpdateInput>
+    /**
+     * Choose, which WebhookConnection to update.
+     */
+    where: WebhookConnectionWhereUniqueInput
+  }
+
+  /**
+   * WebhookConnection updateMany
+   */
+  export type WebhookConnectionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update WebhookConnections.
+     */
+    data: XOR<WebhookConnectionUpdateManyMutationInput, WebhookConnectionUncheckedUpdateManyInput>
+    /**
+     * Filter which WebhookConnections to update
+     */
+    where?: WebhookConnectionWhereInput
+    /**
+     * Limit how many WebhookConnections to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * WebhookConnection updateManyAndReturn
+   */
+  export type WebhookConnectionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * The data used to update WebhookConnections.
+     */
+    data: XOR<WebhookConnectionUpdateManyMutationInput, WebhookConnectionUncheckedUpdateManyInput>
+    /**
+     * Filter which WebhookConnections to update
+     */
+    where?: WebhookConnectionWhereInput
+    /**
+     * Limit how many WebhookConnections to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WebhookConnection upsert
+   */
+  export type WebhookConnectionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    /**
+     * The filter to search for the WebhookConnection to update in case it exists.
+     */
+    where: WebhookConnectionWhereUniqueInput
+    /**
+     * In case the WebhookConnection found by the `where` argument doesn't exist, create a new WebhookConnection with this data.
+     */
+    create: XOR<WebhookConnectionCreateInput, WebhookConnectionUncheckedCreateInput>
+    /**
+     * In case the WebhookConnection was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<WebhookConnectionUpdateInput, WebhookConnectionUncheckedUpdateInput>
+  }
+
+  /**
+   * WebhookConnection delete
+   */
+  export type WebhookConnectionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+    /**
+     * Filter which WebhookConnection to delete.
+     */
+    where: WebhookConnectionWhereUniqueInput
+  }
+
+  /**
+   * WebhookConnection deleteMany
+   */
+  export type WebhookConnectionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WebhookConnections to delete
+     */
+    where?: WebhookConnectionWhereInput
+    /**
+     * Limit how many WebhookConnections to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * WebhookConnection without action
+   */
+  export type WebhookConnectionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WebhookConnection
+     */
+    select?: WebhookConnectionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WebhookConnection
+     */
+    omit?: WebhookConnectionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WebhookConnectionInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Workflow
+   */
+
+  export type AggregateWorkflow = {
+    _count: WorkflowCountAggregateOutputType | null
+    _min: WorkflowMinAggregateOutputType | null
+    _max: WorkflowMaxAggregateOutputType | null
+  }
+
+  export type WorkflowMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    name: string | null
+    description: string | null
+    enabled: boolean | null
+    schedule: string | null
+    timezone: string | null
+    actions: string | null
+    lastRunAt: Date | null
+    nextRunAt: Date | null
+    lastRunStatus: string | null
+    lastRunLog: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type WorkflowMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    name: string | null
+    description: string | null
+    enabled: boolean | null
+    schedule: string | null
+    timezone: string | null
+    actions: string | null
+    lastRunAt: Date | null
+    nextRunAt: Date | null
+    lastRunStatus: string | null
+    lastRunLog: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type WorkflowCountAggregateOutputType = {
+    id: number
+    userId: number
+    name: number
+    description: number
+    enabled: number
+    schedule: number
+    timezone: number
+    actions: number
+    lastRunAt: number
+    nextRunAt: number
+    lastRunStatus: number
+    lastRunLog: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type WorkflowMinAggregateInputType = {
+    id?: true
+    userId?: true
+    name?: true
+    description?: true
+    enabled?: true
+    schedule?: true
+    timezone?: true
+    actions?: true
+    lastRunAt?: true
+    nextRunAt?: true
+    lastRunStatus?: true
+    lastRunLog?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type WorkflowMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    name?: true
+    description?: true
+    enabled?: true
+    schedule?: true
+    timezone?: true
+    actions?: true
+    lastRunAt?: true
+    nextRunAt?: true
+    lastRunStatus?: true
+    lastRunLog?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type WorkflowCountAggregateInputType = {
+    id?: true
+    userId?: true
+    name?: true
+    description?: true
+    enabled?: true
+    schedule?: true
+    timezone?: true
+    actions?: true
+    lastRunAt?: true
+    nextRunAt?: true
+    lastRunStatus?: true
+    lastRunLog?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type WorkflowAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Workflow to aggregate.
+     */
+    where?: WorkflowWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Workflows to fetch.
+     */
+    orderBy?: WorkflowOrderByWithRelationInput | WorkflowOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: WorkflowWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Workflows from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Workflows.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Workflows
+    **/
+    _count?: true | WorkflowCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: WorkflowMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: WorkflowMaxAggregateInputType
+  }
+
+  export type GetWorkflowAggregateType<T extends WorkflowAggregateArgs> = {
+        [P in keyof T & keyof AggregateWorkflow]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateWorkflow[P]>
+      : GetScalarType<T[P], AggregateWorkflow[P]>
+  }
+
+
+
+
+  export type WorkflowGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WorkflowWhereInput
+    orderBy?: WorkflowOrderByWithAggregationInput | WorkflowOrderByWithAggregationInput[]
+    by: WorkflowScalarFieldEnum[] | WorkflowScalarFieldEnum
+    having?: WorkflowScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: WorkflowCountAggregateInputType | true
+    _min?: WorkflowMinAggregateInputType
+    _max?: WorkflowMaxAggregateInputType
+  }
+
+  export type WorkflowGroupByOutputType = {
+    id: string
+    userId: string
+    name: string
+    description: string | null
+    enabled: boolean
+    schedule: string
+    timezone: string
+    actions: string
+    lastRunAt: Date | null
+    nextRunAt: Date | null
+    lastRunStatus: string | null
+    lastRunLog: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: WorkflowCountAggregateOutputType | null
+    _min: WorkflowMinAggregateOutputType | null
+    _max: WorkflowMaxAggregateOutputType | null
+  }
+
+  type GetWorkflowGroupByPayload<T extends WorkflowGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<WorkflowGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof WorkflowGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], WorkflowGroupByOutputType[P]>
+            : GetScalarType<T[P], WorkflowGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type WorkflowSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    name?: boolean
+    description?: boolean
+    enabled?: boolean
+    schedule?: boolean
+    timezone?: boolean
+    actions?: boolean
+    lastRunAt?: boolean
+    nextRunAt?: boolean
+    lastRunStatus?: boolean
+    lastRunLog?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workflow"]>
+
+  export type WorkflowSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    name?: boolean
+    description?: boolean
+    enabled?: boolean
+    schedule?: boolean
+    timezone?: boolean
+    actions?: boolean
+    lastRunAt?: boolean
+    nextRunAt?: boolean
+    lastRunStatus?: boolean
+    lastRunLog?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workflow"]>
+
+  export type WorkflowSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    name?: boolean
+    description?: boolean
+    enabled?: boolean
+    schedule?: boolean
+    timezone?: boolean
+    actions?: boolean
+    lastRunAt?: boolean
+    nextRunAt?: boolean
+    lastRunStatus?: boolean
+    lastRunLog?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workflow"]>
+
+  export type WorkflowSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    name?: boolean
+    description?: boolean
+    enabled?: boolean
+    schedule?: boolean
+    timezone?: boolean
+    actions?: boolean
+    lastRunAt?: boolean
+    nextRunAt?: boolean
+    lastRunStatus?: boolean
+    lastRunLog?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type WorkflowOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "description" | "enabled" | "schedule" | "timezone" | "actions" | "lastRunAt" | "nextRunAt" | "lastRunStatus" | "lastRunLog" | "createdAt" | "updatedAt", ExtArgs["result"]["workflow"]>
+  export type WorkflowInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type WorkflowIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type WorkflowIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $WorkflowPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Workflow"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      name: string
+      description: string | null
+      enabled: boolean
+      schedule: string
+      timezone: string
+      actions: string
+      lastRunAt: Date | null
+      nextRunAt: Date | null
+      lastRunStatus: string | null
+      lastRunLog: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["workflow"]>
+    composites: {}
+  }
+
+  type WorkflowGetPayload<S extends boolean | null | undefined | WorkflowDefaultArgs> = $Result.GetResult<Prisma.$WorkflowPayload, S>
+
+  type WorkflowCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<WorkflowFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: WorkflowCountAggregateInputType | true
+    }
+
+  export interface WorkflowDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Workflow'], meta: { name: 'Workflow' } }
+    /**
+     * Find zero or one Workflow that matches the filter.
+     * @param {WorkflowFindUniqueArgs} args - Arguments to find a Workflow
+     * @example
+     * // Get one Workflow
+     * const workflow = await prisma.workflow.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends WorkflowFindUniqueArgs>(args: SelectSubset<T, WorkflowFindUniqueArgs<ExtArgs>>): Prisma__WorkflowClient<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Workflow that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {WorkflowFindUniqueOrThrowArgs} args - Arguments to find a Workflow
+     * @example
+     * // Get one Workflow
+     * const workflow = await prisma.workflow.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends WorkflowFindUniqueOrThrowArgs>(args: SelectSubset<T, WorkflowFindUniqueOrThrowArgs<ExtArgs>>): Prisma__WorkflowClient<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Workflow that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkflowFindFirstArgs} args - Arguments to find a Workflow
+     * @example
+     * // Get one Workflow
+     * const workflow = await prisma.workflow.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends WorkflowFindFirstArgs>(args?: SelectSubset<T, WorkflowFindFirstArgs<ExtArgs>>): Prisma__WorkflowClient<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Workflow that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkflowFindFirstOrThrowArgs} args - Arguments to find a Workflow
+     * @example
+     * // Get one Workflow
+     * const workflow = await prisma.workflow.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends WorkflowFindFirstOrThrowArgs>(args?: SelectSubset<T, WorkflowFindFirstOrThrowArgs<ExtArgs>>): Prisma__WorkflowClient<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Workflows that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkflowFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Workflows
+     * const workflows = await prisma.workflow.findMany()
+     * 
+     * // Get first 10 Workflows
+     * const workflows = await prisma.workflow.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const workflowWithIdOnly = await prisma.workflow.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends WorkflowFindManyArgs>(args?: SelectSubset<T, WorkflowFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Workflow.
+     * @param {WorkflowCreateArgs} args - Arguments to create a Workflow.
+     * @example
+     * // Create one Workflow
+     * const Workflow = await prisma.workflow.create({
+     *   data: {
+     *     // ... data to create a Workflow
+     *   }
+     * })
+     * 
+     */
+    create<T extends WorkflowCreateArgs>(args: SelectSubset<T, WorkflowCreateArgs<ExtArgs>>): Prisma__WorkflowClient<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Workflows.
+     * @param {WorkflowCreateManyArgs} args - Arguments to create many Workflows.
+     * @example
+     * // Create many Workflows
+     * const workflow = await prisma.workflow.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends WorkflowCreateManyArgs>(args?: SelectSubset<T, WorkflowCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Workflows and returns the data saved in the database.
+     * @param {WorkflowCreateManyAndReturnArgs} args - Arguments to create many Workflows.
+     * @example
+     * // Create many Workflows
+     * const workflow = await prisma.workflow.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Workflows and only return the `id`
+     * const workflowWithIdOnly = await prisma.workflow.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends WorkflowCreateManyAndReturnArgs>(args?: SelectSubset<T, WorkflowCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Workflow.
+     * @param {WorkflowDeleteArgs} args - Arguments to delete one Workflow.
+     * @example
+     * // Delete one Workflow
+     * const Workflow = await prisma.workflow.delete({
+     *   where: {
+     *     // ... filter to delete one Workflow
+     *   }
+     * })
+     * 
+     */
+    delete<T extends WorkflowDeleteArgs>(args: SelectSubset<T, WorkflowDeleteArgs<ExtArgs>>): Prisma__WorkflowClient<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Workflow.
+     * @param {WorkflowUpdateArgs} args - Arguments to update one Workflow.
+     * @example
+     * // Update one Workflow
+     * const workflow = await prisma.workflow.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends WorkflowUpdateArgs>(args: SelectSubset<T, WorkflowUpdateArgs<ExtArgs>>): Prisma__WorkflowClient<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Workflows.
+     * @param {WorkflowDeleteManyArgs} args - Arguments to filter Workflows to delete.
+     * @example
+     * // Delete a few Workflows
+     * const { count } = await prisma.workflow.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends WorkflowDeleteManyArgs>(args?: SelectSubset<T, WorkflowDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Workflows.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkflowUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Workflows
+     * const workflow = await prisma.workflow.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends WorkflowUpdateManyArgs>(args: SelectSubset<T, WorkflowUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Workflows and returns the data updated in the database.
+     * @param {WorkflowUpdateManyAndReturnArgs} args - Arguments to update many Workflows.
+     * @example
+     * // Update many Workflows
+     * const workflow = await prisma.workflow.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Workflows and only return the `id`
+     * const workflowWithIdOnly = await prisma.workflow.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends WorkflowUpdateManyAndReturnArgs>(args: SelectSubset<T, WorkflowUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Workflow.
+     * @param {WorkflowUpsertArgs} args - Arguments to update or create a Workflow.
+     * @example
+     * // Update or create a Workflow
+     * const workflow = await prisma.workflow.upsert({
+     *   create: {
+     *     // ... data to create a Workflow
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Workflow we want to update
+     *   }
+     * })
+     */
+    upsert<T extends WorkflowUpsertArgs>(args: SelectSubset<T, WorkflowUpsertArgs<ExtArgs>>): Prisma__WorkflowClient<$Result.GetResult<Prisma.$WorkflowPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Workflows.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkflowCountArgs} args - Arguments to filter Workflows to count.
+     * @example
+     * // Count the number of Workflows
+     * const count = await prisma.workflow.count({
+     *   where: {
+     *     // ... the filter for the Workflows we want to count
+     *   }
+     * })
+    **/
+    count<T extends WorkflowCountArgs>(
+      args?: Subset<T, WorkflowCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], WorkflowCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Workflow.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkflowAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends WorkflowAggregateArgs>(args: Subset<T, WorkflowAggregateArgs>): Prisma.PrismaPromise<GetWorkflowAggregateType<T>>
+
+    /**
+     * Group by Workflow.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkflowGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends WorkflowGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: WorkflowGroupByArgs['orderBy'] }
+        : { orderBy?: WorkflowGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, WorkflowGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetWorkflowGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Workflow model
+   */
+  readonly fields: WorkflowFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Workflow.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__WorkflowClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Workflow model
+   */
+  interface WorkflowFieldRefs {
+    readonly id: FieldRef<"Workflow", 'String'>
+    readonly userId: FieldRef<"Workflow", 'String'>
+    readonly name: FieldRef<"Workflow", 'String'>
+    readonly description: FieldRef<"Workflow", 'String'>
+    readonly enabled: FieldRef<"Workflow", 'Boolean'>
+    readonly schedule: FieldRef<"Workflow", 'String'>
+    readonly timezone: FieldRef<"Workflow", 'String'>
+    readonly actions: FieldRef<"Workflow", 'String'>
+    readonly lastRunAt: FieldRef<"Workflow", 'DateTime'>
+    readonly nextRunAt: FieldRef<"Workflow", 'DateTime'>
+    readonly lastRunStatus: FieldRef<"Workflow", 'String'>
+    readonly lastRunLog: FieldRef<"Workflow", 'String'>
+    readonly createdAt: FieldRef<"Workflow", 'DateTime'>
+    readonly updatedAt: FieldRef<"Workflow", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Workflow findUnique
+   */
+  export type WorkflowFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    /**
+     * Filter, which Workflow to fetch.
+     */
+    where: WorkflowWhereUniqueInput
+  }
+
+  /**
+   * Workflow findUniqueOrThrow
+   */
+  export type WorkflowFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    /**
+     * Filter, which Workflow to fetch.
+     */
+    where: WorkflowWhereUniqueInput
+  }
+
+  /**
+   * Workflow findFirst
+   */
+  export type WorkflowFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    /**
+     * Filter, which Workflow to fetch.
+     */
+    where?: WorkflowWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Workflows to fetch.
+     */
+    orderBy?: WorkflowOrderByWithRelationInput | WorkflowOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Workflows.
+     */
+    cursor?: WorkflowWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Workflows from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Workflows.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Workflows.
+     */
+    distinct?: WorkflowScalarFieldEnum | WorkflowScalarFieldEnum[]
+  }
+
+  /**
+   * Workflow findFirstOrThrow
+   */
+  export type WorkflowFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    /**
+     * Filter, which Workflow to fetch.
+     */
+    where?: WorkflowWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Workflows to fetch.
+     */
+    orderBy?: WorkflowOrderByWithRelationInput | WorkflowOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Workflows.
+     */
+    cursor?: WorkflowWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Workflows from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Workflows.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Workflows.
+     */
+    distinct?: WorkflowScalarFieldEnum | WorkflowScalarFieldEnum[]
+  }
+
+  /**
+   * Workflow findMany
+   */
+  export type WorkflowFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    /**
+     * Filter, which Workflows to fetch.
+     */
+    where?: WorkflowWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Workflows to fetch.
+     */
+    orderBy?: WorkflowOrderByWithRelationInput | WorkflowOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Workflows.
+     */
+    cursor?: WorkflowWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Workflows from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Workflows.
+     */
+    skip?: number
+    distinct?: WorkflowScalarFieldEnum | WorkflowScalarFieldEnum[]
+  }
+
+  /**
+   * Workflow create
+   */
+  export type WorkflowCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Workflow.
+     */
+    data: XOR<WorkflowCreateInput, WorkflowUncheckedCreateInput>
+  }
+
+  /**
+   * Workflow createMany
+   */
+  export type WorkflowCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Workflows.
+     */
+    data: WorkflowCreateManyInput | WorkflowCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Workflow createManyAndReturn
+   */
+  export type WorkflowCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * The data used to create many Workflows.
+     */
+    data: WorkflowCreateManyInput | WorkflowCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Workflow update
+   */
+  export type WorkflowUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Workflow.
+     */
+    data: XOR<WorkflowUpdateInput, WorkflowUncheckedUpdateInput>
+    /**
+     * Choose, which Workflow to update.
+     */
+    where: WorkflowWhereUniqueInput
+  }
+
+  /**
+   * Workflow updateMany
+   */
+  export type WorkflowUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Workflows.
+     */
+    data: XOR<WorkflowUpdateManyMutationInput, WorkflowUncheckedUpdateManyInput>
+    /**
+     * Filter which Workflows to update
+     */
+    where?: WorkflowWhereInput
+    /**
+     * Limit how many Workflows to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Workflow updateManyAndReturn
+   */
+  export type WorkflowUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * The data used to update Workflows.
+     */
+    data: XOR<WorkflowUpdateManyMutationInput, WorkflowUncheckedUpdateManyInput>
+    /**
+     * Filter which Workflows to update
+     */
+    where?: WorkflowWhereInput
+    /**
+     * Limit how many Workflows to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Workflow upsert
+   */
+  export type WorkflowUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Workflow to update in case it exists.
+     */
+    where: WorkflowWhereUniqueInput
+    /**
+     * In case the Workflow found by the `where` argument doesn't exist, create a new Workflow with this data.
+     */
+    create: XOR<WorkflowCreateInput, WorkflowUncheckedCreateInput>
+    /**
+     * In case the Workflow was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<WorkflowUpdateInput, WorkflowUncheckedUpdateInput>
+  }
+
+  /**
+   * Workflow delete
+   */
+  export type WorkflowDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
+    /**
+     * Filter which Workflow to delete.
+     */
+    where: WorkflowWhereUniqueInput
+  }
+
+  /**
+   * Workflow deleteMany
+   */
+  export type WorkflowDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Workflows to delete
+     */
+    where?: WorkflowWhereInput
+    /**
+     * Limit how many Workflows to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Workflow without action
+   */
+  export type WorkflowDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Workflow
+     */
+    select?: WorkflowSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Workflow
+     */
+    omit?: WorkflowOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkflowInclude<ExtArgs> | null
   }
 
 
@@ -10361,6 +13184,2090 @@ export namespace Prisma {
 
 
   /**
+   * Model QueryCache
+   */
+
+  export type AggregateQueryCache = {
+    _count: QueryCacheCountAggregateOutputType | null
+    _avg: QueryCacheAvgAggregateOutputType | null
+    _sum: QueryCacheSumAggregateOutputType | null
+    _min: QueryCacheMinAggregateOutputType | null
+    _max: QueryCacheMaxAggregateOutputType | null
+  }
+
+  export type QueryCacheAvgAggregateOutputType = {
+    hitCount: number | null
+  }
+
+  export type QueryCacheSumAggregateOutputType = {
+    hitCount: number | null
+  }
+
+  export type QueryCacheMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    queryHash: string | null
+    queryText: string | null
+    answer: string | null
+    hitCount: number | null
+    createdAt: Date | null
+    expiresAt: Date | null
+  }
+
+  export type QueryCacheMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    queryHash: string | null
+    queryText: string | null
+    answer: string | null
+    hitCount: number | null
+    createdAt: Date | null
+    expiresAt: Date | null
+  }
+
+  export type QueryCacheCountAggregateOutputType = {
+    id: number
+    userId: number
+    queryHash: number
+    queryText: number
+    answer: number
+    hitCount: number
+    createdAt: number
+    expiresAt: number
+    _all: number
+  }
+
+
+  export type QueryCacheAvgAggregateInputType = {
+    hitCount?: true
+  }
+
+  export type QueryCacheSumAggregateInputType = {
+    hitCount?: true
+  }
+
+  export type QueryCacheMinAggregateInputType = {
+    id?: true
+    userId?: true
+    queryHash?: true
+    queryText?: true
+    answer?: true
+    hitCount?: true
+    createdAt?: true
+    expiresAt?: true
+  }
+
+  export type QueryCacheMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    queryHash?: true
+    queryText?: true
+    answer?: true
+    hitCount?: true
+    createdAt?: true
+    expiresAt?: true
+  }
+
+  export type QueryCacheCountAggregateInputType = {
+    id?: true
+    userId?: true
+    queryHash?: true
+    queryText?: true
+    answer?: true
+    hitCount?: true
+    createdAt?: true
+    expiresAt?: true
+    _all?: true
+  }
+
+  export type QueryCacheAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which QueryCache to aggregate.
+     */
+    where?: QueryCacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of QueryCaches to fetch.
+     */
+    orderBy?: QueryCacheOrderByWithRelationInput | QueryCacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: QueryCacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` QueryCaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` QueryCaches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned QueryCaches
+    **/
+    _count?: true | QueryCacheCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: QueryCacheAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: QueryCacheSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: QueryCacheMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: QueryCacheMaxAggregateInputType
+  }
+
+  export type GetQueryCacheAggregateType<T extends QueryCacheAggregateArgs> = {
+        [P in keyof T & keyof AggregateQueryCache]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateQueryCache[P]>
+      : GetScalarType<T[P], AggregateQueryCache[P]>
+  }
+
+
+
+
+  export type QueryCacheGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: QueryCacheWhereInput
+    orderBy?: QueryCacheOrderByWithAggregationInput | QueryCacheOrderByWithAggregationInput[]
+    by: QueryCacheScalarFieldEnum[] | QueryCacheScalarFieldEnum
+    having?: QueryCacheScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: QueryCacheCountAggregateInputType | true
+    _avg?: QueryCacheAvgAggregateInputType
+    _sum?: QueryCacheSumAggregateInputType
+    _min?: QueryCacheMinAggregateInputType
+    _max?: QueryCacheMaxAggregateInputType
+  }
+
+  export type QueryCacheGroupByOutputType = {
+    id: string
+    userId: string
+    queryHash: string
+    queryText: string
+    answer: string
+    hitCount: number
+    createdAt: Date
+    expiresAt: Date
+    _count: QueryCacheCountAggregateOutputType | null
+    _avg: QueryCacheAvgAggregateOutputType | null
+    _sum: QueryCacheSumAggregateOutputType | null
+    _min: QueryCacheMinAggregateOutputType | null
+    _max: QueryCacheMaxAggregateOutputType | null
+  }
+
+  type GetQueryCacheGroupByPayload<T extends QueryCacheGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<QueryCacheGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof QueryCacheGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], QueryCacheGroupByOutputType[P]>
+            : GetScalarType<T[P], QueryCacheGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type QueryCacheSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    queryHash?: boolean
+    queryText?: boolean
+    answer?: boolean
+    hitCount?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+  }, ExtArgs["result"]["queryCache"]>
+
+  export type QueryCacheSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    queryHash?: boolean
+    queryText?: boolean
+    answer?: boolean
+    hitCount?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+  }, ExtArgs["result"]["queryCache"]>
+
+  export type QueryCacheSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    queryHash?: boolean
+    queryText?: boolean
+    answer?: boolean
+    hitCount?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+  }, ExtArgs["result"]["queryCache"]>
+
+  export type QueryCacheSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    queryHash?: boolean
+    queryText?: boolean
+    answer?: boolean
+    hitCount?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+  }
+
+  export type QueryCacheOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "queryHash" | "queryText" | "answer" | "hitCount" | "createdAt" | "expiresAt", ExtArgs["result"]["queryCache"]>
+
+  export type $QueryCachePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "QueryCache"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      queryHash: string
+      queryText: string
+      answer: string
+      hitCount: number
+      createdAt: Date
+      expiresAt: Date
+    }, ExtArgs["result"]["queryCache"]>
+    composites: {}
+  }
+
+  type QueryCacheGetPayload<S extends boolean | null | undefined | QueryCacheDefaultArgs> = $Result.GetResult<Prisma.$QueryCachePayload, S>
+
+  type QueryCacheCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<QueryCacheFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: QueryCacheCountAggregateInputType | true
+    }
+
+  export interface QueryCacheDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['QueryCache'], meta: { name: 'QueryCache' } }
+    /**
+     * Find zero or one QueryCache that matches the filter.
+     * @param {QueryCacheFindUniqueArgs} args - Arguments to find a QueryCache
+     * @example
+     * // Get one QueryCache
+     * const queryCache = await prisma.queryCache.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends QueryCacheFindUniqueArgs>(args: SelectSubset<T, QueryCacheFindUniqueArgs<ExtArgs>>): Prisma__QueryCacheClient<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one QueryCache that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {QueryCacheFindUniqueOrThrowArgs} args - Arguments to find a QueryCache
+     * @example
+     * // Get one QueryCache
+     * const queryCache = await prisma.queryCache.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends QueryCacheFindUniqueOrThrowArgs>(args: SelectSubset<T, QueryCacheFindUniqueOrThrowArgs<ExtArgs>>): Prisma__QueryCacheClient<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first QueryCache that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {QueryCacheFindFirstArgs} args - Arguments to find a QueryCache
+     * @example
+     * // Get one QueryCache
+     * const queryCache = await prisma.queryCache.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends QueryCacheFindFirstArgs>(args?: SelectSubset<T, QueryCacheFindFirstArgs<ExtArgs>>): Prisma__QueryCacheClient<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first QueryCache that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {QueryCacheFindFirstOrThrowArgs} args - Arguments to find a QueryCache
+     * @example
+     * // Get one QueryCache
+     * const queryCache = await prisma.queryCache.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends QueryCacheFindFirstOrThrowArgs>(args?: SelectSubset<T, QueryCacheFindFirstOrThrowArgs<ExtArgs>>): Prisma__QueryCacheClient<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more QueryCaches that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {QueryCacheFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all QueryCaches
+     * const queryCaches = await prisma.queryCache.findMany()
+     * 
+     * // Get first 10 QueryCaches
+     * const queryCaches = await prisma.queryCache.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const queryCacheWithIdOnly = await prisma.queryCache.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends QueryCacheFindManyArgs>(args?: SelectSubset<T, QueryCacheFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a QueryCache.
+     * @param {QueryCacheCreateArgs} args - Arguments to create a QueryCache.
+     * @example
+     * // Create one QueryCache
+     * const QueryCache = await prisma.queryCache.create({
+     *   data: {
+     *     // ... data to create a QueryCache
+     *   }
+     * })
+     * 
+     */
+    create<T extends QueryCacheCreateArgs>(args: SelectSubset<T, QueryCacheCreateArgs<ExtArgs>>): Prisma__QueryCacheClient<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many QueryCaches.
+     * @param {QueryCacheCreateManyArgs} args - Arguments to create many QueryCaches.
+     * @example
+     * // Create many QueryCaches
+     * const queryCache = await prisma.queryCache.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends QueryCacheCreateManyArgs>(args?: SelectSubset<T, QueryCacheCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many QueryCaches and returns the data saved in the database.
+     * @param {QueryCacheCreateManyAndReturnArgs} args - Arguments to create many QueryCaches.
+     * @example
+     * // Create many QueryCaches
+     * const queryCache = await prisma.queryCache.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many QueryCaches and only return the `id`
+     * const queryCacheWithIdOnly = await prisma.queryCache.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends QueryCacheCreateManyAndReturnArgs>(args?: SelectSubset<T, QueryCacheCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a QueryCache.
+     * @param {QueryCacheDeleteArgs} args - Arguments to delete one QueryCache.
+     * @example
+     * // Delete one QueryCache
+     * const QueryCache = await prisma.queryCache.delete({
+     *   where: {
+     *     // ... filter to delete one QueryCache
+     *   }
+     * })
+     * 
+     */
+    delete<T extends QueryCacheDeleteArgs>(args: SelectSubset<T, QueryCacheDeleteArgs<ExtArgs>>): Prisma__QueryCacheClient<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one QueryCache.
+     * @param {QueryCacheUpdateArgs} args - Arguments to update one QueryCache.
+     * @example
+     * // Update one QueryCache
+     * const queryCache = await prisma.queryCache.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends QueryCacheUpdateArgs>(args: SelectSubset<T, QueryCacheUpdateArgs<ExtArgs>>): Prisma__QueryCacheClient<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more QueryCaches.
+     * @param {QueryCacheDeleteManyArgs} args - Arguments to filter QueryCaches to delete.
+     * @example
+     * // Delete a few QueryCaches
+     * const { count } = await prisma.queryCache.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends QueryCacheDeleteManyArgs>(args?: SelectSubset<T, QueryCacheDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more QueryCaches.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {QueryCacheUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many QueryCaches
+     * const queryCache = await prisma.queryCache.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends QueryCacheUpdateManyArgs>(args: SelectSubset<T, QueryCacheUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more QueryCaches and returns the data updated in the database.
+     * @param {QueryCacheUpdateManyAndReturnArgs} args - Arguments to update many QueryCaches.
+     * @example
+     * // Update many QueryCaches
+     * const queryCache = await prisma.queryCache.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more QueryCaches and only return the `id`
+     * const queryCacheWithIdOnly = await prisma.queryCache.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends QueryCacheUpdateManyAndReturnArgs>(args: SelectSubset<T, QueryCacheUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one QueryCache.
+     * @param {QueryCacheUpsertArgs} args - Arguments to update or create a QueryCache.
+     * @example
+     * // Update or create a QueryCache
+     * const queryCache = await prisma.queryCache.upsert({
+     *   create: {
+     *     // ... data to create a QueryCache
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the QueryCache we want to update
+     *   }
+     * })
+     */
+    upsert<T extends QueryCacheUpsertArgs>(args: SelectSubset<T, QueryCacheUpsertArgs<ExtArgs>>): Prisma__QueryCacheClient<$Result.GetResult<Prisma.$QueryCachePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of QueryCaches.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {QueryCacheCountArgs} args - Arguments to filter QueryCaches to count.
+     * @example
+     * // Count the number of QueryCaches
+     * const count = await prisma.queryCache.count({
+     *   where: {
+     *     // ... the filter for the QueryCaches we want to count
+     *   }
+     * })
+    **/
+    count<T extends QueryCacheCountArgs>(
+      args?: Subset<T, QueryCacheCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], QueryCacheCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a QueryCache.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {QueryCacheAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends QueryCacheAggregateArgs>(args: Subset<T, QueryCacheAggregateArgs>): Prisma.PrismaPromise<GetQueryCacheAggregateType<T>>
+
+    /**
+     * Group by QueryCache.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {QueryCacheGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends QueryCacheGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: QueryCacheGroupByArgs['orderBy'] }
+        : { orderBy?: QueryCacheGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, QueryCacheGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetQueryCacheGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the QueryCache model
+   */
+  readonly fields: QueryCacheFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for QueryCache.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__QueryCacheClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the QueryCache model
+   */
+  interface QueryCacheFieldRefs {
+    readonly id: FieldRef<"QueryCache", 'String'>
+    readonly userId: FieldRef<"QueryCache", 'String'>
+    readonly queryHash: FieldRef<"QueryCache", 'String'>
+    readonly queryText: FieldRef<"QueryCache", 'String'>
+    readonly answer: FieldRef<"QueryCache", 'String'>
+    readonly hitCount: FieldRef<"QueryCache", 'Int'>
+    readonly createdAt: FieldRef<"QueryCache", 'DateTime'>
+    readonly expiresAt: FieldRef<"QueryCache", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * QueryCache findUnique
+   */
+  export type QueryCacheFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which QueryCache to fetch.
+     */
+    where: QueryCacheWhereUniqueInput
+  }
+
+  /**
+   * QueryCache findUniqueOrThrow
+   */
+  export type QueryCacheFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which QueryCache to fetch.
+     */
+    where: QueryCacheWhereUniqueInput
+  }
+
+  /**
+   * QueryCache findFirst
+   */
+  export type QueryCacheFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which QueryCache to fetch.
+     */
+    where?: QueryCacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of QueryCaches to fetch.
+     */
+    orderBy?: QueryCacheOrderByWithRelationInput | QueryCacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for QueryCaches.
+     */
+    cursor?: QueryCacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` QueryCaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` QueryCaches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of QueryCaches.
+     */
+    distinct?: QueryCacheScalarFieldEnum | QueryCacheScalarFieldEnum[]
+  }
+
+  /**
+   * QueryCache findFirstOrThrow
+   */
+  export type QueryCacheFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which QueryCache to fetch.
+     */
+    where?: QueryCacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of QueryCaches to fetch.
+     */
+    orderBy?: QueryCacheOrderByWithRelationInput | QueryCacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for QueryCaches.
+     */
+    cursor?: QueryCacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` QueryCaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` QueryCaches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of QueryCaches.
+     */
+    distinct?: QueryCacheScalarFieldEnum | QueryCacheScalarFieldEnum[]
+  }
+
+  /**
+   * QueryCache findMany
+   */
+  export type QueryCacheFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which QueryCaches to fetch.
+     */
+    where?: QueryCacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of QueryCaches to fetch.
+     */
+    orderBy?: QueryCacheOrderByWithRelationInput | QueryCacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing QueryCaches.
+     */
+    cursor?: QueryCacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` QueryCaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` QueryCaches.
+     */
+    skip?: number
+    distinct?: QueryCacheScalarFieldEnum | QueryCacheScalarFieldEnum[]
+  }
+
+  /**
+   * QueryCache create
+   */
+  export type QueryCacheCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * The data needed to create a QueryCache.
+     */
+    data: XOR<QueryCacheCreateInput, QueryCacheUncheckedCreateInput>
+  }
+
+  /**
+   * QueryCache createMany
+   */
+  export type QueryCacheCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many QueryCaches.
+     */
+    data: QueryCacheCreateManyInput | QueryCacheCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * QueryCache createManyAndReturn
+   */
+  export type QueryCacheCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * The data used to create many QueryCaches.
+     */
+    data: QueryCacheCreateManyInput | QueryCacheCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * QueryCache update
+   */
+  export type QueryCacheUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * The data needed to update a QueryCache.
+     */
+    data: XOR<QueryCacheUpdateInput, QueryCacheUncheckedUpdateInput>
+    /**
+     * Choose, which QueryCache to update.
+     */
+    where: QueryCacheWhereUniqueInput
+  }
+
+  /**
+   * QueryCache updateMany
+   */
+  export type QueryCacheUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update QueryCaches.
+     */
+    data: XOR<QueryCacheUpdateManyMutationInput, QueryCacheUncheckedUpdateManyInput>
+    /**
+     * Filter which QueryCaches to update
+     */
+    where?: QueryCacheWhereInput
+    /**
+     * Limit how many QueryCaches to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * QueryCache updateManyAndReturn
+   */
+  export type QueryCacheUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * The data used to update QueryCaches.
+     */
+    data: XOR<QueryCacheUpdateManyMutationInput, QueryCacheUncheckedUpdateManyInput>
+    /**
+     * Filter which QueryCaches to update
+     */
+    where?: QueryCacheWhereInput
+    /**
+     * Limit how many QueryCaches to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * QueryCache upsert
+   */
+  export type QueryCacheUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * The filter to search for the QueryCache to update in case it exists.
+     */
+    where: QueryCacheWhereUniqueInput
+    /**
+     * In case the QueryCache found by the `where` argument doesn't exist, create a new QueryCache with this data.
+     */
+    create: XOR<QueryCacheCreateInput, QueryCacheUncheckedCreateInput>
+    /**
+     * In case the QueryCache was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<QueryCacheUpdateInput, QueryCacheUncheckedUpdateInput>
+  }
+
+  /**
+   * QueryCache delete
+   */
+  export type QueryCacheDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+    /**
+     * Filter which QueryCache to delete.
+     */
+    where: QueryCacheWhereUniqueInput
+  }
+
+  /**
+   * QueryCache deleteMany
+   */
+  export type QueryCacheDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which QueryCaches to delete
+     */
+    where?: QueryCacheWhereInput
+    /**
+     * Limit how many QueryCaches to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * QueryCache without action
+   */
+  export type QueryCacheDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the QueryCache
+     */
+    select?: QueryCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the QueryCache
+     */
+    omit?: QueryCacheOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model RateLimit
+   */
+
+  export type AggregateRateLimit = {
+    _count: RateLimitCountAggregateOutputType | null
+    _avg: RateLimitAvgAggregateOutputType | null
+    _sum: RateLimitSumAggregateOutputType | null
+    _min: RateLimitMinAggregateOutputType | null
+    _max: RateLimitMaxAggregateOutputType | null
+  }
+
+  export type RateLimitAvgAggregateOutputType = {
+    requestCount: number | null
+  }
+
+  export type RateLimitSumAggregateOutputType = {
+    requestCount: number | null
+  }
+
+  export type RateLimitMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    windowStart: Date | null
+    requestCount: number | null
+  }
+
+  export type RateLimitMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    windowStart: Date | null
+    requestCount: number | null
+  }
+
+  export type RateLimitCountAggregateOutputType = {
+    id: number
+    userId: number
+    windowStart: number
+    requestCount: number
+    _all: number
+  }
+
+
+  export type RateLimitAvgAggregateInputType = {
+    requestCount?: true
+  }
+
+  export type RateLimitSumAggregateInputType = {
+    requestCount?: true
+  }
+
+  export type RateLimitMinAggregateInputType = {
+    id?: true
+    userId?: true
+    windowStart?: true
+    requestCount?: true
+  }
+
+  export type RateLimitMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    windowStart?: true
+    requestCount?: true
+  }
+
+  export type RateLimitCountAggregateInputType = {
+    id?: true
+    userId?: true
+    windowStart?: true
+    requestCount?: true
+    _all?: true
+  }
+
+  export type RateLimitAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RateLimit to aggregate.
+     */
+    where?: RateLimitWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RateLimits to fetch.
+     */
+    orderBy?: RateLimitOrderByWithRelationInput | RateLimitOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RateLimitWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RateLimits from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RateLimits.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned RateLimits
+    **/
+    _count?: true | RateLimitCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: RateLimitAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: RateLimitSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RateLimitMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RateLimitMaxAggregateInputType
+  }
+
+  export type GetRateLimitAggregateType<T extends RateLimitAggregateArgs> = {
+        [P in keyof T & keyof AggregateRateLimit]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRateLimit[P]>
+      : GetScalarType<T[P], AggregateRateLimit[P]>
+  }
+
+
+
+
+  export type RateLimitGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RateLimitWhereInput
+    orderBy?: RateLimitOrderByWithAggregationInput | RateLimitOrderByWithAggregationInput[]
+    by: RateLimitScalarFieldEnum[] | RateLimitScalarFieldEnum
+    having?: RateLimitScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RateLimitCountAggregateInputType | true
+    _avg?: RateLimitAvgAggregateInputType
+    _sum?: RateLimitSumAggregateInputType
+    _min?: RateLimitMinAggregateInputType
+    _max?: RateLimitMaxAggregateInputType
+  }
+
+  export type RateLimitGroupByOutputType = {
+    id: string
+    userId: string
+    windowStart: Date
+    requestCount: number
+    _count: RateLimitCountAggregateOutputType | null
+    _avg: RateLimitAvgAggregateOutputType | null
+    _sum: RateLimitSumAggregateOutputType | null
+    _min: RateLimitMinAggregateOutputType | null
+    _max: RateLimitMaxAggregateOutputType | null
+  }
+
+  type GetRateLimitGroupByPayload<T extends RateLimitGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RateLimitGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RateLimitGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RateLimitGroupByOutputType[P]>
+            : GetScalarType<T[P], RateLimitGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RateLimitSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    windowStart?: boolean
+    requestCount?: boolean
+  }, ExtArgs["result"]["rateLimit"]>
+
+  export type RateLimitSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    windowStart?: boolean
+    requestCount?: boolean
+  }, ExtArgs["result"]["rateLimit"]>
+
+  export type RateLimitSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    windowStart?: boolean
+    requestCount?: boolean
+  }, ExtArgs["result"]["rateLimit"]>
+
+  export type RateLimitSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    windowStart?: boolean
+    requestCount?: boolean
+  }
+
+  export type RateLimitOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "windowStart" | "requestCount", ExtArgs["result"]["rateLimit"]>
+
+  export type $RateLimitPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RateLimit"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      windowStart: Date
+      requestCount: number
+    }, ExtArgs["result"]["rateLimit"]>
+    composites: {}
+  }
+
+  type RateLimitGetPayload<S extends boolean | null | undefined | RateLimitDefaultArgs> = $Result.GetResult<Prisma.$RateLimitPayload, S>
+
+  type RateLimitCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RateLimitFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RateLimitCountAggregateInputType | true
+    }
+
+  export interface RateLimitDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RateLimit'], meta: { name: 'RateLimit' } }
+    /**
+     * Find zero or one RateLimit that matches the filter.
+     * @param {RateLimitFindUniqueArgs} args - Arguments to find a RateLimit
+     * @example
+     * // Get one RateLimit
+     * const rateLimit = await prisma.rateLimit.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RateLimitFindUniqueArgs>(args: SelectSubset<T, RateLimitFindUniqueArgs<ExtArgs>>): Prisma__RateLimitClient<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one RateLimit that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {RateLimitFindUniqueOrThrowArgs} args - Arguments to find a RateLimit
+     * @example
+     * // Get one RateLimit
+     * const rateLimit = await prisma.rateLimit.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RateLimitFindUniqueOrThrowArgs>(args: SelectSubset<T, RateLimitFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RateLimitClient<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RateLimit that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RateLimitFindFirstArgs} args - Arguments to find a RateLimit
+     * @example
+     * // Get one RateLimit
+     * const rateLimit = await prisma.rateLimit.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RateLimitFindFirstArgs>(args?: SelectSubset<T, RateLimitFindFirstArgs<ExtArgs>>): Prisma__RateLimitClient<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RateLimit that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RateLimitFindFirstOrThrowArgs} args - Arguments to find a RateLimit
+     * @example
+     * // Get one RateLimit
+     * const rateLimit = await prisma.rateLimit.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RateLimitFindFirstOrThrowArgs>(args?: SelectSubset<T, RateLimitFindFirstOrThrowArgs<ExtArgs>>): Prisma__RateLimitClient<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more RateLimits that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RateLimitFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all RateLimits
+     * const rateLimits = await prisma.rateLimit.findMany()
+     * 
+     * // Get first 10 RateLimits
+     * const rateLimits = await prisma.rateLimit.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const rateLimitWithIdOnly = await prisma.rateLimit.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends RateLimitFindManyArgs>(args?: SelectSubset<T, RateLimitFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a RateLimit.
+     * @param {RateLimitCreateArgs} args - Arguments to create a RateLimit.
+     * @example
+     * // Create one RateLimit
+     * const RateLimit = await prisma.rateLimit.create({
+     *   data: {
+     *     // ... data to create a RateLimit
+     *   }
+     * })
+     * 
+     */
+    create<T extends RateLimitCreateArgs>(args: SelectSubset<T, RateLimitCreateArgs<ExtArgs>>): Prisma__RateLimitClient<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many RateLimits.
+     * @param {RateLimitCreateManyArgs} args - Arguments to create many RateLimits.
+     * @example
+     * // Create many RateLimits
+     * const rateLimit = await prisma.rateLimit.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RateLimitCreateManyArgs>(args?: SelectSubset<T, RateLimitCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many RateLimits and returns the data saved in the database.
+     * @param {RateLimitCreateManyAndReturnArgs} args - Arguments to create many RateLimits.
+     * @example
+     * // Create many RateLimits
+     * const rateLimit = await prisma.rateLimit.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many RateLimits and only return the `id`
+     * const rateLimitWithIdOnly = await prisma.rateLimit.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends RateLimitCreateManyAndReturnArgs>(args?: SelectSubset<T, RateLimitCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a RateLimit.
+     * @param {RateLimitDeleteArgs} args - Arguments to delete one RateLimit.
+     * @example
+     * // Delete one RateLimit
+     * const RateLimit = await prisma.rateLimit.delete({
+     *   where: {
+     *     // ... filter to delete one RateLimit
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RateLimitDeleteArgs>(args: SelectSubset<T, RateLimitDeleteArgs<ExtArgs>>): Prisma__RateLimitClient<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one RateLimit.
+     * @param {RateLimitUpdateArgs} args - Arguments to update one RateLimit.
+     * @example
+     * // Update one RateLimit
+     * const rateLimit = await prisma.rateLimit.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RateLimitUpdateArgs>(args: SelectSubset<T, RateLimitUpdateArgs<ExtArgs>>): Prisma__RateLimitClient<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more RateLimits.
+     * @param {RateLimitDeleteManyArgs} args - Arguments to filter RateLimits to delete.
+     * @example
+     * // Delete a few RateLimits
+     * const { count } = await prisma.rateLimit.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RateLimitDeleteManyArgs>(args?: SelectSubset<T, RateLimitDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RateLimits.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RateLimitUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many RateLimits
+     * const rateLimit = await prisma.rateLimit.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RateLimitUpdateManyArgs>(args: SelectSubset<T, RateLimitUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RateLimits and returns the data updated in the database.
+     * @param {RateLimitUpdateManyAndReturnArgs} args - Arguments to update many RateLimits.
+     * @example
+     * // Update many RateLimits
+     * const rateLimit = await prisma.rateLimit.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more RateLimits and only return the `id`
+     * const rateLimitWithIdOnly = await prisma.rateLimit.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends RateLimitUpdateManyAndReturnArgs>(args: SelectSubset<T, RateLimitUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one RateLimit.
+     * @param {RateLimitUpsertArgs} args - Arguments to update or create a RateLimit.
+     * @example
+     * // Update or create a RateLimit
+     * const rateLimit = await prisma.rateLimit.upsert({
+     *   create: {
+     *     // ... data to create a RateLimit
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the RateLimit we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RateLimitUpsertArgs>(args: SelectSubset<T, RateLimitUpsertArgs<ExtArgs>>): Prisma__RateLimitClient<$Result.GetResult<Prisma.$RateLimitPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of RateLimits.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RateLimitCountArgs} args - Arguments to filter RateLimits to count.
+     * @example
+     * // Count the number of RateLimits
+     * const count = await prisma.rateLimit.count({
+     *   where: {
+     *     // ... the filter for the RateLimits we want to count
+     *   }
+     * })
+    **/
+    count<T extends RateLimitCountArgs>(
+      args?: Subset<T, RateLimitCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RateLimitCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a RateLimit.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RateLimitAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RateLimitAggregateArgs>(args: Subset<T, RateLimitAggregateArgs>): Prisma.PrismaPromise<GetRateLimitAggregateType<T>>
+
+    /**
+     * Group by RateLimit.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RateLimitGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RateLimitGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RateLimitGroupByArgs['orderBy'] }
+        : { orderBy?: RateLimitGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RateLimitGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRateLimitGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the RateLimit model
+   */
+  readonly fields: RateLimitFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for RateLimit.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RateLimitClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the RateLimit model
+   */
+  interface RateLimitFieldRefs {
+    readonly id: FieldRef<"RateLimit", 'String'>
+    readonly userId: FieldRef<"RateLimit", 'String'>
+    readonly windowStart: FieldRef<"RateLimit", 'DateTime'>
+    readonly requestCount: FieldRef<"RateLimit", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * RateLimit findUnique
+   */
+  export type RateLimitFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * Filter, which RateLimit to fetch.
+     */
+    where: RateLimitWhereUniqueInput
+  }
+
+  /**
+   * RateLimit findUniqueOrThrow
+   */
+  export type RateLimitFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * Filter, which RateLimit to fetch.
+     */
+    where: RateLimitWhereUniqueInput
+  }
+
+  /**
+   * RateLimit findFirst
+   */
+  export type RateLimitFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * Filter, which RateLimit to fetch.
+     */
+    where?: RateLimitWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RateLimits to fetch.
+     */
+    orderBy?: RateLimitOrderByWithRelationInput | RateLimitOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RateLimits.
+     */
+    cursor?: RateLimitWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RateLimits from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RateLimits.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RateLimits.
+     */
+    distinct?: RateLimitScalarFieldEnum | RateLimitScalarFieldEnum[]
+  }
+
+  /**
+   * RateLimit findFirstOrThrow
+   */
+  export type RateLimitFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * Filter, which RateLimit to fetch.
+     */
+    where?: RateLimitWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RateLimits to fetch.
+     */
+    orderBy?: RateLimitOrderByWithRelationInput | RateLimitOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RateLimits.
+     */
+    cursor?: RateLimitWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RateLimits from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RateLimits.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RateLimits.
+     */
+    distinct?: RateLimitScalarFieldEnum | RateLimitScalarFieldEnum[]
+  }
+
+  /**
+   * RateLimit findMany
+   */
+  export type RateLimitFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * Filter, which RateLimits to fetch.
+     */
+    where?: RateLimitWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RateLimits to fetch.
+     */
+    orderBy?: RateLimitOrderByWithRelationInput | RateLimitOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing RateLimits.
+     */
+    cursor?: RateLimitWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RateLimits from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RateLimits.
+     */
+    skip?: number
+    distinct?: RateLimitScalarFieldEnum | RateLimitScalarFieldEnum[]
+  }
+
+  /**
+   * RateLimit create
+   */
+  export type RateLimitCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * The data needed to create a RateLimit.
+     */
+    data: XOR<RateLimitCreateInput, RateLimitUncheckedCreateInput>
+  }
+
+  /**
+   * RateLimit createMany
+   */
+  export type RateLimitCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many RateLimits.
+     */
+    data: RateLimitCreateManyInput | RateLimitCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RateLimit createManyAndReturn
+   */
+  export type RateLimitCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * The data used to create many RateLimits.
+     */
+    data: RateLimitCreateManyInput | RateLimitCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RateLimit update
+   */
+  export type RateLimitUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * The data needed to update a RateLimit.
+     */
+    data: XOR<RateLimitUpdateInput, RateLimitUncheckedUpdateInput>
+    /**
+     * Choose, which RateLimit to update.
+     */
+    where: RateLimitWhereUniqueInput
+  }
+
+  /**
+   * RateLimit updateMany
+   */
+  export type RateLimitUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update RateLimits.
+     */
+    data: XOR<RateLimitUpdateManyMutationInput, RateLimitUncheckedUpdateManyInput>
+    /**
+     * Filter which RateLimits to update
+     */
+    where?: RateLimitWhereInput
+    /**
+     * Limit how many RateLimits to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * RateLimit updateManyAndReturn
+   */
+  export type RateLimitUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * The data used to update RateLimits.
+     */
+    data: XOR<RateLimitUpdateManyMutationInput, RateLimitUncheckedUpdateManyInput>
+    /**
+     * Filter which RateLimits to update
+     */
+    where?: RateLimitWhereInput
+    /**
+     * Limit how many RateLimits to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * RateLimit upsert
+   */
+  export type RateLimitUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * The filter to search for the RateLimit to update in case it exists.
+     */
+    where: RateLimitWhereUniqueInput
+    /**
+     * In case the RateLimit found by the `where` argument doesn't exist, create a new RateLimit with this data.
+     */
+    create: XOR<RateLimitCreateInput, RateLimitUncheckedCreateInput>
+    /**
+     * In case the RateLimit was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RateLimitUpdateInput, RateLimitUncheckedUpdateInput>
+  }
+
+  /**
+   * RateLimit delete
+   */
+  export type RateLimitDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+    /**
+     * Filter which RateLimit to delete.
+     */
+    where: RateLimitWhereUniqueInput
+  }
+
+  /**
+   * RateLimit deleteMany
+   */
+  export type RateLimitDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RateLimits to delete
+     */
+    where?: RateLimitWhereInput
+    /**
+     * Limit how many RateLimits to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * RateLimit without action
+   */
+  export type RateLimitDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RateLimit
+     */
+    select?: RateLimitSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RateLimit
+     */
+    omit?: RateLimitOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -10411,6 +15318,46 @@ export namespace Prisma {
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+  export const WebhookConnectionScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    name: 'name',
+    description: 'description',
+    url: 'url',
+    method: 'method',
+    headers: 'headers',
+    emoji: 'emoji',
+    secret: 'secret',
+    lastTestedAt: 'lastTestedAt',
+    lastTestStatus: 'lastTestStatus',
+    lastTestCode: 'lastTestCode',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type WebhookConnectionScalarFieldEnum = (typeof WebhookConnectionScalarFieldEnum)[keyof typeof WebhookConnectionScalarFieldEnum]
+
+
+  export const WorkflowScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    name: 'name',
+    description: 'description',
+    enabled: 'enabled',
+    schedule: 'schedule',
+    timezone: 'timezone',
+    actions: 'actions',
+    lastRunAt: 'lastRunAt',
+    nextRunAt: 'nextRunAt',
+    lastRunStatus: 'lastRunStatus',
+    lastRunLog: 'lastRunLog',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type WorkflowScalarFieldEnum = (typeof WorkflowScalarFieldEnum)[keyof typeof WorkflowScalarFieldEnum]
 
 
   export const VerificationTokenScalarFieldEnum: {
@@ -10480,6 +15427,30 @@ export namespace Prisma {
   };
 
   export type SyncStateScalarFieldEnum = (typeof SyncStateScalarFieldEnum)[keyof typeof SyncStateScalarFieldEnum]
+
+
+  export const QueryCacheScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    queryHash: 'queryHash',
+    queryText: 'queryText',
+    answer: 'answer',
+    hitCount: 'hitCount',
+    createdAt: 'createdAt',
+    expiresAt: 'expiresAt'
+  };
+
+  export type QueryCacheScalarFieldEnum = (typeof QueryCacheScalarFieldEnum)[keyof typeof QueryCacheScalarFieldEnum]
+
+
+  export const RateLimitScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    windowStart: 'windowStart',
+    requestCount: 'requestCount'
+  };
+
+  export type RateLimitScalarFieldEnum = (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -10733,6 +15704,8 @@ export namespace Prisma {
     sessions?: SessionListRelationFilter
     emails?: EmailListRelationFilter
     preferences?: XOR<UserPreferenceNullableScalarRelationFilter, UserPreferenceWhereInput> | null
+    workflows?: WorkflowListRelationFilter
+    webhooks?: WebhookConnectionListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -10745,6 +15718,8 @@ export namespace Prisma {
     sessions?: SessionOrderByRelationAggregateInput
     emails?: EmailOrderByRelationAggregateInput
     preferences?: UserPreferenceOrderByWithRelationInput
+    workflows?: WorkflowOrderByRelationAggregateInput
+    webhooks?: WebhookConnectionOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -10760,6 +15735,8 @@ export namespace Prisma {
     sessions?: SessionListRelationFilter
     emails?: EmailListRelationFilter
     preferences?: XOR<UserPreferenceNullableScalarRelationFilter, UserPreferenceWhereInput> | null
+    workflows?: WorkflowListRelationFilter
+    webhooks?: WebhookConnectionListRelationFilter
   }, "id" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -10782,6 +15759,208 @@ export namespace Prisma {
     email?: StringNullableWithAggregatesFilter<"User"> | string | null
     emailVerified?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     image?: StringNullableWithAggregatesFilter<"User"> | string | null
+  }
+
+  export type WebhookConnectionWhereInput = {
+    AND?: WebhookConnectionWhereInput | WebhookConnectionWhereInput[]
+    OR?: WebhookConnectionWhereInput[]
+    NOT?: WebhookConnectionWhereInput | WebhookConnectionWhereInput[]
+    id?: StringFilter<"WebhookConnection"> | string
+    userId?: StringFilter<"WebhookConnection"> | string
+    name?: StringFilter<"WebhookConnection"> | string
+    description?: StringNullableFilter<"WebhookConnection"> | string | null
+    url?: StringFilter<"WebhookConnection"> | string
+    method?: StringFilter<"WebhookConnection"> | string
+    headers?: StringNullableFilter<"WebhookConnection"> | string | null
+    emoji?: StringFilter<"WebhookConnection"> | string
+    secret?: StringNullableFilter<"WebhookConnection"> | string | null
+    lastTestedAt?: DateTimeNullableFilter<"WebhookConnection"> | Date | string | null
+    lastTestStatus?: StringNullableFilter<"WebhookConnection"> | string | null
+    lastTestCode?: IntNullableFilter<"WebhookConnection"> | number | null
+    createdAt?: DateTimeFilter<"WebhookConnection"> | Date | string
+    updatedAt?: DateTimeFilter<"WebhookConnection"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type WebhookConnectionOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrderInput | SortOrder
+    url?: SortOrder
+    method?: SortOrder
+    headers?: SortOrderInput | SortOrder
+    emoji?: SortOrder
+    secret?: SortOrderInput | SortOrder
+    lastTestedAt?: SortOrderInput | SortOrder
+    lastTestStatus?: SortOrderInput | SortOrder
+    lastTestCode?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type WebhookConnectionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: WebhookConnectionWhereInput | WebhookConnectionWhereInput[]
+    OR?: WebhookConnectionWhereInput[]
+    NOT?: WebhookConnectionWhereInput | WebhookConnectionWhereInput[]
+    userId?: StringFilter<"WebhookConnection"> | string
+    name?: StringFilter<"WebhookConnection"> | string
+    description?: StringNullableFilter<"WebhookConnection"> | string | null
+    url?: StringFilter<"WebhookConnection"> | string
+    method?: StringFilter<"WebhookConnection"> | string
+    headers?: StringNullableFilter<"WebhookConnection"> | string | null
+    emoji?: StringFilter<"WebhookConnection"> | string
+    secret?: StringNullableFilter<"WebhookConnection"> | string | null
+    lastTestedAt?: DateTimeNullableFilter<"WebhookConnection"> | Date | string | null
+    lastTestStatus?: StringNullableFilter<"WebhookConnection"> | string | null
+    lastTestCode?: IntNullableFilter<"WebhookConnection"> | number | null
+    createdAt?: DateTimeFilter<"WebhookConnection"> | Date | string
+    updatedAt?: DateTimeFilter<"WebhookConnection"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type WebhookConnectionOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrderInput | SortOrder
+    url?: SortOrder
+    method?: SortOrder
+    headers?: SortOrderInput | SortOrder
+    emoji?: SortOrder
+    secret?: SortOrderInput | SortOrder
+    lastTestedAt?: SortOrderInput | SortOrder
+    lastTestStatus?: SortOrderInput | SortOrder
+    lastTestCode?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: WebhookConnectionCountOrderByAggregateInput
+    _avg?: WebhookConnectionAvgOrderByAggregateInput
+    _max?: WebhookConnectionMaxOrderByAggregateInput
+    _min?: WebhookConnectionMinOrderByAggregateInput
+    _sum?: WebhookConnectionSumOrderByAggregateInput
+  }
+
+  export type WebhookConnectionScalarWhereWithAggregatesInput = {
+    AND?: WebhookConnectionScalarWhereWithAggregatesInput | WebhookConnectionScalarWhereWithAggregatesInput[]
+    OR?: WebhookConnectionScalarWhereWithAggregatesInput[]
+    NOT?: WebhookConnectionScalarWhereWithAggregatesInput | WebhookConnectionScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"WebhookConnection"> | string
+    userId?: StringWithAggregatesFilter<"WebhookConnection"> | string
+    name?: StringWithAggregatesFilter<"WebhookConnection"> | string
+    description?: StringNullableWithAggregatesFilter<"WebhookConnection"> | string | null
+    url?: StringWithAggregatesFilter<"WebhookConnection"> | string
+    method?: StringWithAggregatesFilter<"WebhookConnection"> | string
+    headers?: StringNullableWithAggregatesFilter<"WebhookConnection"> | string | null
+    emoji?: StringWithAggregatesFilter<"WebhookConnection"> | string
+    secret?: StringNullableWithAggregatesFilter<"WebhookConnection"> | string | null
+    lastTestedAt?: DateTimeNullableWithAggregatesFilter<"WebhookConnection"> | Date | string | null
+    lastTestStatus?: StringNullableWithAggregatesFilter<"WebhookConnection"> | string | null
+    lastTestCode?: IntNullableWithAggregatesFilter<"WebhookConnection"> | number | null
+    createdAt?: DateTimeWithAggregatesFilter<"WebhookConnection"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"WebhookConnection"> | Date | string
+  }
+
+  export type WorkflowWhereInput = {
+    AND?: WorkflowWhereInput | WorkflowWhereInput[]
+    OR?: WorkflowWhereInput[]
+    NOT?: WorkflowWhereInput | WorkflowWhereInput[]
+    id?: StringFilter<"Workflow"> | string
+    userId?: StringFilter<"Workflow"> | string
+    name?: StringFilter<"Workflow"> | string
+    description?: StringNullableFilter<"Workflow"> | string | null
+    enabled?: BoolFilter<"Workflow"> | boolean
+    schedule?: StringFilter<"Workflow"> | string
+    timezone?: StringFilter<"Workflow"> | string
+    actions?: StringFilter<"Workflow"> | string
+    lastRunAt?: DateTimeNullableFilter<"Workflow"> | Date | string | null
+    nextRunAt?: DateTimeNullableFilter<"Workflow"> | Date | string | null
+    lastRunStatus?: StringNullableFilter<"Workflow"> | string | null
+    lastRunLog?: StringNullableFilter<"Workflow"> | string | null
+    createdAt?: DateTimeFilter<"Workflow"> | Date | string
+    updatedAt?: DateTimeFilter<"Workflow"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type WorkflowOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrderInput | SortOrder
+    enabled?: SortOrder
+    schedule?: SortOrder
+    timezone?: SortOrder
+    actions?: SortOrder
+    lastRunAt?: SortOrderInput | SortOrder
+    nextRunAt?: SortOrderInput | SortOrder
+    lastRunStatus?: SortOrderInput | SortOrder
+    lastRunLog?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type WorkflowWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: WorkflowWhereInput | WorkflowWhereInput[]
+    OR?: WorkflowWhereInput[]
+    NOT?: WorkflowWhereInput | WorkflowWhereInput[]
+    userId?: StringFilter<"Workflow"> | string
+    name?: StringFilter<"Workflow"> | string
+    description?: StringNullableFilter<"Workflow"> | string | null
+    enabled?: BoolFilter<"Workflow"> | boolean
+    schedule?: StringFilter<"Workflow"> | string
+    timezone?: StringFilter<"Workflow"> | string
+    actions?: StringFilter<"Workflow"> | string
+    lastRunAt?: DateTimeNullableFilter<"Workflow"> | Date | string | null
+    nextRunAt?: DateTimeNullableFilter<"Workflow"> | Date | string | null
+    lastRunStatus?: StringNullableFilter<"Workflow"> | string | null
+    lastRunLog?: StringNullableFilter<"Workflow"> | string | null
+    createdAt?: DateTimeFilter<"Workflow"> | Date | string
+    updatedAt?: DateTimeFilter<"Workflow"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type WorkflowOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrderInput | SortOrder
+    enabled?: SortOrder
+    schedule?: SortOrder
+    timezone?: SortOrder
+    actions?: SortOrder
+    lastRunAt?: SortOrderInput | SortOrder
+    nextRunAt?: SortOrderInput | SortOrder
+    lastRunStatus?: SortOrderInput | SortOrder
+    lastRunLog?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: WorkflowCountOrderByAggregateInput
+    _max?: WorkflowMaxOrderByAggregateInput
+    _min?: WorkflowMinOrderByAggregateInput
+  }
+
+  export type WorkflowScalarWhereWithAggregatesInput = {
+    AND?: WorkflowScalarWhereWithAggregatesInput | WorkflowScalarWhereWithAggregatesInput[]
+    OR?: WorkflowScalarWhereWithAggregatesInput[]
+    NOT?: WorkflowScalarWhereWithAggregatesInput | WorkflowScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Workflow"> | string
+    userId?: StringWithAggregatesFilter<"Workflow"> | string
+    name?: StringWithAggregatesFilter<"Workflow"> | string
+    description?: StringNullableWithAggregatesFilter<"Workflow"> | string | null
+    enabled?: BoolWithAggregatesFilter<"Workflow"> | boolean
+    schedule?: StringWithAggregatesFilter<"Workflow"> | string
+    timezone?: StringWithAggregatesFilter<"Workflow"> | string
+    actions?: StringWithAggregatesFilter<"Workflow"> | string
+    lastRunAt?: DateTimeNullableWithAggregatesFilter<"Workflow"> | Date | string | null
+    nextRunAt?: DateTimeNullableWithAggregatesFilter<"Workflow"> | Date | string | null
+    lastRunStatus?: StringNullableWithAggregatesFilter<"Workflow"> | string | null
+    lastRunLog?: StringNullableWithAggregatesFilter<"Workflow"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"Workflow"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Workflow"> | Date | string
   }
 
   export type VerificationTokenWhereInput = {
@@ -11131,6 +16310,125 @@ export namespace Prisma {
     lastSyncAt?: DateTimeWithAggregatesFilter<"SyncState"> | Date | string
   }
 
+  export type QueryCacheWhereInput = {
+    AND?: QueryCacheWhereInput | QueryCacheWhereInput[]
+    OR?: QueryCacheWhereInput[]
+    NOT?: QueryCacheWhereInput | QueryCacheWhereInput[]
+    id?: StringFilter<"QueryCache"> | string
+    userId?: StringFilter<"QueryCache"> | string
+    queryHash?: StringFilter<"QueryCache"> | string
+    queryText?: StringFilter<"QueryCache"> | string
+    answer?: StringFilter<"QueryCache"> | string
+    hitCount?: IntFilter<"QueryCache"> | number
+    createdAt?: DateTimeFilter<"QueryCache"> | Date | string
+    expiresAt?: DateTimeFilter<"QueryCache"> | Date | string
+  }
+
+  export type QueryCacheOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    queryHash?: SortOrder
+    queryText?: SortOrder
+    answer?: SortOrder
+    hitCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type QueryCacheWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    userId_queryHash?: QueryCacheUserIdQueryHashCompoundUniqueInput
+    AND?: QueryCacheWhereInput | QueryCacheWhereInput[]
+    OR?: QueryCacheWhereInput[]
+    NOT?: QueryCacheWhereInput | QueryCacheWhereInput[]
+    userId?: StringFilter<"QueryCache"> | string
+    queryHash?: StringFilter<"QueryCache"> | string
+    queryText?: StringFilter<"QueryCache"> | string
+    answer?: StringFilter<"QueryCache"> | string
+    hitCount?: IntFilter<"QueryCache"> | number
+    createdAt?: DateTimeFilter<"QueryCache"> | Date | string
+    expiresAt?: DateTimeFilter<"QueryCache"> | Date | string
+  }, "id" | "userId_queryHash">
+
+  export type QueryCacheOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    queryHash?: SortOrder
+    queryText?: SortOrder
+    answer?: SortOrder
+    hitCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+    _count?: QueryCacheCountOrderByAggregateInput
+    _avg?: QueryCacheAvgOrderByAggregateInput
+    _max?: QueryCacheMaxOrderByAggregateInput
+    _min?: QueryCacheMinOrderByAggregateInput
+    _sum?: QueryCacheSumOrderByAggregateInput
+  }
+
+  export type QueryCacheScalarWhereWithAggregatesInput = {
+    AND?: QueryCacheScalarWhereWithAggregatesInput | QueryCacheScalarWhereWithAggregatesInput[]
+    OR?: QueryCacheScalarWhereWithAggregatesInput[]
+    NOT?: QueryCacheScalarWhereWithAggregatesInput | QueryCacheScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"QueryCache"> | string
+    userId?: StringWithAggregatesFilter<"QueryCache"> | string
+    queryHash?: StringWithAggregatesFilter<"QueryCache"> | string
+    queryText?: StringWithAggregatesFilter<"QueryCache"> | string
+    answer?: StringWithAggregatesFilter<"QueryCache"> | string
+    hitCount?: IntWithAggregatesFilter<"QueryCache"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"QueryCache"> | Date | string
+    expiresAt?: DateTimeWithAggregatesFilter<"QueryCache"> | Date | string
+  }
+
+  export type RateLimitWhereInput = {
+    AND?: RateLimitWhereInput | RateLimitWhereInput[]
+    OR?: RateLimitWhereInput[]
+    NOT?: RateLimitWhereInput | RateLimitWhereInput[]
+    id?: StringFilter<"RateLimit"> | string
+    userId?: StringFilter<"RateLimit"> | string
+    windowStart?: DateTimeFilter<"RateLimit"> | Date | string
+    requestCount?: IntFilter<"RateLimit"> | number
+  }
+
+  export type RateLimitOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    windowStart?: SortOrder
+    requestCount?: SortOrder
+  }
+
+  export type RateLimitWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    userId?: string
+    AND?: RateLimitWhereInput | RateLimitWhereInput[]
+    OR?: RateLimitWhereInput[]
+    NOT?: RateLimitWhereInput | RateLimitWhereInput[]
+    windowStart?: DateTimeFilter<"RateLimit"> | Date | string
+    requestCount?: IntFilter<"RateLimit"> | number
+  }, "id" | "userId">
+
+  export type RateLimitOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    windowStart?: SortOrder
+    requestCount?: SortOrder
+    _count?: RateLimitCountOrderByAggregateInput
+    _avg?: RateLimitAvgOrderByAggregateInput
+    _max?: RateLimitMaxOrderByAggregateInput
+    _min?: RateLimitMinOrderByAggregateInput
+    _sum?: RateLimitSumOrderByAggregateInput
+  }
+
+  export type RateLimitScalarWhereWithAggregatesInput = {
+    AND?: RateLimitScalarWhereWithAggregatesInput | RateLimitScalarWhereWithAggregatesInput[]
+    OR?: RateLimitScalarWhereWithAggregatesInput[]
+    NOT?: RateLimitScalarWhereWithAggregatesInput | RateLimitScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"RateLimit"> | string
+    userId?: StringWithAggregatesFilter<"RateLimit"> | string
+    windowStart?: DateTimeWithAggregatesFilter<"RateLimit"> | Date | string
+    requestCount?: IntWithAggregatesFilter<"RateLimit"> | number
+  }
+
   export type AccountCreateInput = {
     id?: string
     type: string
@@ -11293,6 +16591,8 @@ export namespace Prisma {
     sessions?: SessionCreateNestedManyWithoutUserInput
     emails?: EmailCreateNestedManyWithoutUserInput
     preferences?: UserPreferenceCreateNestedOneWithoutUserInput
+    workflows?: WorkflowCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -11305,6 +16605,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     emails?: EmailUncheckedCreateNestedManyWithoutUserInput
     preferences?: UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+    workflows?: WorkflowUncheckedCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -11317,6 +16619,8 @@ export namespace Prisma {
     sessions?: SessionUpdateManyWithoutUserNestedInput
     emails?: EmailUpdateManyWithoutUserNestedInput
     preferences?: UserPreferenceUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -11329,6 +16633,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     emails?: EmailUncheckedUpdateManyWithoutUserNestedInput
     preferences?: UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUncheckedUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -11353,6 +16659,242 @@ export namespace Prisma {
     email?: NullableStringFieldUpdateOperationsInput | string | null
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type WebhookConnectionCreateInput = {
+    id?: string
+    name: string
+    description?: string | null
+    url: string
+    method?: string
+    headers?: string | null
+    emoji?: string
+    secret?: string | null
+    lastTestedAt?: Date | string | null
+    lastTestStatus?: string | null
+    lastTestCode?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutWebhooksInput
+  }
+
+  export type WebhookConnectionUncheckedCreateInput = {
+    id?: string
+    userId: string
+    name: string
+    description?: string | null
+    url: string
+    method?: string
+    headers?: string | null
+    emoji?: string
+    secret?: string | null
+    lastTestedAt?: Date | string | null
+    lastTestStatus?: string | null
+    lastTestCode?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WebhookConnectionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    url?: StringFieldUpdateOperationsInput | string
+    method?: StringFieldUpdateOperationsInput | string
+    headers?: NullableStringFieldUpdateOperationsInput | string | null
+    emoji?: StringFieldUpdateOperationsInput | string
+    secret?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastTestStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestCode?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutWebhooksNestedInput
+  }
+
+  export type WebhookConnectionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    url?: StringFieldUpdateOperationsInput | string
+    method?: StringFieldUpdateOperationsInput | string
+    headers?: NullableStringFieldUpdateOperationsInput | string | null
+    emoji?: StringFieldUpdateOperationsInput | string
+    secret?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastTestStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestCode?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WebhookConnectionCreateManyInput = {
+    id?: string
+    userId: string
+    name: string
+    description?: string | null
+    url: string
+    method?: string
+    headers?: string | null
+    emoji?: string
+    secret?: string | null
+    lastTestedAt?: Date | string | null
+    lastTestStatus?: string | null
+    lastTestCode?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WebhookConnectionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    url?: StringFieldUpdateOperationsInput | string
+    method?: StringFieldUpdateOperationsInput | string
+    headers?: NullableStringFieldUpdateOperationsInput | string | null
+    emoji?: StringFieldUpdateOperationsInput | string
+    secret?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastTestStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestCode?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WebhookConnectionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    url?: StringFieldUpdateOperationsInput | string
+    method?: StringFieldUpdateOperationsInput | string
+    headers?: NullableStringFieldUpdateOperationsInput | string | null
+    emoji?: StringFieldUpdateOperationsInput | string
+    secret?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastTestStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestCode?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkflowCreateInput = {
+    id?: string
+    name: string
+    description?: string | null
+    enabled?: boolean
+    schedule: string
+    timezone?: string
+    actions: string
+    lastRunAt?: Date | string | null
+    nextRunAt?: Date | string | null
+    lastRunStatus?: string | null
+    lastRunLog?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutWorkflowsInput
+  }
+
+  export type WorkflowUncheckedCreateInput = {
+    id?: string
+    userId: string
+    name: string
+    description?: string | null
+    enabled?: boolean
+    schedule: string
+    timezone?: string
+    actions: string
+    lastRunAt?: Date | string | null
+    nextRunAt?: Date | string | null
+    lastRunStatus?: string | null
+    lastRunLog?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WorkflowUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    schedule?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    actions?: StringFieldUpdateOperationsInput | string
+    lastRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastRunStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastRunLog?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutWorkflowsNestedInput
+  }
+
+  export type WorkflowUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    schedule?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    actions?: StringFieldUpdateOperationsInput | string
+    lastRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastRunStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastRunLog?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkflowCreateManyInput = {
+    id?: string
+    userId: string
+    name: string
+    description?: string | null
+    enabled?: boolean
+    schedule: string
+    timezone?: string
+    actions: string
+    lastRunAt?: Date | string | null
+    nextRunAt?: Date | string | null
+    lastRunStatus?: string | null
+    lastRunLog?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WorkflowUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    schedule?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    actions?: StringFieldUpdateOperationsInput | string
+    lastRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastRunStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastRunLog?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkflowUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    schedule?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    actions?: StringFieldUpdateOperationsInput | string
+    lastRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastRunStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastRunLog?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type VerificationTokenCreateInput = {
@@ -11734,6 +17276,132 @@ export namespace Prisma {
     lastSyncAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type QueryCacheCreateInput = {
+    id?: string
+    userId: string
+    queryHash: string
+    queryText: string
+    answer: string
+    hitCount?: number
+    createdAt?: Date | string
+    expiresAt: Date | string
+  }
+
+  export type QueryCacheUncheckedCreateInput = {
+    id?: string
+    userId: string
+    queryHash: string
+    queryText: string
+    answer: string
+    hitCount?: number
+    createdAt?: Date | string
+    expiresAt: Date | string
+  }
+
+  export type QueryCacheUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    queryHash?: StringFieldUpdateOperationsInput | string
+    queryText?: StringFieldUpdateOperationsInput | string
+    answer?: StringFieldUpdateOperationsInput | string
+    hitCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type QueryCacheUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    queryHash?: StringFieldUpdateOperationsInput | string
+    queryText?: StringFieldUpdateOperationsInput | string
+    answer?: StringFieldUpdateOperationsInput | string
+    hitCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type QueryCacheCreateManyInput = {
+    id?: string
+    userId: string
+    queryHash: string
+    queryText: string
+    answer: string
+    hitCount?: number
+    createdAt?: Date | string
+    expiresAt: Date | string
+  }
+
+  export type QueryCacheUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    queryHash?: StringFieldUpdateOperationsInput | string
+    queryText?: StringFieldUpdateOperationsInput | string
+    answer?: StringFieldUpdateOperationsInput | string
+    hitCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type QueryCacheUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    queryHash?: StringFieldUpdateOperationsInput | string
+    queryText?: StringFieldUpdateOperationsInput | string
+    answer?: StringFieldUpdateOperationsInput | string
+    hitCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RateLimitCreateInput = {
+    id?: string
+    userId: string
+    windowStart?: Date | string
+    requestCount?: number
+  }
+
+  export type RateLimitUncheckedCreateInput = {
+    id?: string
+    userId: string
+    windowStart?: Date | string
+    requestCount?: number
+  }
+
+  export type RateLimitUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    windowStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    requestCount?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type RateLimitUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    windowStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    requestCount?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type RateLimitCreateManyInput = {
+    id?: string
+    userId: string
+    windowStart?: Date | string
+    requestCount?: number
+  }
+
+  export type RateLimitUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    windowStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    requestCount?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type RateLimitUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    windowStart?: DateTimeFieldUpdateOperationsInput | Date | string
+    requestCount?: IntFieldUpdateOperationsInput | number
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -11975,6 +17643,18 @@ export namespace Prisma {
     isNot?: UserPreferenceWhereInput | null
   }
 
+  export type WorkflowListRelationFilter = {
+    every?: WorkflowWhereInput
+    some?: WorkflowWhereInput
+    none?: WorkflowWhereInput
+  }
+
+  export type WebhookConnectionListRelationFilter = {
+    every?: WebhookConnectionWhereInput
+    some?: WebhookConnectionWhereInput
+    none?: WebhookConnectionWhereInput
+  }
+
   export type AccountOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -11984,6 +17664,14 @@ export namespace Prisma {
   }
 
   export type EmailOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type WorkflowOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type WebhookConnectionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -12023,6 +17711,129 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type WebhookConnectionCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    url?: SortOrder
+    method?: SortOrder
+    headers?: SortOrder
+    emoji?: SortOrder
+    secret?: SortOrder
+    lastTestedAt?: SortOrder
+    lastTestStatus?: SortOrder
+    lastTestCode?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type WebhookConnectionAvgOrderByAggregateInput = {
+    lastTestCode?: SortOrder
+  }
+
+  export type WebhookConnectionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    url?: SortOrder
+    method?: SortOrder
+    headers?: SortOrder
+    emoji?: SortOrder
+    secret?: SortOrder
+    lastTestedAt?: SortOrder
+    lastTestStatus?: SortOrder
+    lastTestCode?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type WebhookConnectionMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    url?: SortOrder
+    method?: SortOrder
+    headers?: SortOrder
+    emoji?: SortOrder
+    secret?: SortOrder
+    lastTestedAt?: SortOrder
+    lastTestStatus?: SortOrder
+    lastTestCode?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type WebhookConnectionSumOrderByAggregateInput = {
+    lastTestCode?: SortOrder
+  }
+
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type WorkflowCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    enabled?: SortOrder
+    schedule?: SortOrder
+    timezone?: SortOrder
+    actions?: SortOrder
+    lastRunAt?: SortOrder
+    nextRunAt?: SortOrder
+    lastRunStatus?: SortOrder
+    lastRunLog?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type WorkflowMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    enabled?: SortOrder
+    schedule?: SortOrder
+    timezone?: SortOrder
+    actions?: SortOrder
+    lastRunAt?: SortOrder
+    nextRunAt?: SortOrder
+    lastRunStatus?: SortOrder
+    lastRunLog?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type WorkflowMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    name?: SortOrder
+    description?: SortOrder
+    enabled?: SortOrder
+    schedule?: SortOrder
+    timezone?: SortOrder
+    actions?: SortOrder
+    lastRunAt?: SortOrder
+    nextRunAt?: SortOrder
+    lastRunStatus?: SortOrder
+    lastRunLog?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type VerificationTokenIdentifierTokenCompoundUniqueInput = {
@@ -12110,11 +17921,6 @@ export namespace Prisma {
     _max?: NestedIntFilter<$PrismaModel>
   }
 
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
   export type EmailSummaryNullableScalarRelationFilter = {
     is?: EmailSummaryWhereInput | null
     isNot?: EmailSummaryWhereInput | null
@@ -12175,14 +17981,6 @@ export namespace Prisma {
     dedupHash?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type EmailScalarRelationFilter = {
@@ -12256,6 +18054,81 @@ export namespace Prisma {
     userId?: SortOrder
     lastHistoryId?: SortOrder
     lastSyncAt?: SortOrder
+  }
+
+  export type QueryCacheUserIdQueryHashCompoundUniqueInput = {
+    userId: string
+    queryHash: string
+  }
+
+  export type QueryCacheCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    queryHash?: SortOrder
+    queryText?: SortOrder
+    answer?: SortOrder
+    hitCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type QueryCacheAvgOrderByAggregateInput = {
+    hitCount?: SortOrder
+  }
+
+  export type QueryCacheMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    queryHash?: SortOrder
+    queryText?: SortOrder
+    answer?: SortOrder
+    hitCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type QueryCacheMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    queryHash?: SortOrder
+    queryText?: SortOrder
+    answer?: SortOrder
+    hitCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type QueryCacheSumOrderByAggregateInput = {
+    hitCount?: SortOrder
+  }
+
+  export type RateLimitCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    windowStart?: SortOrder
+    requestCount?: SortOrder
+  }
+
+  export type RateLimitAvgOrderByAggregateInput = {
+    requestCount?: SortOrder
+  }
+
+  export type RateLimitMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    windowStart?: SortOrder
+    requestCount?: SortOrder
+  }
+
+  export type RateLimitMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    windowStart?: SortOrder
+    requestCount?: SortOrder
+  }
+
+  export type RateLimitSumOrderByAggregateInput = {
+    requestCount?: SortOrder
   }
 
   export type UserCreateNestedOneWithoutAccountsInput = {
@@ -12333,6 +18206,20 @@ export namespace Prisma {
     connect?: UserPreferenceWhereUniqueInput
   }
 
+  export type WorkflowCreateNestedManyWithoutUserInput = {
+    create?: XOR<WorkflowCreateWithoutUserInput, WorkflowUncheckedCreateWithoutUserInput> | WorkflowCreateWithoutUserInput[] | WorkflowUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WorkflowCreateOrConnectWithoutUserInput | WorkflowCreateOrConnectWithoutUserInput[]
+    createMany?: WorkflowCreateManyUserInputEnvelope
+    connect?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+  }
+
+  export type WebhookConnectionCreateNestedManyWithoutUserInput = {
+    create?: XOR<WebhookConnectionCreateWithoutUserInput, WebhookConnectionUncheckedCreateWithoutUserInput> | WebhookConnectionCreateWithoutUserInput[] | WebhookConnectionUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WebhookConnectionCreateOrConnectWithoutUserInput | WebhookConnectionCreateOrConnectWithoutUserInput[]
+    createMany?: WebhookConnectionCreateManyUserInputEnvelope
+    connect?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
+  }
+
   export type AccountUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<AccountCreateWithoutUserInput, AccountUncheckedCreateWithoutUserInput> | AccountCreateWithoutUserInput[] | AccountUncheckedCreateWithoutUserInput[]
     connectOrCreate?: AccountCreateOrConnectWithoutUserInput | AccountCreateOrConnectWithoutUserInput[]
@@ -12358,6 +18245,20 @@ export namespace Prisma {
     create?: XOR<UserPreferenceCreateWithoutUserInput, UserPreferenceUncheckedCreateWithoutUserInput>
     connectOrCreate?: UserPreferenceCreateOrConnectWithoutUserInput
     connect?: UserPreferenceWhereUniqueInput
+  }
+
+  export type WorkflowUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<WorkflowCreateWithoutUserInput, WorkflowUncheckedCreateWithoutUserInput> | WorkflowCreateWithoutUserInput[] | WorkflowUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WorkflowCreateOrConnectWithoutUserInput | WorkflowCreateOrConnectWithoutUserInput[]
+    createMany?: WorkflowCreateManyUserInputEnvelope
+    connect?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+  }
+
+  export type WebhookConnectionUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<WebhookConnectionCreateWithoutUserInput, WebhookConnectionUncheckedCreateWithoutUserInput> | WebhookConnectionCreateWithoutUserInput[] | WebhookConnectionUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WebhookConnectionCreateOrConnectWithoutUserInput | WebhookConnectionCreateOrConnectWithoutUserInput[]
+    createMany?: WebhookConnectionCreateManyUserInputEnvelope
+    connect?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
   }
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
@@ -12416,6 +18317,34 @@ export namespace Prisma {
     update?: XOR<XOR<UserPreferenceUpdateToOneWithWhereWithoutUserInput, UserPreferenceUpdateWithoutUserInput>, UserPreferenceUncheckedUpdateWithoutUserInput>
   }
 
+  export type WorkflowUpdateManyWithoutUserNestedInput = {
+    create?: XOR<WorkflowCreateWithoutUserInput, WorkflowUncheckedCreateWithoutUserInput> | WorkflowCreateWithoutUserInput[] | WorkflowUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WorkflowCreateOrConnectWithoutUserInput | WorkflowCreateOrConnectWithoutUserInput[]
+    upsert?: WorkflowUpsertWithWhereUniqueWithoutUserInput | WorkflowUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: WorkflowCreateManyUserInputEnvelope
+    set?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+    disconnect?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+    delete?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+    connect?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+    update?: WorkflowUpdateWithWhereUniqueWithoutUserInput | WorkflowUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: WorkflowUpdateManyWithWhereWithoutUserInput | WorkflowUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: WorkflowScalarWhereInput | WorkflowScalarWhereInput[]
+  }
+
+  export type WebhookConnectionUpdateManyWithoutUserNestedInput = {
+    create?: XOR<WebhookConnectionCreateWithoutUserInput, WebhookConnectionUncheckedCreateWithoutUserInput> | WebhookConnectionCreateWithoutUserInput[] | WebhookConnectionUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WebhookConnectionCreateOrConnectWithoutUserInput | WebhookConnectionCreateOrConnectWithoutUserInput[]
+    upsert?: WebhookConnectionUpsertWithWhereUniqueWithoutUserInput | WebhookConnectionUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: WebhookConnectionCreateManyUserInputEnvelope
+    set?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
+    disconnect?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
+    delete?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
+    connect?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
+    update?: WebhookConnectionUpdateWithWhereUniqueWithoutUserInput | WebhookConnectionUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: WebhookConnectionUpdateManyWithWhereWithoutUserInput | WebhookConnectionUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: WebhookConnectionScalarWhereInput | WebhookConnectionScalarWhereInput[]
+  }
+
   export type AccountUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<AccountCreateWithoutUserInput, AccountUncheckedCreateWithoutUserInput> | AccountCreateWithoutUserInput[] | AccountUncheckedCreateWithoutUserInput[]
     connectOrCreate?: AccountCreateOrConnectWithoutUserInput | AccountCreateOrConnectWithoutUserInput[]
@@ -12468,6 +18397,66 @@ export namespace Prisma {
     update?: XOR<XOR<UserPreferenceUpdateToOneWithWhereWithoutUserInput, UserPreferenceUpdateWithoutUserInput>, UserPreferenceUncheckedUpdateWithoutUserInput>
   }
 
+  export type WorkflowUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<WorkflowCreateWithoutUserInput, WorkflowUncheckedCreateWithoutUserInput> | WorkflowCreateWithoutUserInput[] | WorkflowUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WorkflowCreateOrConnectWithoutUserInput | WorkflowCreateOrConnectWithoutUserInput[]
+    upsert?: WorkflowUpsertWithWhereUniqueWithoutUserInput | WorkflowUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: WorkflowCreateManyUserInputEnvelope
+    set?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+    disconnect?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+    delete?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+    connect?: WorkflowWhereUniqueInput | WorkflowWhereUniqueInput[]
+    update?: WorkflowUpdateWithWhereUniqueWithoutUserInput | WorkflowUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: WorkflowUpdateManyWithWhereWithoutUserInput | WorkflowUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: WorkflowScalarWhereInput | WorkflowScalarWhereInput[]
+  }
+
+  export type WebhookConnectionUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<WebhookConnectionCreateWithoutUserInput, WebhookConnectionUncheckedCreateWithoutUserInput> | WebhookConnectionCreateWithoutUserInput[] | WebhookConnectionUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: WebhookConnectionCreateOrConnectWithoutUserInput | WebhookConnectionCreateOrConnectWithoutUserInput[]
+    upsert?: WebhookConnectionUpsertWithWhereUniqueWithoutUserInput | WebhookConnectionUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: WebhookConnectionCreateManyUserInputEnvelope
+    set?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
+    disconnect?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
+    delete?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
+    connect?: WebhookConnectionWhereUniqueInput | WebhookConnectionWhereUniqueInput[]
+    update?: WebhookConnectionUpdateWithWhereUniqueWithoutUserInput | WebhookConnectionUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: WebhookConnectionUpdateManyWithWhereWithoutUserInput | WebhookConnectionUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: WebhookConnectionScalarWhereInput | WebhookConnectionScalarWhereInput[]
+  }
+
+  export type UserCreateNestedOneWithoutWebhooksInput = {
+    create?: XOR<UserCreateWithoutWebhooksInput, UserUncheckedCreateWithoutWebhooksInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWebhooksInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserUpdateOneRequiredWithoutWebhooksNestedInput = {
+    create?: XOR<UserCreateWithoutWebhooksInput, UserUncheckedCreateWithoutWebhooksInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWebhooksInput
+    upsert?: UserUpsertWithoutWebhooksInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutWebhooksInput, UserUpdateWithoutWebhooksInput>, UserUncheckedUpdateWithoutWebhooksInput>
+  }
+
+  export type UserCreateNestedOneWithoutWorkflowsInput = {
+    create?: XOR<UserCreateWithoutWorkflowsInput, UserUncheckedCreateWithoutWorkflowsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWorkflowsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
+  export type UserUpdateOneRequiredWithoutWorkflowsNestedInput = {
+    create?: XOR<UserCreateWithoutWorkflowsInput, UserUncheckedCreateWithoutWorkflowsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWorkflowsInput
+    upsert?: UserUpsertWithoutWorkflowsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutWorkflowsInput, UserUpdateWithoutWorkflowsInput>, UserUncheckedUpdateWithoutWorkflowsInput>
+  }
+
   export type UserCreateNestedOneWithoutPreferencesInput = {
     create?: XOR<UserCreateWithoutPreferencesInput, UserUncheckedCreateWithoutPreferencesInput>
     connectOrCreate?: UserCreateOrConnectWithoutPreferencesInput
@@ -12506,10 +18495,6 @@ export namespace Prisma {
     create?: XOR<EmailSummaryCreateWithoutEmailInput, EmailSummaryUncheckedCreateWithoutEmailInput>
     connectOrCreate?: EmailSummaryCreateOrConnectWithoutEmailInput
     connect?: EmailSummaryWhereUniqueInput
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type UserUpdateOneRequiredWithoutEmailsNestedInput = {
@@ -12715,6 +18700,19 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[] | ListIntFieldRefInput<$PrismaModel>
@@ -12742,19 +18740,6 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
-  }
-
   export type UserCreateWithoutAccountsInput = {
     id?: string
     name?: string | null
@@ -12764,6 +18749,8 @@ export namespace Prisma {
     sessions?: SessionCreateNestedManyWithoutUserInput
     emails?: EmailCreateNestedManyWithoutUserInput
     preferences?: UserPreferenceCreateNestedOneWithoutUserInput
+    workflows?: WorkflowCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -12775,6 +18762,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     emails?: EmailUncheckedCreateNestedManyWithoutUserInput
     preferences?: UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+    workflows?: WorkflowUncheckedCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -12802,6 +18791,8 @@ export namespace Prisma {
     sessions?: SessionUpdateManyWithoutUserNestedInput
     emails?: EmailUpdateManyWithoutUserNestedInput
     preferences?: UserPreferenceUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -12813,6 +18804,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     emails?: EmailUncheckedUpdateManyWithoutUserNestedInput
     preferences?: UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUncheckedUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutSessionsInput = {
@@ -12824,6 +18817,8 @@ export namespace Prisma {
     accounts?: AccountCreateNestedManyWithoutUserInput
     emails?: EmailCreateNestedManyWithoutUserInput
     preferences?: UserPreferenceCreateNestedOneWithoutUserInput
+    workflows?: WorkflowCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -12835,6 +18830,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     emails?: EmailUncheckedCreateNestedManyWithoutUserInput
     preferences?: UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+    workflows?: WorkflowUncheckedCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -12862,6 +18859,8 @@ export namespace Prisma {
     accounts?: AccountUpdateManyWithoutUserNestedInput
     emails?: EmailUpdateManyWithoutUserNestedInput
     preferences?: UserPreferenceUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -12873,6 +18872,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     emails?: EmailUncheckedUpdateManyWithoutUserNestedInput
     preferences?: UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUncheckedUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type AccountCreateWithoutUserInput = {
@@ -13004,6 +19005,90 @@ export namespace Prisma {
     create: XOR<UserPreferenceCreateWithoutUserInput, UserPreferenceUncheckedCreateWithoutUserInput>
   }
 
+  export type WorkflowCreateWithoutUserInput = {
+    id?: string
+    name: string
+    description?: string | null
+    enabled?: boolean
+    schedule: string
+    timezone?: string
+    actions: string
+    lastRunAt?: Date | string | null
+    nextRunAt?: Date | string | null
+    lastRunStatus?: string | null
+    lastRunLog?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WorkflowUncheckedCreateWithoutUserInput = {
+    id?: string
+    name: string
+    description?: string | null
+    enabled?: boolean
+    schedule: string
+    timezone?: string
+    actions: string
+    lastRunAt?: Date | string | null
+    nextRunAt?: Date | string | null
+    lastRunStatus?: string | null
+    lastRunLog?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WorkflowCreateOrConnectWithoutUserInput = {
+    where: WorkflowWhereUniqueInput
+    create: XOR<WorkflowCreateWithoutUserInput, WorkflowUncheckedCreateWithoutUserInput>
+  }
+
+  export type WorkflowCreateManyUserInputEnvelope = {
+    data: WorkflowCreateManyUserInput | WorkflowCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type WebhookConnectionCreateWithoutUserInput = {
+    id?: string
+    name: string
+    description?: string | null
+    url: string
+    method?: string
+    headers?: string | null
+    emoji?: string
+    secret?: string | null
+    lastTestedAt?: Date | string | null
+    lastTestStatus?: string | null
+    lastTestCode?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WebhookConnectionUncheckedCreateWithoutUserInput = {
+    id?: string
+    name: string
+    description?: string | null
+    url: string
+    method?: string
+    headers?: string | null
+    emoji?: string
+    secret?: string | null
+    lastTestedAt?: Date | string | null
+    lastTestStatus?: string | null
+    lastTestCode?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WebhookConnectionCreateOrConnectWithoutUserInput = {
+    where: WebhookConnectionWhereUniqueInput
+    create: XOR<WebhookConnectionCreateWithoutUserInput, WebhookConnectionUncheckedCreateWithoutUserInput>
+  }
+
+  export type WebhookConnectionCreateManyUserInputEnvelope = {
+    data: WebhookConnectionCreateManyUserInput | WebhookConnectionCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type AccountUpsertWithWhereUniqueWithoutUserInput = {
     where: AccountWhereUniqueInput
     update: XOR<AccountUpdateWithoutUserInput, AccountUncheckedUpdateWithoutUserInput>
@@ -13129,6 +19214,214 @@ export namespace Prisma {
     chatModel?: StringFieldUpdateOperationsInput | string
   }
 
+  export type WorkflowUpsertWithWhereUniqueWithoutUserInput = {
+    where: WorkflowWhereUniqueInput
+    update: XOR<WorkflowUpdateWithoutUserInput, WorkflowUncheckedUpdateWithoutUserInput>
+    create: XOR<WorkflowCreateWithoutUserInput, WorkflowUncheckedCreateWithoutUserInput>
+  }
+
+  export type WorkflowUpdateWithWhereUniqueWithoutUserInput = {
+    where: WorkflowWhereUniqueInput
+    data: XOR<WorkflowUpdateWithoutUserInput, WorkflowUncheckedUpdateWithoutUserInput>
+  }
+
+  export type WorkflowUpdateManyWithWhereWithoutUserInput = {
+    where: WorkflowScalarWhereInput
+    data: XOR<WorkflowUpdateManyMutationInput, WorkflowUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type WorkflowScalarWhereInput = {
+    AND?: WorkflowScalarWhereInput | WorkflowScalarWhereInput[]
+    OR?: WorkflowScalarWhereInput[]
+    NOT?: WorkflowScalarWhereInput | WorkflowScalarWhereInput[]
+    id?: StringFilter<"Workflow"> | string
+    userId?: StringFilter<"Workflow"> | string
+    name?: StringFilter<"Workflow"> | string
+    description?: StringNullableFilter<"Workflow"> | string | null
+    enabled?: BoolFilter<"Workflow"> | boolean
+    schedule?: StringFilter<"Workflow"> | string
+    timezone?: StringFilter<"Workflow"> | string
+    actions?: StringFilter<"Workflow"> | string
+    lastRunAt?: DateTimeNullableFilter<"Workflow"> | Date | string | null
+    nextRunAt?: DateTimeNullableFilter<"Workflow"> | Date | string | null
+    lastRunStatus?: StringNullableFilter<"Workflow"> | string | null
+    lastRunLog?: StringNullableFilter<"Workflow"> | string | null
+    createdAt?: DateTimeFilter<"Workflow"> | Date | string
+    updatedAt?: DateTimeFilter<"Workflow"> | Date | string
+  }
+
+  export type WebhookConnectionUpsertWithWhereUniqueWithoutUserInput = {
+    where: WebhookConnectionWhereUniqueInput
+    update: XOR<WebhookConnectionUpdateWithoutUserInput, WebhookConnectionUncheckedUpdateWithoutUserInput>
+    create: XOR<WebhookConnectionCreateWithoutUserInput, WebhookConnectionUncheckedCreateWithoutUserInput>
+  }
+
+  export type WebhookConnectionUpdateWithWhereUniqueWithoutUserInput = {
+    where: WebhookConnectionWhereUniqueInput
+    data: XOR<WebhookConnectionUpdateWithoutUserInput, WebhookConnectionUncheckedUpdateWithoutUserInput>
+  }
+
+  export type WebhookConnectionUpdateManyWithWhereWithoutUserInput = {
+    where: WebhookConnectionScalarWhereInput
+    data: XOR<WebhookConnectionUpdateManyMutationInput, WebhookConnectionUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type WebhookConnectionScalarWhereInput = {
+    AND?: WebhookConnectionScalarWhereInput | WebhookConnectionScalarWhereInput[]
+    OR?: WebhookConnectionScalarWhereInput[]
+    NOT?: WebhookConnectionScalarWhereInput | WebhookConnectionScalarWhereInput[]
+    id?: StringFilter<"WebhookConnection"> | string
+    userId?: StringFilter<"WebhookConnection"> | string
+    name?: StringFilter<"WebhookConnection"> | string
+    description?: StringNullableFilter<"WebhookConnection"> | string | null
+    url?: StringFilter<"WebhookConnection"> | string
+    method?: StringFilter<"WebhookConnection"> | string
+    headers?: StringNullableFilter<"WebhookConnection"> | string | null
+    emoji?: StringFilter<"WebhookConnection"> | string
+    secret?: StringNullableFilter<"WebhookConnection"> | string | null
+    lastTestedAt?: DateTimeNullableFilter<"WebhookConnection"> | Date | string | null
+    lastTestStatus?: StringNullableFilter<"WebhookConnection"> | string | null
+    lastTestCode?: IntNullableFilter<"WebhookConnection"> | number | null
+    createdAt?: DateTimeFilter<"WebhookConnection"> | Date | string
+    updatedAt?: DateTimeFilter<"WebhookConnection"> | Date | string
+  }
+
+  export type UserCreateWithoutWebhooksInput = {
+    id?: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    image?: string | null
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    emails?: EmailCreateNestedManyWithoutUserInput
+    preferences?: UserPreferenceCreateNestedOneWithoutUserInput
+    workflows?: WorkflowCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutWebhooksInput = {
+    id?: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    image?: string | null
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    emails?: EmailUncheckedCreateNestedManyWithoutUserInput
+    preferences?: UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+    workflows?: WorkflowUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutWebhooksInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutWebhooksInput, UserUncheckedCreateWithoutWebhooksInput>
+  }
+
+  export type UserUpsertWithoutWebhooksInput = {
+    update: XOR<UserUpdateWithoutWebhooksInput, UserUncheckedUpdateWithoutWebhooksInput>
+    create: XOR<UserCreateWithoutWebhooksInput, UserUncheckedCreateWithoutWebhooksInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutWebhooksInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutWebhooksInput, UserUncheckedUpdateWithoutWebhooksInput>
+  }
+
+  export type UserUpdateWithoutWebhooksInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    emails?: EmailUpdateManyWithoutUserNestedInput
+    preferences?: UserPreferenceUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutWebhooksInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    emails?: EmailUncheckedUpdateManyWithoutUserNestedInput
+    preferences?: UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutWorkflowsInput = {
+    id?: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    image?: string | null
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    emails?: EmailCreateNestedManyWithoutUserInput
+    preferences?: UserPreferenceCreateNestedOneWithoutUserInput
+    webhooks?: WebhookConnectionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutWorkflowsInput = {
+    id?: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    image?: string | null
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    emails?: EmailUncheckedCreateNestedManyWithoutUserInput
+    preferences?: UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+    webhooks?: WebhookConnectionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutWorkflowsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutWorkflowsInput, UserUncheckedCreateWithoutWorkflowsInput>
+  }
+
+  export type UserUpsertWithoutWorkflowsInput = {
+    update: XOR<UserUpdateWithoutWorkflowsInput, UserUncheckedUpdateWithoutWorkflowsInput>
+    create: XOR<UserCreateWithoutWorkflowsInput, UserUncheckedCreateWithoutWorkflowsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutWorkflowsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutWorkflowsInput, UserUncheckedUpdateWithoutWorkflowsInput>
+  }
+
+  export type UserUpdateWithoutWorkflowsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    emails?: EmailUpdateManyWithoutUserNestedInput
+    preferences?: UserPreferenceUpdateOneWithoutUserNestedInput
+    webhooks?: WebhookConnectionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutWorkflowsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    emails?: EmailUncheckedUpdateManyWithoutUserNestedInput
+    preferences?: UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+    webhooks?: WebhookConnectionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
   export type UserCreateWithoutPreferencesInput = {
     id?: string
     name?: string | null
@@ -13138,6 +19431,8 @@ export namespace Prisma {
     accounts?: AccountCreateNestedManyWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
     emails?: EmailCreateNestedManyWithoutUserInput
+    workflows?: WorkflowCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPreferencesInput = {
@@ -13149,6 +19444,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     emails?: EmailUncheckedCreateNestedManyWithoutUserInput
+    workflows?: WorkflowUncheckedCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPreferencesInput = {
@@ -13176,6 +19473,8 @@ export namespace Prisma {
     accounts?: AccountUpdateManyWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
     emails?: EmailUpdateManyWithoutUserNestedInput
+    workflows?: WorkflowUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPreferencesInput = {
@@ -13187,6 +19486,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     emails?: EmailUncheckedUpdateManyWithoutUserNestedInput
+    workflows?: WorkflowUncheckedUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutEmailsInput = {
@@ -13198,6 +19499,8 @@ export namespace Prisma {
     accounts?: AccountCreateNestedManyWithoutUserInput
     sessions?: SessionCreateNestedManyWithoutUserInput
     preferences?: UserPreferenceCreateNestedOneWithoutUserInput
+    workflows?: WorkflowCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutEmailsInput = {
@@ -13209,6 +19512,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     preferences?: UserPreferenceUncheckedCreateNestedOneWithoutUserInput
+    workflows?: WorkflowUncheckedCreateNestedManyWithoutUserInput
+    webhooks?: WebhookConnectionUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutEmailsInput = {
@@ -13265,6 +19570,8 @@ export namespace Prisma {
     accounts?: AccountUpdateManyWithoutUserNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
     preferences?: UserPreferenceUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutEmailsInput = {
@@ -13276,6 +19583,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     preferences?: UserPreferenceUncheckedUpdateOneWithoutUserNestedInput
+    workflows?: WorkflowUncheckedUpdateManyWithoutUserNestedInput
+    webhooks?: WebhookConnectionUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type EmailSummaryUpsertWithoutEmailInput = {
@@ -13443,6 +19752,38 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type WorkflowCreateManyUserInput = {
+    id?: string
+    name: string
+    description?: string | null
+    enabled?: boolean
+    schedule: string
+    timezone?: string
+    actions: string
+    lastRunAt?: Date | string | null
+    nextRunAt?: Date | string | null
+    lastRunStatus?: string | null
+    lastRunLog?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WebhookConnectionCreateManyUserInput = {
+    id?: string
+    name: string
+    description?: string | null
+    url: string
+    method?: string
+    headers?: string | null
+    emoji?: string
+    secret?: string | null
+    lastTestedAt?: Date | string | null
+    lastTestStatus?: string | null
+    lastTestCode?: number | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
   export type AccountUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     type?: StringFieldUpdateOperationsInput | string
@@ -13555,6 +19896,102 @@ export namespace Prisma {
     labels?: StringFieldUpdateOperationsInput | string
     isDuplicate?: BoolFieldUpdateOperationsInput | boolean
     dedupHash?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkflowUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    schedule?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    actions?: StringFieldUpdateOperationsInput | string
+    lastRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastRunStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastRunLog?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkflowUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    schedule?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    actions?: StringFieldUpdateOperationsInput | string
+    lastRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastRunStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastRunLog?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkflowUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    enabled?: BoolFieldUpdateOperationsInput | boolean
+    schedule?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
+    actions?: StringFieldUpdateOperationsInput | string
+    lastRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    nextRunAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastRunStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastRunLog?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WebhookConnectionUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    url?: StringFieldUpdateOperationsInput | string
+    method?: StringFieldUpdateOperationsInput | string
+    headers?: NullableStringFieldUpdateOperationsInput | string | null
+    emoji?: StringFieldUpdateOperationsInput | string
+    secret?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastTestStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestCode?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WebhookConnectionUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    url?: StringFieldUpdateOperationsInput | string
+    method?: StringFieldUpdateOperationsInput | string
+    headers?: NullableStringFieldUpdateOperationsInput | string | null
+    emoji?: StringFieldUpdateOperationsInput | string
+    secret?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastTestStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestCode?: NullableIntFieldUpdateOperationsInput | number | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WebhookConnectionUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    url?: StringFieldUpdateOperationsInput | string
+    method?: StringFieldUpdateOperationsInput | string
+    headers?: NullableStringFieldUpdateOperationsInput | string | null
+    emoji?: StringFieldUpdateOperationsInput | string
+    secret?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastTestStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    lastTestCode?: NullableIntFieldUpdateOperationsInput | number | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

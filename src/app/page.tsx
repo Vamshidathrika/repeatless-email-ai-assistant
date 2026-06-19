@@ -5,7 +5,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { 
   Inbox, Sparkles, RefreshCw, LogOut, Send, Search, CheckSquare, 
   MessageSquare, User, AlertCircle, ChevronRight, Mail, Reply, ArrowRight, UserCheck, Star, Trash2,
-  BarChart2, Calendar, ShieldCheck, MailOpen, X
+  BarChart2, Calendar, ShieldCheck, MailOpen, X, Sun, Moon, PanelLeftClose, PanelLeft, Folder, Tag, Users,
+  Briefcase, Zap, Link2, Play, Pause, Trash, Plus, Clock
 } from "lucide-react";
 
 interface EmailSummary {
@@ -34,7 +35,12 @@ interface Email {
   summary?: EmailSummary;
 }
 
-const categories = ["All", "Important", "Promotions", "Finance", "Social", "Updates"];
+const categories = ["All", "Newsletters", "Job / Recruitment", "Finance", "Notifications", "Personal", "Work / Professional"];
+
+const getCategoryClass = (cat: string) => {
+  if (!cat) return "";
+  return cat.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+};
 
 function renderMessageContent(content: string) {
   if (!content) return null;
@@ -106,16 +112,42 @@ function renderMessageContent(content: string) {
 export default function Home() {
   const { data: session, status } = useSession();
   
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") as "dark" | "light" | null;
+    const initialTheme = savedTheme || "dark";
+    setTheme(initialTheme);
+    if (initialTheme === "light") {
+      document.documentElement.classList.add("light-theme");
+    } else {
+      document.documentElement.classList.remove("light-theme");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    if (newTheme === "light") {
+      document.documentElement.classList.add("light-theme");
+    } else {
+      document.documentElement.classList.remove("light-theme");
+    }
+  };
+  
   const [emails, setEmails] = useState<Email[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
+  const [statusFilter, setStatusFilter] = useState<"all" | "unread" | "starred" | "action">("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoadingEmails, setIsLoadingEmails] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncMessage, setSyncMessage] = useState<string>("");
   
   // Dashboard tab state
-  const [activeTab, setActiveTab] = useState<"inbox" | "matrix" | "brief" | "unsubscribe">("inbox");
+  const [activeTab, setActiveTab] = useState<"inbox" | "matrix" | "brief" | "unsubscribe" | "connections">("inbox");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
 
   // Local interaction states
   const [starredEmails, setStarredEmails] = useState<Record<string, boolean>>({});
@@ -127,6 +159,7 @@ export default function Home() {
   const [cleanStrategy, setCleanStrategy] = useState<string>("both");
   const [isCleaning, setIsCleaning] = useState<boolean>(false);
   const [cleanResult, setCleanResult] = useState<{ trashedCount: number; freedBytesEstimate: number } | null>(null);
+  const [selectedSenders, setSelectedSenders] = useState<Record<string, boolean>>({});
 
   // Tab control in detail pane
   const [detailTab, setDetailTab] = useState<"ai" | "original">("ai");
@@ -161,6 +194,8 @@ export default function Home() {
   ]);
   const [chatInput, setChatInput] = useState<string>("");
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
+  const [chatRemainingQueries, setChatRemainingQueries] = useState<number | null>(null);
+  const [lastMsgCached, setLastMsgCached] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Reply Draft State
@@ -174,7 +209,72 @@ export default function Home() {
   const [showReplyForNotification, setShowReplyForNotification] = useState<boolean>(false);
   const [isResummarizing, setIsResummarizing] = useState<boolean>(false);
   const [attemptedSummaries, setAttemptedSummaries] = useState<Record<string, boolean>>({});
+
+  // Integrations States
+  const [activeIntegrationTab, setActiveIntegrationTab] = useState<"meet" | "jira" | null>(null);
+  const [meetTitle, setMeetTitle] = useState<string>("");
+  const [meetDateTime, setMeetDateTime] = useState<string>("");
+  const [meetDuration, setMeetDuration] = useState<number>(30);
+  const [isBookingMeet, setIsBookingMeet] = useState<boolean>(false);
+  const [meetResult, setMeetResult] = useState<any>(null);
+  const [meetError, setMeetError] = useState<string>("");
   
+  const [jiraConnected, setJiraConnected] = useState<boolean>(false);
+  const [jiraSandbox, setJiraSandbox] = useState<boolean>(true);
+  const [jiraSiteUrl, setJiraSiteUrl] = useState<string>("");
+
+  // Slack Integration States
+  const [slackConnected, setSlackConnected] = useState<boolean>(false);
+  const [slackSandbox, setSlackSandbox] = useState<boolean>(true);
+  const [slackWorkspace, setSlackWorkspace] = useState<string>("");
+  const [slackBotName, setSlackBotName] = useState<string>("");
+  const [jiraLoadingStatus, setJiraLoadingStatus] = useState<boolean>(false);
+  const [jiraProjects, setJiraProjects] = useState<any[]>([]);
+  const [jiraIssueTypes, setJiraIssueTypes] = useState<any[]>([]);
+  const [selectedJiraProject, setSelectedJiraProject] = useState<string>("");
+  const [selectedJiraIssueType, setSelectedJiraIssueType] = useState<string>("");
+  const [jiraSummary, setJiraSummary] = useState<string>("");
+  const [jiraDescription, setJiraDescription] = useState<string>("");
+  const [isCreatingJiraIssue, setIsCreatingJiraIssue] = useState<boolean>(false);
+  const [jiraResult, setJiraResult] = useState<any>(null);
+  const [jiraError, setJiraError] = useState<string>("");
+  
+  // Connections tab — Workflow states
+  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [isLoadingWorkflows, setIsLoadingWorkflows] = useState<boolean>(false);
+  const [showNewWorkflow, setShowNewWorkflow] = useState<boolean>(false);
+  const [wfName, setWfName] = useState<string>("");
+  const [wfDescription, setWfDescription] = useState<string>("");
+  const [wfSchedule, setWfSchedule] = useState<string>("0 8 * * *");
+  const [wfTimezone, setWfTimezone] = useState<string>("UTC");
+  const [wfActionSync, setWfActionSync] = useState<boolean>(true);
+  const [wfActionSummarize, setWfActionSummarize] = useState<boolean>(true);
+  const [wfActionJira, setWfActionJira] = useState<boolean>(false);
+  const [wfJiraProjectId, setWfJiraProjectId] = useState<string>("");
+  const [wfSlackChannelId, setWfSlackChannelId] = useState<string>("");
+  const [wfSlackChannelName, setWfSlackChannelName] = useState<string>("");
+  const [wfActionWebhook, setWfActionWebhook] = useState<boolean>(false);
+  const [wfWebhookId, setWfWebhookId] = useState<string>("");
+  const [wfWebhookName, setWfWebhookName] = useState<string>("");
+  const [isSavingWorkflow, setIsSavingWorkflow] = useState<boolean>(false);
+  const [workflowRunStatus, setWorkflowRunStatus] = useState<Record<string, string>>({});
+  const [slackChannels, setSlackChannels] = useState<any[]>([]);
+
+  // Webhook Connection States
+  const [webhooks, setWebhooks] = useState<any[]>([]);
+  const [isLoadingWebhooks, setIsLoadingWebhooks] = useState<boolean>(false);
+  const [showWebhookForm, setShowWebhookForm] = useState<boolean>(false);
+  const [whName, setWhName] = useState<string>("");
+  const [whDescription, setWhDescription] = useState<string>("");
+  const [whUrl, setWhUrl] = useState<string>("");
+  const [whMethod, setWhMethod] = useState<string>("POST");
+  const [whEmoji, setWhEmoji] = useState<string>("🔗");
+  const [whSecret, setWhSecret] = useState<string>("");
+  const [whHeaders, setWhHeaders] = useState<{ key: string; value: string }[]>([{ key: "", value: "" }]);
+  const [isSavingWebhook, setIsSavingWebhook] = useState<boolean>(false);
+  const [webhookTestStatus, setWebhookTestStatus] = useState<Record<string, { status: string; code?: number; msg?: string }>>({});
+
+
   // Floating Chat Toggle States
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [showPaTooltip, setShowPaTooltip] = useState<boolean>(false);
@@ -246,6 +346,64 @@ export default function Home() {
       };
     }).sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [visibleEmails]);
+
+  // Filter threads by statusFilter (All, Unread, Starred, Action Items)
+  const filteredThreads = useMemo(() => {
+    return threads.filter((thread) => {
+      if (statusFilter === "unread") {
+        return thread.emails.some((e) => e.labels.toUpperCase().includes("UNREAD"));
+      }
+      if (statusFilter === "starred") {
+        return thread.emails.some((e) => starredEmails[e.id] || e.labels.toUpperCase().includes("STARRED"));
+      }
+      if (statusFilter === "action") {
+        return thread.emails.some((e) => {
+          if (!e.summary?.actionItems) return false;
+          try {
+            const actions = JSON.parse(e.summary.actionItems);
+            return Array.isArray(actions) && actions.length > 0;
+          } catch {
+            return false;
+          }
+        });
+      }
+      return true;
+    });
+  }, [threads, statusFilter, starredEmails]);
+
+  // Compute count of threads for each status filter (within the current categoryFilter context)
+  const statusCounts = useMemo(() => {
+    let unreadCount = 0;
+    let starredCount = 0;
+    let actionCount = 0;
+
+    threads.forEach((thread) => {
+      if (thread.emails.some((e) => e.labels.toUpperCase().includes("UNREAD"))) {
+        unreadCount++;
+      }
+      if (thread.emails.some((e) => starredEmails[e.id] || e.labels.toUpperCase().includes("STARRED"))) {
+        starredCount++;
+      }
+      if (thread.emails.some((e) => {
+        if (!e.summary?.actionItems) return false;
+        try {
+          const actions = JSON.parse(e.summary.actionItems);
+          return Array.isArray(actions) && actions.length > 0;
+        } catch {
+          return false;
+        }
+      })) {
+        actionCount++;
+      }
+    });
+
+    return {
+      all: threads.length,
+      unread: unreadCount,
+      starred: starredCount,
+      action: actionCount,
+    };
+  }, [threads, starredEmails]);
 
   // Expanded emails in accordion view
   const [expandedEmails, setExpandedEmails] = useState<Record<string, boolean>>({});
@@ -373,6 +531,7 @@ export default function Home() {
     if (session) {
       fetchEmails();
     }
+    setSelectedSenders({});
   }, [activeTab]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -403,18 +562,26 @@ export default function Home() {
   const handleSendChat = async (userMsg: string) => {
     if (!userMsg.trim()) return;
 
+    const history = chatMessages.slice(-8); // Send last 4 exchanges as context
     setChatMessages((prev) => [...prev, { role: "user", content: userMsg }]);
     setIsChatLoading(true);
+    setLastMsgCached(false);
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userMsg }),
+        body: JSON.stringify({ query: userMsg, history }),
       });
       const data = await res.json();
       if (data.success) {
-        setChatMessages((prev) => [...prev, { role: "assistant", content: data.answer }]);
+        const isCached = !!data.cached;
+        const answer = isCached
+          ? `${data.answer}\n\n*\u26a1 Instant answer (from cache)*`
+          : data.answer;
+        setChatMessages((prev) => [...prev, { role: "assistant", content: answer }]);
+        setLastMsgCached(isCached);
+        if (typeof data.remaining === "number") setChatRemainingQueries(data.remaining);
       } else {
         setChatMessages((prev) => [...prev, { role: "assistant", content: `Error: ${data.error}` }]);
       }
@@ -422,6 +589,463 @@ export default function Home() {
       setChatMessages((prev) => [...prev, { role: "assistant", content: "Failed to communicate with the assistant." }]);
     } finally {
       setIsChatLoading(false);
+    }
+  };
+
+  // Prefill Meeting and Jira ticket details when selectedEmail changes
+  useEffect(() => {
+    if (selectedEmail) {
+      setMeetTitle(`Follow-up: ${selectedEmail.subject.replace(/^(Re:|Fwd:)\s*/gi, "")}`);
+      
+      // Default datetime: tomorrow at 10:00 AM local time
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(10, 0, 0, 0);
+      
+      // Format as YYYY-MM-DDTHH:MM for datetime-local input
+      const pad = (num: number) => String(num).padStart(2, '0');
+      const formatted = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T${pad(tomorrow.getHours())}:${pad(tomorrow.getMinutes())}`;
+      setMeetDateTime(formatted);
+
+      // Reset meeting & Jira results
+      setMeetResult(null);
+      setMeetError("");
+      setJiraResult(null);
+      setJiraError("");
+      setActiveIntegrationTab(null);
+
+      // Prefill Jira
+      setJiraSummary(`Email: ${selectedEmail.subject.replace(/^(Re:|Fwd:)\s*/gi, "")}`);
+      setJiraDescription(`Issue logged from Repeatless client email thread.\nSender: ${selectedEmail.sender}\nSubject: ${selectedEmail.subject}\nSnippet: ${selectedEmail.bodySnippet}`);
+    }
+  }, [selectedEmail]);
+
+  // Listen for Jira OAuth connection message from popup
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data === "jira-connected") {
+        setJiraConnected(true);
+        fetchJiraProjects();
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  // Fetch Jira connection status
+  const fetchJiraStatus = async () => {
+    try {
+      const res = await fetch("/api/jira/status");
+      const data = await res.json();
+      if (data) {
+        setJiraConnected(data.connected);
+        setJiraSandbox(data.sandbox);
+        if (data.connected) {
+          fetchJiraProjects();
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching Jira status:", err);
+    }
+  };
+
+  // Fetch Jira projects
+  const fetchJiraProjects = async () => {
+    setJiraLoadingStatus(true);
+    setJiraError("");
+    try {
+      const res = await fetch("/api/jira/projects");
+      const data = await res.json();
+      if (data && data.success) {
+        setJiraProjects(data.projects || []);
+        setJiraIssueTypes(data.issueTypes || []);
+        setJiraSiteUrl(data.siteUrl || "");
+        if (data.projects && data.projects.length > 0) {
+          setSelectedJiraProject(data.projects[0].id);
+        }
+        if (data.issueTypes && data.issueTypes.length > 0) {
+          setSelectedJiraIssueType(data.issueTypes[0].id);
+        }
+      } else {
+        setJiraError(data.error || "Failed to load Jira projects");
+      }
+    } catch (err) {
+      setJiraError("Failed to fetch projects");
+    } finally {
+      setJiraLoadingStatus(false);
+    }
+  };
+
+  // Trigger check on session load
+  useEffect(() => {
+    if (session) {
+      fetchJiraStatus();
+      fetchWorkflows();
+      fetchSlackStatus();
+      fetchWebhooks();
+    }
+  }, [session]);
+
+  // ── Workflow Helpers ──────────────────────────────────────────────────
+  const fetchWorkflows = async () => {
+    setIsLoadingWorkflows(true);
+    try {
+      const res = await fetch("/api/workflows");
+      const data = await res.json();
+      if (data.workflows) setWorkflows(data.workflows);
+    } catch (e) {
+      console.error("Failed to load workflows", e);
+    } finally {
+      setIsLoadingWorkflows(false);
+    }
+  };
+
+  const fetchSlackStatus = async () => {
+    try {
+      const res = await fetch("/api/slack/status");
+      const data = await res.json();
+      setSlackConnected(data.connected);
+      setSlackSandbox(data.sandbox ?? true);
+      setSlackWorkspace(data.workspace || "");
+      setSlackBotName(data.botName || "");
+    } catch (e) {
+      console.error("Failed to fetch Slack status", e);
+    }
+  };
+
+  const fetchSlackChannels = async () => {
+    try {
+      const res = await fetch("/api/slack/channels");
+      const data = await res.json();
+      if (data.channels) {
+        setSlackChannels(data.channels);
+        if (data.channels.length > 0 && !wfSlackChannelId) {
+          setWfSlackChannelId(data.channels[0].id);
+          setWfSlackChannelName(data.channels[0].name);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load Slack channels", e);
+    }
+  };
+
+  const handleSlackConnect = () => {
+    const popup = window.open("/api/slack/connect", "SlackConnect", "width=520,height=640,scrollbars=yes");
+    const handleMsg = (event: MessageEvent) => {
+      if (event.data?.type === "slack_connected") {
+        setSlackConnected(true);
+        setSlackSandbox(event.data.data?.sandbox ?? true);
+        setSlackWorkspace(event.data.data?.workspace || "Slack Workspace");
+        setSlackBotName(event.data.data?.botName || "Repeatless Bot");
+        popup?.close();
+        window.removeEventListener("message", handleMsg);
+      }
+    };
+    window.addEventListener("message", handleMsg);
+  };
+
+  const handleSlackDisconnect = async () => {
+    await fetch("/api/slack/disconnect", { method: "POST" });
+    setSlackConnected(false);
+    setSlackWorkspace("");
+    setSlackBotName("");
+    setSlackChannels([]);
+    setWfSlackChannelId("");
+    setWfSlackChannelName("");
+  };
+
+  // ── Webhook Helpers ──────────────────────────────────────────────────
+  const fetchWebhooks = async () => {
+    setIsLoadingWebhooks(true);
+    try {
+      const res = await fetch("/api/webhooks");
+      const data = await res.json();
+      if (data.webhooks) setWebhooks(data.webhooks);
+    } catch (e) { console.error("Failed to load webhooks", e); }
+    finally { setIsLoadingWebhooks(false); }
+  };
+
+  const resetWebhookForm = () => {
+    setWhName(""); setWhDescription(""); setWhUrl("");
+    setWhMethod("POST"); setWhEmoji("🔗"); setWhSecret("");
+    setWhHeaders([{ key: "", value: "" }]);
+    setShowWebhookForm(false);
+  };
+
+  const handleSaveWebhook = async () => {
+    if (!whName.trim() || !whUrl.trim()) return;
+    setIsSavingWebhook(true);
+    const headersObj: Record<string, string> = {};
+    whHeaders.forEach(h => { if (h.key.trim()) headersObj[h.key.trim()] = h.value.trim(); });
+    try {
+      const res = await fetch("/api/webhooks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: whName, description: whDescription, url: whUrl,
+          method: whMethod, emoji: whEmoji, secret: whSecret,
+          headers: JSON.stringify(headersObj),
+        }),
+      });
+      const data = await res.json();
+      if (data.webhook) { setWebhooks(prev => [data.webhook, ...prev]); resetWebhookForm(); }
+    } catch (e) { console.error("Failed to save webhook", e); }
+    finally { setIsSavingWebhook(false); }
+  };
+
+  const handleDeleteWebhook = async (id: string) => {
+    await fetch(`/api/webhooks/${id}`, { method: "DELETE" });
+    setWebhooks(prev => prev.filter(w => w.id !== id));
+  };
+
+  const handleTestWebhook = async (id: string) => {
+    setWebhookTestStatus(prev => ({ ...prev, [id]: { status: "testing" } }));
+    try {
+      const res = await fetch("/api/webhooks/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ webhookId: id }),
+      });
+      const data = await res.json();
+      setWebhookTestStatus(prev => ({ ...prev, [id]: { status: data.success ? "success" : "error", code: data.statusCode, msg: data.message } }));
+      // Update last test status in list
+      setWebhooks(prev => prev.map(w => w.id === id ? { ...w, lastTestStatus: data.success ? "success" : "error", lastTestCode: data.statusCode, lastTestedAt: new Date().toISOString() } : w));
+    } catch (e) {
+      setWebhookTestStatus(prev => ({ ...prev, [id]: { status: "error", msg: "Network error" } }));
+    }
+  };
+
+  const updateWhHeader = (i: number, field: "key" | "value", val: string) => {
+    setWhHeaders(prev => {
+      const updated = [...prev];
+      updated[i] = { ...updated[i], [field]: val };
+      if (i === prev.length - 1 && val) updated.push({ key: "", value: "" });
+      return updated;
+    });
+  };
+
+  const resetWorkflowForm = () => {
+    setWfName("");
+    setWfDescription("");
+    setWfSchedule("0 8 * * *");
+    setWfTimezone("UTC");
+    setWfActionSync(true);
+    setWfActionSummarize(true);
+    setWfActionJira(false);
+    setWfActionWebhook(false);
+    setWfSlackChannelId("");
+    setWfSlackChannelName("");
+    setWfWebhookId("");
+    setWfWebhookName("");
+    setShowNewWorkflow(false);
+  };
+
+  const handleSaveWorkflow = async () => {
+    if (!wfName.trim()) return;
+    setIsSavingWorkflow(true);
+    const actions: any[] = [];
+    if (wfActionSync) actions.push({ type: "sync_emails" });
+    if (wfActionSummarize) actions.push({ type: "summarize_emails", hoursBack: 24 });
+    if (wfActionJira && wfSlackChannelId) actions.push({
+      type: "send_to_slack",
+      channelId: wfSlackChannelId,
+      channelName: wfSlackChannelName,
+    });
+    if (wfActionWebhook && wfWebhookId) actions.push({
+      type: "send_to_webhook",
+      webhookId: wfWebhookId,
+      webhookName: wfWebhookName,
+    });
+
+    try {
+      const res = await fetch("/api/workflows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: wfName,
+          description: wfDescription,
+          schedule: wfSchedule,
+          timezone: wfTimezone,
+          actions: JSON.stringify(actions),
+        }),
+      });
+      const data = await res.json();
+      if (data.workflow) {
+        setWorkflows((prev) => [data.workflow, ...prev]);
+        resetWorkflowForm();
+      }
+    } catch (e) {
+      console.error("Failed to save workflow", e);
+    } finally {
+      setIsSavingWorkflow(false);
+    }
+  };
+
+  const handleToggleWorkflow = async (id: string, enabled: boolean) => {
+    try {
+      await fetch(`/api/workflows/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !enabled }),
+      });
+      setWorkflows((prev) => prev.map((w) => w.id === id ? { ...w, enabled: !enabled } : w));
+    } catch (e) {
+      console.error("Failed to toggle workflow", e);
+    }
+  };
+
+  const handleDeleteWorkflow = async (id: string) => {
+    try {
+      await fetch(`/api/workflows/${id}`, { method: "DELETE" });
+      setWorkflows((prev) => prev.filter((w) => w.id !== id));
+    } catch (e) {
+      console.error("Failed to delete workflow", e);
+    }
+  };
+
+  const handleRunWorkflow = async (id: string) => {
+    setWorkflowRunStatus((prev) => ({ ...prev, [id]: "running" }));
+    try {
+      const res = await fetch("/api/workflows/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workflowId: id }),
+      });
+      const data = await res.json();
+      setWorkflowRunStatus((prev) => ({ ...prev, [id]: data.success ? "success" : "error" }));
+      // Refresh list to get updated lastRunAt etc.
+      fetchWorkflows();
+    } catch (e) {
+      setWorkflowRunStatus((prev) => ({ ...prev, [id]: "error" }));
+    }
+  };
+
+
+
+  // Book a meeting via Google Calendar
+  const handleBookMeeting = async () => {
+    if (!selectedEmail || !meetDateTime) return;
+    setIsBookingMeet(true);
+    setMeetError("");
+    setMeetResult(null);
+
+    const getEmailAddress = (sender: string) => {
+      if (!sender) return "";
+      const match = sender.match(/<([^>]+)>/);
+      return match ? match[1] : sender;
+    };
+    const clientEmail = getEmailAddress(selectedEmail.sender);
+
+    try {
+      const res = await fetch("/api/calendar/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: meetTitle || `Meeting re: ${selectedEmail.subject}`,
+          description: `Scheduled via Repeatless AI Assistant`,
+          startTime: meetDateTime,
+          duration: Number(meetDuration),
+          clientEmail,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMeetResult(data);
+        
+        // Append Meet details to draftBody
+        const formattedDate = new Date(meetDateTime).toLocaleString(undefined, {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        const meetText = `\n\n---\n📅 Scheduled Meeting:\nTime: ${formattedDate} (${meetDuration} mins)\nGoogle Meet: ${data.hangoutLink}\nCalendar Event: ${data.htmlLink}\n`;
+        setDraftBody((prev) => prev + meetText);
+        setReplyStatus("Meeting scheduled! Meet link appended to your draft.");
+      } else {
+        if (res.status === 403 || data.error === "insufficient_scopes") {
+          setMeetError("insufficient_scopes");
+        } else {
+          setMeetError(data.details || data.error || "Failed to schedule meeting.");
+        }
+      }
+    } catch (error: any) {
+      setMeetError("Network error. Failed to schedule meeting.");
+    } finally {
+      setIsBookingMeet(false);
+    }
+  };
+
+  // Open Jira OAuth popup
+  const handleJiraConnect = () => {
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      "/api/jira/connect",
+      "Connect Jira",
+      `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes`
+    );
+    
+    if (popup) popup.focus();
+  };
+
+  // Disconnect Jira integration
+  const handleJiraDisconnect = async () => {
+    try {
+      const res = await fetch("/api/jira/disconnect", { method: "POST" });
+      if (res.ok) {
+        setJiraConnected(false);
+        setJiraProjects([]);
+        setJiraIssueTypes([]);
+        setJiraResult(null);
+        setJiraError("");
+      }
+    } catch (err) {
+      console.error("Failed to disconnect Jira:", err);
+    }
+  };
+
+  // Create Jira Issue
+  const handleCreateJiraIssue = async () => {
+    if (!selectedEmail) return;
+    setIsCreatingJiraIssue(true);
+    setJiraError("");
+    setJiraResult(null);
+
+    const project = jiraProjects.find(p => p.id === selectedJiraProject);
+    const projectKey = project ? project.key : "MOCK";
+
+    try {
+      const res = await fetch("/api/jira/issue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: selectedJiraProject,
+          projectKey,
+          issueTypeId: selectedJiraIssueType,
+          summary: jiraSummary,
+          description: jiraDescription,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setJiraResult(data);
+        setReplyStatus(`Jira ticket ${data.key} created!`);
+      } else {
+        setJiraError(data.details || data.error || "Failed to create Jira ticket.");
+      }
+    } catch (error) {
+      setJiraError("Network error. Failed to create Jira ticket.");
+    } finally {
+      setIsCreatingJiraIssue(false);
     }
   };
 
@@ -581,6 +1205,59 @@ export default function Home() {
       setIsCleaning(false);
       setTimeout(() => setSyncMessage(""), 5000);
     }
+  };
+
+  // Perform bulk sender trashing inside the Unsubscribe Hub
+  const handleTrashSelectedSenders = async () => {
+    const selectedList = Object.keys(selectedSenders).filter(email => selectedSenders[email]);
+    if (selectedList.length === 0) return;
+
+    setIsCleaning(true);
+    try {
+      const res = await fetch("/api/clean", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ senders: selectedList })
+      });
+      const data = await res.json();
+      if (data.success) {
+        updateCleanupStats(data.trashedCount, data.freedBytesEstimate);
+        setSyncMessage(`Successfully cleared ${data.trashedCount} messages from ${selectedList.length} senders`);
+        setSelectedSenders({});
+        fetchEmails();
+      } else {
+        setSyncMessage(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      setSyncMessage("Failed to connect to cleanup agent.");
+    } finally {
+      setIsCleaning(false);
+      setTimeout(() => setSyncMessage(""), 5000);
+    }
+  };
+
+  // Perform bulk unsubscribe redirection inside the Unsubscribe Hub
+  const handleUnsubscribeSelectedSenders = () => {
+    const selectedList = Object.keys(selectedSenders).filter(email => selectedSenders[email]);
+    if (selectedList.length === 0) return;
+
+    const urlsToOpen = selectedList
+      .map(email => newsletterSenders.find(s => s.email === email)?.unsubscribeUrl)
+      .filter((url): url is string => !!url);
+
+    if (urlsToOpen.length === 0) {
+      alert("None of the selected senders have unsubscribe URLs available.");
+      return;
+    }
+
+    urlsToOpen.forEach((url, index) => {
+      setTimeout(() => {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }, index * 200);
+    });
+
+    setSyncMessage(`Opening ${urlsToOpen.length} unsubscribe pages in new tabs... Please allow popups if blocked.`);
+    setTimeout(() => setSyncMessage(""), 5000);
   };
 
   // Helper to generate a unique gradient background for user initials (avoids boring gray)
@@ -1163,1600 +1840,209 @@ export default function Home() {
   }
 
   return (
-    <div className="dashboard-container slide-in">
-      <style jsx>{`
-        .dashboard-container {
-          display: flex;
-          flex-direction: column;
-          height: 100vh;
-          width: 100vw;
-          overflow: hidden;
-          background: var(--bg-primary);
-          padding: 0.75rem;
-          gap: 0.75rem;
-        }
-        
-        /* Top Navigation Bar Styling */
-        .top-navbar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 0.5rem 1.25rem;
-          height: 56px;
-          flex-shrink: 0;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-        
-        .navbar-left {
-          display: flex;
-          align-items: center;
-          gap: 2rem;
-        }
-        
-        .navbar-brand {
-          display: flex;
-          align-items: center;
-          gap: 0.65rem;
-          font-weight: 800;
-          font-size: 1.15rem;
-          color: var(--text-primary);
-          letter-spacing: -0.5px;
-          font-family: var(--font-display);
-        }
-        
-        .navbar-brand :global(svg) {
-          color: var(--accent-indigo);
-        }
-        
-        .navbar-tabs {
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-        }
-        
-        .navbar-tab-btn {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.45rem 0.85rem;
-          border-radius: var(--radius-pill);
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-          font-weight: 600;
-        }
-        
-        .navbar-tab-btn:hover {
-          background: var(--bg-surface-hover);
-          color: var(--text-primary);
-        }
-        
-        .navbar-tab-btn.active {
-          background: var(--border-accent);
-          color: #041e49;
-        }
-        
-        .navbar-tab-badge {
-          font-size: 0.68rem;
-          background: rgba(0, 0, 0, 0.06);
-          color: var(--text-muted);
-          padding: 0.1rem 0.35rem;
-          border-radius: var(--radius-xs);
-          font-weight: 700;
-          margin-left: 0.25rem;
-        }
-        
-        .navbar-tab-btn.active .navbar-tab-badge {
-          background: rgba(0, 0, 0, 0.09);
-          color: #041e49;
-        }
-        
-        .navbar-right {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-        
-        .btn-navbar-clean {
-          background: rgba(239, 68, 68, 0.06);
-          border: 1px solid rgba(239, 68, 68, 0.15);
-          color: var(--google-red);
-          font-size: 0.74rem;
-          font-weight: 600;
-          padding: 0.45rem 0.85rem;
-          border-radius: var(--radius-pill);
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-        .btn-navbar-clean:hover {
-          background: var(--google-red);
-          color: #ffffff;
-          border-color: var(--google-red);
-        }
-        
-        .btn-navbar-sync {
-          background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-sky) 100%);
-          border: none;
-          color: #ffffff;
-          font-size: 0.74rem;
-          font-weight: 600;
-          padding: 0.45rem 0.85rem;
-          border-radius: var(--radius-pill);
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
-        }
-        .btn-navbar-sync:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
-        }
-        .btn-navbar-sync:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        
-        .navbar-profile-widget {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding-left: 0.5rem;
-          border-left: 1px solid var(--border-color);
-        }
-        
-        .navbar-avatar {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background: var(--bg-surface-hover);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          border: 1px solid var(--border-color);
-        }
-        
-        .navbar-avatar img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        
-        .navbar-profile-info {
-          display: flex;
-          flex-direction: column;
-          max-width: 100px;
-        }
-        
-        .navbar-username {
-          font-size: 0.76rem;
-          font-weight: 600;
-          color: var(--text-primary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        
-        .navbar-logout-btn {
-          background: transparent;
-          border: none;
-          color: var(--text-muted);
-          cursor: pointer;
-          padding: 4px;
-          display: flex;
-          align-items: center;
-          border-radius: 4px;
-          transition: all var(--transition-fast);
-        }
-        
-        .navbar-logout-btn:hover {
-          color: var(--google-red);
-          background: rgba(239, 68, 68, 0.05);
-        }
+    <div className="app-layout slide-in">
 
-        /* Horizontal Category Filters */
-        .category-scroll-bar {
-          display: flex;
-          gap: 0.35rem;
-          padding: 0.5rem 1.25rem;
-          border-bottom: 1px solid var(--border-color);
-          overflow-x: auto;
-          background: var(--bg-primary);
-          scrollbar-width: none;
-        }
-        
-        .category-scroll-bar::-webkit-scrollbar {
-          display: none;
-        }
-        
-        .category-pill {
-          display: flex;
-          align-items: center;
-          gap: 0.3rem;
-          padding: 0.35rem 0.65rem;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-pill);
-          color: var(--text-secondary);
-          font-size: 0.72rem;
-          font-weight: 600;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: all var(--transition-fast);
-        }
-        
-        .category-pill:hover {
-          background: var(--bg-surface-hover);
-          color: var(--text-primary);
-        }
-        
-        .category-pill.active {
-          background: rgba(99, 102, 241, 0.08);
-          border-color: var(--accent-indigo);
-          color: var(--accent-indigo);
-        }
-        
-        .category-badge {
-          font-size: 0.64rem;
-          background: rgba(0, 0, 0, 0.04);
-          color: var(--text-muted);
-          padding: 0.05rem 0.3rem;
-          border-radius: 4px;
-          font-weight: 700;
-        }
-        
-        .category-pill.active .category-badge {
-          background: rgba(99, 102, 241, 0.15);
-          color: var(--accent-indigo);
-        }
-
-        /* Main panels layout */
-        .workspace {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-          min-width: 0;
-        }
-
-        /* Sync Notification Bar */
-        .sync-notification-bar {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          background: rgba(26, 115, 232, 0.08);
-          border: 1px solid rgba(26, 115, 232, 0.2);
-          border-radius: var(--radius-sm);
-          color: var(--accent-indigo);
-          font-size: 0.78rem;
-          padding: 0.6rem 1rem;
-          flex-shrink: 0;
-        }
-
-        /* Content pane styling */
-        .workspace-content {
-          flex: 1;
-          display: flex;
-          min-height: 0;
-          min-width: 0;
-          gap: 0.75rem;
-        }
-        
-        .emails-column {
-          width: 380px;
-          display: flex;
-          flex-direction: column;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          flex-shrink: 0;
-        }
-        
-        .search-container {
-          padding: 1rem;
-          border-bottom: 1px solid var(--border-color);
-        }
-        .search-form {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-        .search-input {
-          width: 100%;
-          padding: 0.5rem 0.75rem 0.5rem 2rem;
-          font-size: 0.8rem;
-        }
-        .search-icon-pos {
-          position: absolute;
-          left: 0.75rem;
-          opacity: 0.6;
-        }
-        
-        .emails-list {
-          flex: 1;
-          overflow-y: auto;
-          padding: 0.5rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-        }
-        
-        /* Email Card */
-        .email-card {
-          padding: 0.85rem;
-          border-radius: var(--radius-sm);
-          background: transparent;
-          border: 1px solid transparent;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-          display: flex;
-          flex-direction: column;
-          gap: 0.35rem;
-        }
-        .email-card:hover {
-          background: var(--bg-surface-hover);
-          border-color: var(--border-color);
-        }
-        .email-card.selected {
-          background: #eaf1fb;
-          border-color: var(--border-accent);
-        }
-        .card-row-1 {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .sender-info {
-          display: flex;
-          align-items: center;
-          gap: 0.45rem;
-          max-width: 70%;
-        }
-        .sender-avatar {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.58rem;
-          color: #ffffff;
-          font-weight: 700;
-          flex-shrink: 0;
-        }
-        .sender-name {
-          font-size: 0.82rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .email-date {
-          font-size: 0.7rem;
-          color: var(--text-muted);
-        }
-        .email-subject {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: var(--text-primary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .email-short-summary {
-          font-size: 0.74rem;
-          color: var(--text-secondary);
-          line-height: 1.4;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-        .card-row-1 {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 0.25rem;
-        }
-        .tag {
-          font-size: 0.65rem;
-          font-weight: 600;
-          padding: 0.1rem 0.4rem;
-          border-radius: 4px;
-        }
-        .tag-important { background: rgba(239, 68, 68, 0.1); color: var(--google-red); }
-        .tag-promotions { background: rgba(16, 185, 129, 0.1); color: var(--google-green); }
-        .tag-finance { background: rgba(245, 158, 11, 0.1); color: var(--google-yellow); }
-        .tag-social { background: rgba(59, 130, 246, 0.1); color: var(--google-blue); }
-        .tag-updates { background: rgba(99, 102, 241, 0.1); color: var(--google-indigo); }
-        .tag-duplicate { background: rgba(0, 0, 0, 0.05); color: var(--text-muted); border: 1px solid var(--border-color); }
-        
-        .card-actions-icons {
-          display: flex;
-          gap: 0.4rem;
-          opacity: 0;
-          transition: opacity var(--transition-fast);
-        }
-        .email-card:hover .card-actions-icons {
-          opacity: 1;
-        }
-        .action-icon-btn {
-          background: transparent;
-          color: var(--text-muted);
-          padding: 0.15rem;
-          border-radius: 4px;
-        }
-        .action-icon-btn:hover {
-          color: var(--accent-indigo);
-          background: rgba(0,0,0,0.06);
-        }
-        .action-icon-btn.starred {
-          color: var(--google-yellow);
-        }
-
-        /* Detail pane styling */
-        .detail-column {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          min-width: 0;
-        }
-        
-        .detail-header-panel {
-          padding: 1.5rem;
-          border-bottom: 1px solid var(--border-color);
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-        .detail-meta-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .detail-subject {
-          font-size: 1.25rem;
-          font-weight: 800;
-          color: var(--text-primary);
-          line-height: 1.3;
-          font-family: var(--font-display);
-        }
-        .detail-sender {
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-        }
-        .detail-date {
-          font-size: 0.74rem;
-          color: var(--text-muted);
-        }
-        
-        .pane-toggle-bar {
-          display: flex;
-          gap: 0.5rem;
-          border-bottom: 1px solid var(--border-color);
-          padding: 0 1.5rem;
-          background: var(--bg-primary);
-        }
-        .pane-toggle-btn {
-          padding: 0.75rem 1rem;
-          background: transparent;
-          color: var(--text-muted);
-          font-size: 0.78rem;
-          font-weight: 700;
-          border-bottom: 2px solid transparent;
-          text-transform: uppercase;
-          letter-spacing: 0.75px;
-          border-left: none;
-          border-right: none;
-          border-top: none;
-        }
-        .pane-toggle-btn.active {
-          color: var(--accent-indigo);
-          border-color: var(--accent-indigo);
-        }
-        
-        .detail-body {
-          flex: 1;
-          overflow-y: auto;
-          padding: 1.5rem;
-        }
-        
-        /* Cognitive Doc card */
-        .cognitive-card {
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          background: var(--bg-primary);
-          padding: 1.5rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-          margin-bottom: 1.5rem;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-        }
-        .section-header {
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          letter-spacing: 1.5px;
-          color: var(--accent-indigo);
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .summary-text-styled {
-          font-size: 0.88rem;
-          line-height: 1.6;
-          color: var(--text-secondary);
-        }
-        
-        /* Checklist items */
-        .action-item-row {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.65rem;
-          padding: 0.4rem 0.5rem;
-          border-radius: var(--radius-xs);
-          background: transparent;
-          transition: background var(--transition-fast);
-        }
-        .action-item-row:hover {
-          background: rgba(255, 255, 255, 0.015);
-        }
-        .action-checkbox-mock {
-          width: 14px;
-          height: 14px;
-          border: 1px solid var(--border-color);
-          border-radius: 3px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-top: 0.15rem;
-          cursor: pointer;
-          background: rgba(0, 0, 0, 0.2);
-          flex-shrink: 0;
-        }
-        .action-checkbox-mock.checked {
-          background: var(--google-green);
-          border-color: var(--google-green);
-        }
-        .action-text {
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-          line-height: 1.5;
-        }
-        .action-text.checked {
-          text-decoration: line-through;
-          color: var(--text-muted);
-        }
-
-        /* Compose assistant box */
-        .compose-assistant {
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          background: var(--bg-primary);
-          padding: 1.25rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-        .compose-chips {
-          display: flex;
-          gap: 0.4rem;
-          flex-wrap: wrap;
-        }
-        .chip-btn {
-          font-size: 0.72rem;
-          padding: 0.3rem 0.65rem;
-          border-radius: 6px;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          color: var(--text-secondary);
-        }
-        .chip-btn:hover {
-          border-color: var(--border-hover);
-          background: var(--bg-surface-hover);
-          color: var(--text-primary);
-        }
-        .compose-input-row {
-          display: flex;
-          gap: 0.5rem;
-        }
-        .compose-text-input {
-          flex: 1;
-          font-size: 0.8rem;
-          padding: 0.5rem 0.75rem;
-        }
-        .draft-editor {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-sm);
-          padding: 1rem;
-          font-size: 0.82rem;
-          color: var(--text-secondary);
-          line-height: 1.6;
-          white-space: pre-wrap;
-        }
-
-        /* ── Gmail-style compose window ── */
-        .compose-window {
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: 10px;
-          overflow: hidden;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-          margin-top: 0.75rem;
-        }
-        .compose-window-header {
-          background: var(--bg-secondary);
-          padding: 0.55rem 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 1px solid var(--border-color);
-        }
-        .compose-window-title {
-          font-size: 0.78rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          letter-spacing: 0.2px;
-        }
-        .compose-mode-toggle {
-          display: flex;
-          gap: 0.25rem;
-        }
-        .compose-mode-btn {
-          font-size: 0.7rem;
-          padding: 0.22rem 0.65rem;
-          border-radius: 12px;
-          border: 1px solid var(--border-color);
-          background: transparent;
-          color: var(--text-muted);
-          cursor: pointer;
-          font-weight: 600;
-          transition: all 0.15s;
-        }
-        .compose-mode-btn.active {
-          background: var(--text-primary);
-          color: var(--bg-primary);
-          border-color: var(--text-primary);
-        }
-        .compose-field-row {
-          display: flex;
-          align-items: center;
-          border-bottom: 1px solid var(--border-color);
-          padding: 0 1rem;
-          min-height: 38px;
-          gap: 0.5rem;
-        }
-        .compose-field-label {
-          font-size: 0.7rem;
-          font-weight: 700;
-          color: var(--text-muted);
-          min-width: 34px;
-          text-transform: uppercase;
-          letter-spacing: 0.4px;
-          flex-shrink: 0;
-        }
-        .compose-field-input {
-          flex: 1;
-          border: none;
-          outline: none;
-          padding: 0.45rem 0;
-          font-size: 0.82rem;
-          color: var(--text-primary);
-          background: transparent;
-          font-family: inherit;
-        }
-        .compose-field-input::placeholder { color: var(--text-muted); }
-        .compose-field-actions {
-          display: flex;
-          gap: 0.25rem;
-          flex-shrink: 0;
-          align-items: center;
-        }
-        .compose-cc-btn {
-          font-size: 0.68rem;
-          font-weight: 700;
-          color: var(--text-muted);
-          padding: 0.12rem 0.45rem;
-          border-radius: 4px;
-          border: 1px solid var(--border-color);
-          background: transparent;
-          cursor: pointer;
-          letter-spacing: 0.3px;
-          transition: all 0.12s;
-        }
-        .compose-cc-btn:hover, .compose-cc-btn.active {
-          background: var(--bg-secondary);
-          color: var(--text-primary);
-          border-color: var(--text-primary);
-        }
-        .compose-body-area {
-          padding: 0.75rem 1rem;
-        }
-        .compose-body-textarea {
-          width: 100%;
-          border: none;
-          outline: none;
-          resize: none;
-          font-size: 0.82rem;
-          line-height: 1.65;
-          color: var(--text-primary);
-          background: transparent;
-          min-height: 130px;
-          font-family: inherit;
-        }
-        .compose-body-textarea::placeholder { color: var(--text-muted); }
-        .compose-toolbar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0.6rem 1rem;
-          border-top: 1px solid var(--border-color);
-          background: var(--bg-secondary);
-          gap: 0.5rem;
-        }
-        .compose-toolbar-left {
-          display: flex;
-          gap: 0.4rem;
-          align-items: center;
-        }
-        .compose-discard-btn {
-          font-size: 0.74rem;
-          padding: 0.35rem 0.8rem;
-          border-radius: 6px;
-          border: 1px solid var(--border-color);
-          background: transparent;
-          color: var(--text-muted);
-          cursor: pointer;
-          font-weight: 600;
-          transition: all 0.12s;
-        }
-        .compose-discard-btn:hover {
-          background: var(--bg-primary);
-          color: var(--text-primary);
-          border-color: var(--border-hover);
-        }
-        .compose-forward-btn {
-          font-size: 0.74rem;
-          padding: 0.35rem 0.8rem;
-          border-radius: 6px;
-          border: 1px solid var(--border-color);
-          background: transparent;
-          color: var(--text-secondary);
-          cursor: pointer;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 0.3rem;
-          transition: all 0.12s;
-        }
-        .compose-forward-btn:hover {
-          background: var(--bg-primary);
-          color: var(--text-primary);
-          border-color: var(--border-hover);
-        }
-        .compose-send-btn {
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-          background: #1a73e8;
-          color: #ffffff;
-          border: none;
-          border-radius: 6px;
-          padding: 0.4rem 1.1rem;
-          font-size: 0.81rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.15s;
-        }
-        .compose-send-btn:hover { background: #1557b0; }
-        .compose-send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-
-
-        /* Alignment utility */
-        .accordion-container {
-          display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-        }
-
-        /* Priority Matrix tab styled layout */
-        .priority-grid {
-          flex: 1;
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-          grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-          gap: 0.75rem;
-          min-height: 0;
-          min-width: 0;
-          width: 100%;
-          height: 100%;
-        }
-        .matrix-quadrant {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 1.25rem;
-          display: flex;
-          flex-direction: column;
-          min-height: 0;
-          min-width: 0;
-        }
-        .matrix-quadrant.do-first { border-left: 3px solid var(--google-red); }
-        .matrix-quadrant.schedule { border-left: 3px solid var(--google-yellow); }
-        .matrix-quadrant.delegate { border-left: 3px solid var(--google-blue); }
-        .matrix-quadrant.eliminate { border-left: 3px solid var(--text-muted); }
-        
-        .quadrant-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.75rem;
-          flex-shrink: 0;
-        }
-        .quadrant-title {
-          font-size: 0.85rem;
-          font-weight: 800;
-          color: var(--text-primary);
-          display: flex;
-          align-items: center;
-          gap: 0.45rem;
-        }
-        .quadrant-subtitle {
-          font-size: 0.68rem;
-          color: var(--text-muted);
-        }
-        .quadrant-list {
-          flex: 1;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          padding-right: 0.25rem;
-        }
-        .matrix-item-card {
-          padding: 0.65rem 0.85rem;
-          border-radius: var(--radius-sm);
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-        .matrix-item-card:hover {
-          background: var(--bg-surface-hover);
-          border-color: var(--border-hover);
-          transform: translateX(2px);
-        }
-        .matrix-item-subject {
-          font-size: 0.78rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          margin-bottom: 0.15rem;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .matrix-item-sender {
-          font-size: 0.68rem;
-          color: var(--text-muted);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        /* Executive Brief tab layout */
-        .brief-container {
-          flex: 1;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 1.5rem;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-          min-width: 0;
-          min-height: 0;
-        }
-        .brief-welcome {
-          background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0) 100%);
-          border-radius: var(--radius-sm);
-          padding: 1.25rem 1.5rem;
-          border-left: 2px solid var(--accent-indigo);
-        }
-        .brief-grid-stats {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 0.75rem;
-        }
-        .stat-card-brief {
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-sm);
-          padding: 1rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-        .stat-card-val {
-          font-size: 1.5rem;
-          font-weight: 800;
-          color: var(--text-primary);
-          font-family: var(--font-display);
-        }
-        .stat-card-label {
-          font-size: 0.7rem;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        .brief-layout-split {
-          display: grid;
-          grid-template-columns: 1.2fr 0.8fr;
-          gap: 1.25rem;
-          align-items: flex-start;
-        }
-        .brief-box {
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 1.25rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        /* Unsubscribe hub layout */
-        .unsubscribe-container {
-          flex: 1;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 1.5rem;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-          min-width: 0;
-          min-height: 0;
-        }
-        .unsub-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-        }
-        .unsub-table {
-          width: 100%;
-          border-collapse: collapse;
-          text-align: left;
-          table-layout: fixed;
-        }
-        .unsub-table th {
-          font-size: 0.72rem;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          color: var(--text-muted);
-          padding: 0.75rem 1rem;
-          border-bottom: 1px solid var(--border-color);
-          font-weight: 700;
-        }
-        .unsub-table td {
-          padding: 1rem;
-          border-bottom: 1px solid var(--border-color);
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .unsub-row:hover {
-          background: var(--bg-surface-hover);
-        }
-        .btn-trash-sender {
-          background: rgba(239, 68, 68, 0.08);
-          border: 1px solid rgba(239, 68, 68, 0.15);
-          color: var(--google-red);
-          padding: 0.35rem 0.75rem;
-          border-radius: 6px;
-          font-size: 0.72rem;
-          font-weight: 600;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.3rem;
-        }
-        .btn-trash-sender:hover {
-          background: var(--google-red);
-          color: #ffffff;
-        }
-
-        /* Chat Copilot panel styling */
-        /* Chat Copilot panel styling */
-        .chat-column {
-          position: fixed;
-          bottom: 92px;
-          right: 24px;
-          width: 360px;
-          height: 620px;
-          max-height: calc(100vh - 135px);
-          display: flex;
-          flex-direction: column;
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-lg);
-          overflow: hidden;
-          z-index: 1000;
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-          animation: chatSlideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        @keyframes chatSlideUp {
-          from {
-            transform: translateY(20px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-        
-        /* Floating Chat Button & Tooltip */
-        .floating-chat-container {
-          position: fixed;
-          bottom: 24px;
-          right: 24px;
-          z-index: 1001;
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 8px;
-        }
-        
-        .pa-floating-button {
-          width: 56px;
-          height: 56px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-sky) 100%);
-          border: none;
-          color: #ffffff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
-          cursor: pointer;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .pa-floating-button:hover {
-          transform: scale(1.08) translateY(-2px);
-          box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
-        }
-        .pa-floating-button.active {
-          background: #374151;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-          transform: rotate(90deg);
-        }
-        
-        .pa-tooltip-bubble {
-          position: relative;
-          background: var(--accent-indigo);
-          color: #ffffff;
-          padding: 0.6rem 1rem;
-          border-radius: 12px;
-          font-size: 0.76rem;
-          font-weight: 600;
-          white-space: nowrap;
-          box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
-          animation: floatBounce 2.5s infinite ease-in-out;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin-bottom: 4px;
-        }
-        
-        .pa-tooltip-bubble::after {
-          content: "";
-          position: absolute;
-          bottom: -6px;
-          right: 22px;
-          border-width: 6px 6px 0;
-          border-style: solid;
-          border-color: var(--accent-indigo) transparent;
-          display: block;
-          width: 0;
-        }
-        
-        .pa-tooltip-close {
-          background: transparent;
-          border: none;
-          color: rgba(255, 255, 255, 0.7);
-          cursor: pointer;
-          font-size: 0.95rem;
-          font-weight: 700;
-          padding: 0 0 0 4px;
-          line-height: 1;
-          transition: color 0.2s;
-        }
-        .pa-tooltip-close:hover {
-          color: #ffffff;
-        }
-        
-        @keyframes floatBounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
-        }
-        
-        .chat-header {
-          padding: 1.25rem;
-          border-bottom: 1px solid var(--border-color);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-shrink: 0;
-        }
-        .chat-header-left {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.85rem;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-        .chat-status-dot {
-          width: 6px;
-          height: 6px;
-          background: var(--google-green);
-          border-radius: 50%;
-          filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.8));
-        }
-        
-        .chat-messages {
-          flex: 1;
-          overflow-y: auto;
-          padding: 1rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.85rem;
-        }
-        .chat-msg {
-          max-width: 85%;
-          padding: 0.75rem 0.85rem;
-          border-radius: var(--radius-sm);
-          font-size: 0.78rem;
-          line-height: 1.5;
-        }
-        .chat-msg.assistant {
-          align-self: flex-start;
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          color: var(--text-primary);
-        }
-        .chat-msg.user {
-          align-self: flex-end;
-          background: var(--border-accent); /* Gmail light blue active color */
-          color: #041e49; /* Gmail dark blue text */
-          border: 1px solid rgba(26, 115, 232, 0.15);
-        }
-        
-        .chat-suggestions {
-          padding: 0.75rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.35rem;
-          border-top: 1px solid var(--border-color);
-          background: var(--bg-secondary);
-          flex-shrink: 0;
-        }
-        .suggestion-chip {
-          background: var(--bg-primary);
-          border: 1px solid var(--border-color);
-          padding: 0.45rem 0.65rem;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-          display: flex;
-          flex-direction: column;
-          gap: 0.1rem;
-        }
-        .suggestion-chip:hover {
-          border-color: var(--border-hover);
-          background: var(--bg-surface-hover);
-        }
-        
-        .chat-input-container {
-          padding: 0.75rem;
-          border-top: 1px solid var(--border-color);
-          display: flex;
-          gap: 0.4rem;
-          flex-shrink: 0;
-        }
-        .chat-input {
-          flex: 1;
-          padding: 0.5rem 0.75rem;
-          font-size: 0.78rem;
-        }
-        .btn-chat-send {
-          background: var(--accent-indigo);
-          color: #ffffff;
-          padding: 0.5rem;
-          border-radius: var(--radius-sm);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .btn-chat-send:hover {
-          background: var(--accent-purple);
-        }
- 
-        /* Clean Inbox Modal styling */
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5); /* lighter overlay */
-          backdrop-filter: blur(4px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 100;
-        }
-        .modal-card {
-          width: 440px;
-          background: var(--bg-glass);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          box-shadow: var(--shadow-card);
-          padding: 1.75rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .modal-title {
-          font-size: 1.05rem;
-          font-weight: 800;
-          color: var(--text-primary);
-          display: flex;
-          align-items: center;
-          gap: 0.45rem;
-        }
-        .strategy-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.6rem;
-        }
-        .strategy-row {
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-sm);
-          padding: 0.75rem 1rem;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-        }
-        .strategy-row:hover {
-          background: rgba(255, 255, 255, 0.02);
-          border-color: var(--border-hover);
-        }
-        .strategy-row.active {
-          border-color: var(--accent-indigo);
-          background: rgba(99, 102, 241, 0.05);
-        }
-        .radio-dot {
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          border: 1px solid var(--border-color);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .strategy-row.active .radio-dot {
-          border-color: var(--accent-indigo);
-        }
-        .radio-dot-inner {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: transparent;
-        }
-        .strategy-row.active .radio-dot-inner {
-          background: var(--accent-indigo);
-        }
-        .strategy-info {
-          display: flex;
-          flex-direction: column;
-          gap: 0.15rem;
-        }
-        .strategy-name {
-          font-size: 0.82rem;
-          font-weight: 700;
-          color: var(--text-primary);
-        }
-        .strategy-desc-text {
-          font-size: 0.72rem;
-          color: var(--text-muted);
-        }
-        .modal-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 0.6rem;
-          margin-top: 0.5rem;
-        }
-        .btn-cancel {
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid var(--border-color);
-          color: var(--text-secondary);
-          padding: 0.5rem 1.25rem;
-          border-radius: var(--radius-xs);
-          font-size: 0.8rem;
-        }
-        .btn-cancel:hover {
-          background: rgba(255,255,255,0.04);
-          color: #ffffff;
-        }
-        .btn-confirm-clean {
-          background: var(--google-red);
-          color: #ffffff;
-          padding: 0.5rem 1.25rem;
-          border-radius: var(--radius-xs);
-          font-size: 0.8rem;
-          font-weight: 600;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.45rem;
-        }
-        .btn-confirm-clean:hover {
-          opacity: 0.9;
-        }
-        .clean-success-banner {
-          background: rgba(16, 185, 129, 0.08);
-          border: 1px solid rgba(16, 185, 129, 0.15);
-          border-radius: var(--radius-sm);
-          padding: 0.85rem;
-          text-align: center;
-        }
-        .clean-success-title {
-          font-size: 0.85rem;
-          font-weight: 700;
-          color: var(--google-green);
-          display: inline-flex;
-          align-items: center;
-          gap: 0.35rem;
-        }
-
-        /* Chronological Accordion Styles */
-        .accordion-container {
-          display: flex;
-          flex-direction: column;
-          gap: 0.65rem;
-          width: 100%;
-          height: 100%;
-          overflow-y: auto;
-          padding-right: 0.25rem;
-        }
-        .accordion-item {
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-sm);
-          overflow: hidden;
-          background: rgba(255, 255, 255, 0.01);
-          transition: all var(--transition-fast);
-        }
-        .accordion-item.expanded {
-          border-color: var(--border-hover);
-          background: rgba(255, 255, 255, 0.02);
-          box-shadow: var(--shadow-glow);
-        }
-        .accordion-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0.75rem 1rem;
-          cursor: pointer;
-          user-select: none;
-          background: rgba(255, 255, 255, 0.01);
-          transition: background var(--transition-fast);
-        }
-        .accordion-header:hover {
-          background: rgba(255, 255, 255, 0.03);
-        }
-        .accordion-sender {
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
-          max-width: 45%;
-        }
-        .accordion-sender-avatar {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.65rem;
-          font-weight: 700;
-          color: #ffffff;
-          flex-shrink: 0;
-        }
-        .accordion-sender-name {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: var(--text-primary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .accordion-snippet {
-          font-size: 0.78rem;
-          color: var(--text-muted);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          flex: 1;
-          margin: 0 1.5rem;
-          text-align: left;
-        }
-        .accordion-date {
-          font-size: 0.72rem;
-          color: var(--text-muted);
-          margin-right: 1rem;
-          flex-shrink: 0;
-        }
-        .accordion-chevron {
-          color: var(--text-muted);
-          transition: transform var(--transition-fast);
-          flex-shrink: 0;
-        }
-        .accordion-chevron.rotated {
-          transform: rotate(90deg);
-          color: var(--text-primary);
-        }
-        .accordion-body {
-          border-top: 1px solid var(--border-color);
-          padding: 1rem;
-          background: var(--bg-primary);
-        }
-        .accordion-body-iframe {
-          width: 100%;
-          height: 450px;
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-xs);
-          background: #ffffff;
-        }
-        .accordion-body-text {
-          font-size: 0.82rem;
-          color: var(--text-secondary);
-          line-height: 1.6;
-          white-space: pre-wrap;
-          background: var(--bg-secondary);
-          padding: 1rem;
-          border-radius: var(--radius-xs);
-          border: 1px solid var(--border-color);
-          overflow-y: auto;
-          max-height: 400px;
-        }
-      `}</style>
-
-      {/* 1. Top Navigation Bar */}
-      <div className="top-navbar">
-        <div className="navbar-left">
-          <div className="navbar-brand">
-            <Inbox size={18} />
-            <span>Aether</span>
+      {/* 1. Collapsible Sidebar */}
+      <div className={`sidebar-column ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="sidebar-brand">
+          <div className="brand-logo-container">
+            <Inbox size={15} />
           </div>
-          <div className="navbar-tabs">
-            <button className={`navbar-tab-btn ${activeTab === "inbox" ? "active" : ""}`} onClick={() => setActiveTab("inbox")}>
-              <Inbox size={13} style={{ opacity: activeTab === "inbox" ? 1 : 0.75 }} />
-              <span>Inbox Reader</span>
-              <span className="navbar-tab-badge">{threads.length}</span>
+          {!sidebarCollapsed && <span className="brand-text">Aether</span>}
+          <button className="sidebar-collapse-btn" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+            {sidebarCollapsed ? <PanelLeft size={14} /> : <PanelLeftClose size={14} />}
+          </button>
+        </div>
+
+        {/* Mailboxes Navigation */}
+        <div className="sidebar-section">
+          <div className="sidebar-section-title">{!sidebarCollapsed && "Mailboxes"}</div>
+          <div className="sidebar-menu">
+            <button 
+              className={`sidebar-menu-item ${activeTab === "inbox" && categoryFilter === "All" ? "active" : ""}`} 
+              onClick={() => { setActiveTab("inbox"); setCategoryFilter("All"); setStatusFilter("all"); }}
+              title="Inbox Reader"
+            >
+              <Inbox size={14} />
+              {!sidebarCollapsed && <span className="menu-text">Inbox Reader</span>}
+              {!sidebarCollapsed && <span className="menu-badge">{threads.length}</span>}
             </button>
-            <button className={`navbar-tab-btn ${activeTab === "matrix" ? "active" : ""}`} onClick={() => setActiveTab("matrix")}>
-              <BarChart2 size={13} style={{ opacity: activeTab === "matrix" ? 1 : 0.75 }} />
-              <span>Priority Matrix</span>
-              <span className="navbar-tab-badge">{matrixData.doFirst.length}</span>
+            <button 
+              className={`sidebar-menu-item ${activeTab === "matrix" ? "active" : ""}`} 
+              onClick={() => setActiveTab("matrix")}
+              title="Priority Matrix"
+            >
+              <BarChart2 size={14} />
+              {!sidebarCollapsed && <span className="menu-text">Priority Matrix</span>}
+              {!sidebarCollapsed && <span className="menu-badge badge-important">{matrixData.doFirst.length}</span>}
             </button>
-            <button className={`navbar-tab-btn ${activeTab === "brief" ? "active" : ""}`} onClick={() => setActiveTab("brief")}>
-              <Calendar size={13} style={{ opacity: activeTab === "brief" ? 1 : 0.75 }} />
-              <span>Executive Brief</span>
+            <button 
+              className={`sidebar-menu-item ${activeTab === "brief" ? "active" : ""}`} 
+              onClick={() => setActiveTab("brief")}
+              title="Executive Brief"
+            >
+              <Calendar size={14} />
+              {!sidebarCollapsed && <span className="menu-text">Executive Brief</span>}
             </button>
-            <button className={`navbar-tab-btn ${activeTab === "unsubscribe" ? "active" : ""}`} onClick={() => setActiveTab("unsubscribe")}>
-              <ShieldCheck size={13} style={{ opacity: activeTab === "unsubscribe" ? 1 : 0.75 }} />
-              <span>Unsubscribe Hub</span>
-              <span className="navbar-tab-badge" style={{ color: "var(--google-red)" }}>{newsletterSenders.length}</span>
+            <button 
+              className={`sidebar-menu-item ${activeTab === "unsubscribe" ? "active" : ""}`} 
+              onClick={() => setActiveTab("unsubscribe")}
+              title="Unsubscribe Hub"
+            >
+              <ShieldCheck size={14} />
+              {!sidebarCollapsed && <span className="menu-text">Unsubscribe Hub</span>}
+              {!sidebarCollapsed && <span className="menu-badge badge-danger">{newsletterSenders.length}</span>}
+            </button>
+            <button 
+              className={`sidebar-menu-item ${activeTab === "connections" ? "active" : ""}`} 
+              onClick={() => setActiveTab("connections")}
+              title="Connections & Workflows"
+            >
+              <Zap size={14} />
+              {!sidebarCollapsed && <span className="menu-text">Connections</span>}
+              {!sidebarCollapsed && workflows.filter(w => w.enabled).length > 0 && (
+                <span className="menu-badge" style={{ background: "rgba(99,102,241,0.2)", color: "var(--accent-purple)" }}>{workflows.filter(w => w.enabled).length}</span>
+              )}
             </button>
           </div>
         </div>
 
-        <div className="navbar-right">
-          {/* Storage Cleaner Trigger */}
-          <button 
-            className="btn-navbar-clean"
-            onClick={() => {
-              setCleanResult(null);
-              setIsCleanModalOpen(true);
-            }}
-            title="Clean newsletters & promotions straight to your Gmail Trash folder"
-          >
-            <Trash2 size={12} />
-            <span>Clean Inbox</span>
-          </button>
+        {/* Smart Categories Navigation */}
+        <div className="sidebar-section">
+          <div className="sidebar-section-title">{!sidebarCollapsed && "Smart Categories"}</div>
+          <div className="sidebar-menu">
+            {categories.filter(cat => cat !== "All").map(cat => {
+              // Calculate counts of non-archived emails
+              const count = emails.filter(e => e.summary?.category.toLowerCase() === cat.toLowerCase() && !archivedEmails[e.id]).length;
+              
+              let icon = <Folder size={14} />;
+              if (cat === "Newsletters") icon = <Tag size={14} style={{ color: "var(--status-newsletters-text)" }} />;
+              if (cat === "Job / Recruitment") icon = <UserCheck size={14} style={{ color: "var(--status-job-recruitment-text)" }} />;
+              if (cat === "Finance") icon = <Folder size={14} style={{ color: "var(--status-finance-text)" }} />;
+              if (cat === "Notifications") icon = <AlertCircle size={14} style={{ color: "var(--status-notifications-text)" }} />;
+              if (cat === "Personal") icon = <Users size={14} style={{ color: "var(--status-personal-text)" }} />;
+              if (cat === "Work / Professional") icon = <Sparkles size={14} style={{ color: "var(--status-work-professional-text)" }} />;
 
-          {/* Sync Trigger */}
-          <button 
-            className="btn-navbar-sync"
-            onClick={triggerSync}
-            disabled={isSyncing}
-          >
-            <RefreshCw size={12} className={isSyncing ? "animate-spin" : ""} />
-            <span>{isSyncing ? "Syncing..." : "Sync Inbox"}</span>
-          </button>
+              const isActive = activeTab === "inbox" && categoryFilter === cat;
 
-          {/* User profile */}
+              return (
+                <button 
+                  key={cat}
+                  className={`sidebar-menu-item ${isActive ? "active" : ""}`} 
+                  onClick={() => {
+                    setCategoryFilter(cat);
+                    setStatusFilter("all");
+                    setActiveTab("inbox");
+                  }}
+                  title={cat}
+                >
+                  {icon}
+                  {!sidebarCollapsed && <span className="menu-text">{cat}</span>}
+                  {!sidebarCollapsed && count > 0 && <span className="menu-badge">{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Sidebar Footer */}
+        <div className="sidebar-footer">
           {session?.user && (
-            <div className="navbar-profile-widget">
-              <div className="navbar-avatar" title={session.user.email || ""}>
+            <div className="sidebar-user-widget">
+              <div className="sidebar-user-avatar">
                 {session.user.image ? (
                   <img src={session.user.image} alt={session.user.name || "User"} />
                 ) : (
-                  <User size={12} />
+                  <User size={14} />
                 )}
               </div>
-              <div className="navbar-profile-info">
-                <span className="navbar-username">{session.user.name || "Logged User"}</span>
-              </div>
-              <button 
-                onClick={() => signOut()}
-                className="navbar-logout-btn"
-                title="Sign Out"
-              >
-                <LogOut size={13} />
-              </button>
+              {!sidebarCollapsed && (
+                <div className="sidebar-user-info">
+                  <span className="sidebar-user-name">{session.user.name || "Logged User"}</span>
+                  <span className="sidebar-user-email">{session.user.email || ""}</span>
+                </div>
+              )}
             </div>
           )}
+          
+          <div className="sidebar-actions-row">
+            <button 
+              className="sidebar-btn-theme"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+              {!sidebarCollapsed && <span>{theme === "dark" ? "Light" : "Dark"}</span>}
+            </button>
+            {!sidebarCollapsed && (
+              <button 
+                className="sidebar-btn-logout"
+                onClick={() => signOut()}
+                title="Sign Out"
+              >
+                <LogOut size={14} />
+                <span>Sign Out</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* 2. Workspace Views */}
-      <div className="workspace">
+      {/* 2. Main Content Area */}
+      <div className="main-content-area">
+        {/* Modern Top Navbar */}
+        <div className="top-navbar-modern">
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "1px", fontFamily: "var(--font-display)" }}>
+              {activeTab === "inbox" ? `Inbox / ${categoryFilter}` : activeTab === "matrix" ? "Priority Matrix" : activeTab === "brief" ? "Executive Brief" : activeTab === "unsubscribe" ? "Unsubscribe Hub" : "Connections & Workflows"}
+            </span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            {/* Storage Cleaner Trigger */}
+            <button 
+              className="btn-danger"
+              style={{ padding: "0.45rem 0.85rem", fontSize: "0.74rem", borderRadius: "100px", fontWeight: 600 }}
+              onClick={() => {
+                setCleanResult(null);
+                setIsCleanModalOpen(true);
+              }}
+              title="Clean newsletters & promotions straight to your Gmail Trash folder"
+            >
+              <Trash2 size={12} />
+              <span>Clean Inbox</span>
+            </button>
+
+            {/* Sync Trigger */}
+            <button 
+              className="btn-primary"
+              style={{ padding: "0.45rem 0.85rem", fontSize: "0.74rem", borderRadius: "100px", fontWeight: 600 }}
+              onClick={triggerSync}
+              disabled={isSyncing}
+            >
+              <RefreshCw size={12} className={isSyncing ? "animate-spin" : ""} />
+              <span>{isSyncing ? "Syncing..." : "Sync Inbox"}</span>
+            </button>
+          </div>
+        </div>
+
         {/* Sync notification bar */}
         {syncMessage && (
-          <div className="sync-notification-bar">
+          <div className="sync-notification-bar" style={{ margin: "0.75rem 0.75rem 0" }}>
             <RefreshCw size={14} className="animate-spin" style={{ color: "var(--accent-indigo)" }} />
             <span>{syncMessage}</span>
           </div>
         )}
 
-        {/* Tab Contents */}
-        <div className="workspace-content">
+        {/* Tab-specific Content */}
+        <div className="tab-content-container">
+          <div className="workspace-content">
           
           {/* TAB 1: Inbox Reader Split Pane */}
           {activeTab === "inbox" && (
-            <>
+            <div className="inbox-split-pane">
               {/* Left Column: Email list */}
               <div className="emails-column">
                 <div className="search-container">
@@ -2772,105 +2058,103 @@ export default function Home() {
                   </form>
                 </div>
 
-                {/* Horizontal Category Filters */}
-                <div className="category-scroll-bar">
-                  {categories.map((cat) => {
-                    const count = cat === "All" 
-                      ? threads.length 
-                      : threads.filter(t => t.latestEmail.summary?.category === cat).length;
-                    const isActive = categoryFilter === cat;
+                {/* Compact Status Filters */}
+                <div className="status-filter-bar">
+                  {([
+                    { key: "all",     icon: <Inbox size={12} />, label: "All"     },
+                    { key: "unread",  icon: <Mail size={12} />, label: "Unread"  },
+                    { key: "starred", icon: <Star size={12} />, label: "Starred" },
+                    { key: "action",  icon: <CheckSquare size={12} />, label: "Actions" },
+                  ] as { key: "all" | "unread" | "starred" | "action"; icon: React.ReactNode; label: string }[]).map(({ key, icon, label }) => {
+                    const isActive = statusFilter === key;
+                    const count = statusCounts[key];
                     return (
-                      <button 
-                        key={cat} 
-                        className={`category-pill ${isActive ? "active" : ""}`}
-                        onClick={() => setCategoryFilter(cat)}
+                      <button
+                        key={key}
+                        className={`status-filter-btn ${isActive ? "active" : ""}`}
+                        onClick={() => setStatusFilter(key)}
+                        title={label}
                       >
-                        <span>{cat}</span>
-                        <span className="category-badge">{count}</span>
+                        <span className="status-filter-icon">{icon}</span>
+                        <span className="status-filter-label">{label}</span>
+                        {count > 0 && <span className="status-filter-badge">{count}</span>}
                       </button>
                     );
                   })}
                 </div>
+
 
                 <div className="emails-list">
                   {isLoadingEmails ? (
                     <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
                       <RefreshCw size={18} className="animate-spin" style={{ color: "var(--text-muted)" }} />
                     </div>
-                  ) : threads.length === 0 ? (
-                    <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "3rem", fontSize: "0.82rem" }}>
-                      No emails matched the filter. Trigger sync.
+                  ) : filteredThreads.length === 0 ? (
+                    <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "3rem 1rem", fontSize: "0.82rem" }}>
+                      No emails matched the filter.
                     </div>
                   ) : (
-                    threads.map((thread) => {
+                    filteredThreads.map((thread) => {
                       const { threadId, emails: threadEmails, latestEmail } = thread;
                       const isSelected = selectedEmail?.threadId === threadId;
                       const isStarred = threadEmails.some(e => starredEmails[e.id]);
-                      
-                      // Format the combined senders list, e.g. "Srinija, Vamshi (2)"
-                      const uniqueSenders = Array.from(new Set(
-                        [...threadEmails].reverse().map(e => e.sender.replace(/<[^>]+>/, "").trim().replace(/^["']|["']$/g, "").trim())
-                      ));
-                      const sendersDisplay = uniqueSenders.join(", ") + (threadEmails.length > 1 ? ` (${threadEmails.length})` : "");
+                      const isUnread = latestEmail.labels?.toUpperCase().includes("UNREAD");
+                      const displayName = latestEmail.sender.replace(/<[^>]+>/, "").trim().replace(/^["']|["']$/g, "").trim();
+                      const threadCount = threadEmails.length;
+                      const dateStr = new Date(latestEmail.date).toLocaleDateString([], { month: "short", day: "numeric" });
+                      const snippet = latestEmail.summary?.shortSummary || latestEmail.bodySnippet || "";
 
                       return (
-                        <div 
-                          key={threadId} 
-                          className={`email-card ${isSelected ? "selected" : ""}`}
+                        <div
+                          key={threadId}
+                          className={`email-row ${isSelected ? "selected" : ""} ${isUnread ? "unread" : ""}`}
                           onClick={() => setSelectedEmail(latestEmail)}
                         >
-                          <div className="card-row-1">
-                            <div className="sender-info">
-                              <div className="sender-avatar" style={{ background: getAvatarGradient(latestEmail.sender) }}>
-                                {latestEmail.sender.charAt(0).toUpperCase()}
-                              </div>
-                              <span className="sender-name">{sendersDisplay}</span>
-                            </div>
-                            <span className="email-date">
-                              {new Date(latestEmail.date).toLocaleDateString([], { month: "short", day: "numeric" })}
-                            </span>
+                          {/* Unread indicator dot */}
+                          <div className="email-row-dot" />
+
+                          {/* Avatar */}
+                          <div className="email-row-avatar" style={{ background: getAvatarGradient(latestEmail.sender) }}>
+                            {displayName.charAt(0).toUpperCase()}
                           </div>
-                          
-                          <div className="email-subject">{latestEmail.subject}</div>
-                          
-                          <p className="email-short-summary">
-                            {latestEmail.summary ? latestEmail.summary.shortSummary : latestEmail.bodySnippet}
-                          </p>
 
-                          <div className="card-row-1" style={{ marginTop: "0.25rem" }}>
-                            <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
-                              {latestEmail.summary && (
-                                <span className={`tag tag-${latestEmail.summary.category.toLowerCase()}`}>
-                                  {latestEmail.summary.category}
-                                </span>
-                              )}
-                              {threadEmails.some(e => e.isDuplicate) && (
-                                <span className="tag tag-duplicate">Newsletter</span>
-                              )}
-                              {latestEmail.summary && latestEmail.summary.importanceScore >= 7 && (
-                                <span style={{ fontSize: "0.68rem", color: "var(--google-red)", fontWeight: "bold" }}>
-                                  ★ {latestEmail.summary.importanceScore}
-                                </span>
-                              )}
+                          {/* Main content */}
+                          <div className="email-row-body">
+                            <div className="email-row-top">
+                              <span className="email-row-sender">
+                                {displayName}
+                                {threadCount > 1 && <span className="email-row-count">{threadCount}</span>}
+                              </span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+                                {latestEmail.summary && latestEmail.summary.importanceScore >= 8 && (
+                                  <span style={{ fontSize: "0.65rem", color: "#f87171" }}>●</span>
+                                )}
+                                <span className="email-row-date">{dateStr}</span>
+                              </div>
                             </div>
-
-                            <div className="card-actions-icons">
-                              <button 
-                                className={`action-icon-btn ${isStarred ? "starred" : ""}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setStarredEmails((prev) => ({ ...prev, [latestEmail.id]: !prev[latestEmail.id] }));
-                                }}
-                              >
-                                <Star size={12} fill={isStarred ? "currentColor" : "none"} />
-                              </button>
-                              <button 
-                                className="action-icon-btn"
-                                onClick={(e) => archiveThread(threadEmails, threadId, e)}
-                                title="Archive Thread"
-                              >
-                                <CheckSquare size={12} />
-                              </button>
+                            <div className="email-row-subject">{latestEmail.subject}</div>
+                            <div className="email-row-bottom">
+                              <span className="email-row-snippet">{snippet.slice(0, 80)}</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", flexShrink: 0 }}>
+                                {latestEmail.summary && (
+                                  <span className={`email-row-tag tag-${getCategoryClass(latestEmail.summary.category)}`}>
+                                    {latestEmail.summary.category.split(" / ")[0].split(" ")[0]}
+                                  </span>
+                                )}
+                                <button
+                                  className={`email-row-star ${isStarred ? "starred" : ""}`}
+                                  onClick={(e) => { e.stopPropagation(); setStarredEmails(prev => ({ ...prev, [latestEmail.id]: !prev[latestEmail.id] })); }}
+                                >
+                                  <Star size={11} fill={isStarred ? "currentColor" : "none"} />
+                                </button>
+                                <button
+                                  className="email-row-archive"
+                                  onClick={(e) => archiveThread(threadEmails, threadId, e)}
+                                  title="Archive"
+                                >
+                                  <CheckSquare size={11} />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -2892,6 +2176,24 @@ export default function Home() {
                         <span className="detail-date">{new Date(selectedEmail.date).toLocaleString()}</span>
                       </div>
                       <h2 className="detail-subject">{selectedEmail.subject}</h2>
+                      {/* Category + Importance inline badges */}
+                      {selectedEmail.summary && (
+                        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem", flexWrap: "wrap" }}>
+                          <span className={`tag tag-${getCategoryClass(selectedEmail.summary.category)}`} style={{ fontSize: "0.72rem", padding: "0.2rem 0.6rem" }}>
+                            {selectedEmail.summary.category}
+                          </span>
+                          <span style={{
+                            fontSize: "0.72rem",
+                            padding: "0.2rem 0.55rem",
+                            borderRadius: "20px",
+                            background: selectedEmail.summary.importanceScore >= 7 ? "rgba(239,68,68,0.12)" : selectedEmail.summary.importanceScore >= 4 ? "rgba(245,158,11,0.12)" : "rgba(99,102,241,0.1)",
+                            color: selectedEmail.summary.importanceScore >= 7 ? "#f87171" : selectedEmail.summary.importanceScore >= 4 ? "#f59e0b" : "var(--accent-indigo)",
+                            fontWeight: 600,
+                          }}>
+                            ⭐ {selectedEmail.summary.importanceScore}/10
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="pane-toggle-bar">
@@ -2899,38 +2201,39 @@ export default function Home() {
                         className={`pane-toggle-btn ${detailTab === "ai" ? "active" : ""}`}
                         onClick={() => setDetailTab("ai")}
                       >
-                        AI Insights
+                        <Sparkles size={13} style={{ marginRight: "0.3rem" }} />
+                        AI Summary
                       </button>
                       <button 
                         className={`pane-toggle-btn ${detailTab === "original" ? "active" : ""}`}
                         onClick={() => setDetailTab("original")}
                       >
-                        Original Message
+                        <Mail size={13} style={{ marginRight: "0.3rem" }} />
+                        Original
                       </button>
                     </div>
 
                     <div className="detail-body">
                       {detailTab === "ai" ? (
                         <>
-                          {/* Cognitive Summary */}
+                          {/* Summary Card */}
                           <div className="cognitive-card">
                             <div className="section-header">
-                              <MailOpen size={14} />
-                              <span>COGNITIVE SUMMARY</span>
+                              <Sparkles size={13} />
+                              <span>Summary</span>
                             </div>
-                            
                             {selectedEmail.summary ? (
                               <>
-                                <p className="summary-text-styled" style={{ fontWeight: "700", color: "var(--text-primary)" }}>
+                                <p className="summary-text-styled" style={{ fontWeight: "600", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
                                   {selectedEmail.summary.shortSummary}
                                 </p>
-                                <p className="summary-text-styled">
+                                <p className="summary-text-styled" style={{ color: "var(--text-secondary)", lineHeight: "1.6" }}>
                                   {selectedEmail.summary.detailedSummary}
                                 </p>
                               </>
                             ) : (
                               <p className="summary-text-styled" style={{ fontStyle: "italic", color: "var(--text-muted)" }}>
-                                Summarization was skipped for this item.
+                                No AI summary available for this email.
                               </p>
                             )}
                           </div>
@@ -2939,8 +2242,8 @@ export default function Home() {
                           {selectedEmail.summary && (
                             <div className="cognitive-card">
                               <div className="section-header">
-                                <CheckSquare size={14} />
-                                <span>EXTRACTED ACTION ITEMS</span>
+                                <CheckSquare size={13} />
+                                <span>Action Items</span>
                               </div>
                               <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                                 {(() => {
@@ -3026,8 +2329,8 @@ export default function Home() {
                               return (
                                 <>
                                   <div className="section-header">
-                                    <Reply size={14} />
-                                    <span>WORKSPACE DRAFTING ASSISTANT</span>
+                                    <Reply size={13} />
+                                    <span>Draft Reply</span>
                                   </div>
 
                                   {/* Render Helper Cards based on context */}
@@ -3318,6 +2621,262 @@ export default function Home() {
                                             />
                                           </div>
 
+                                          {/* Integrations Toolbar Tabs */}
+                                          <div className="compose-integrations-tabs">
+                                            <div className="compose-integrations-title">
+                                              Integrations & Automations
+                                            </div>
+                                            <div className="compose-integrations-buttons">
+                                              <button
+                                                type="button"
+                                                className={`integration-tab-btn ${activeIntegrationTab === "meet" ? "active" : ""}`}
+                                                onClick={() => setActiveIntegrationTab(activeIntegrationTab === "meet" ? null : "meet")}
+                                              >
+                                                <Calendar size={12} />
+                                                <span>Book Google Meet</span>
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className={`integration-tab-btn ${activeIntegrationTab === "jira" ? "active" : ""}`}
+                                                onClick={() => {
+                                                  setActiveIntegrationTab(activeIntegrationTab === "jira" ? null : "jira");
+                                                  if (!jiraConnected) {
+                                                    fetchJiraStatus();
+                                                  }
+                                                }}
+                                              >
+                                                <Briefcase size={12} />
+                                                <span>Log Jira Issue</span>
+                                              </button>
+                                            </div>
+                                          </div>
+
+                                          {/* Integrations Content Area */}
+                                          {activeIntegrationTab && (
+                                            <div className="compose-integration-panel">
+                                              {activeIntegrationTab === "meet" && (
+                                                <div className="integration-subpanel">
+                                                  <div className="panel-header">
+                                                    <h4>Schedule Client Meeting & Generate Meet Link</h4>
+                                                    <button type="button" className="panel-close-btn" onClick={() => setActiveIntegrationTab(null)}><X size={14} /></button>
+                                                  </div>
+                                                  
+                                                  {meetResult ? (
+                                                    <div className="integration-success-card">
+                                                      <div className="success-icon">✓</div>
+                                                      <div className="success-content">
+                                                        <h5>Meeting Scheduled Successfully!</h5>
+                                                        <p>Google Meet details have been appended to your email draft.</p>
+                                                        <div className="success-links">
+                                                          <a href={meetResult.hangoutLink} target="_blank" rel="noopener noreferrer" className="meet-url-badge">
+                                                            Join Google Meet
+                                                          </a>
+                                                          <a href={meetResult.htmlLink} target="_blank" rel="noopener noreferrer" className="calendar-url-link">
+                                                            View Calendar Event
+                                                          </a>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  ) : (
+                                                    <div className="integration-form">
+                                                      {meetError === "insufficient_scopes" ? (
+                                                        <div className="integration-warning-card">
+                                                          <AlertCircle size={18} />
+                                                          <div>
+                                                            <p>Google Calendar access is required to generate meetings.</p>
+                                                            <button 
+                                                              type="button"
+                                                              className="btn-primary" 
+                                                              style={{ marginTop: "0.5rem", padding: "0.35rem 0.75rem", fontSize: "0.74rem" }}
+                                                              onClick={() => signIn("google", { callbackUrl: window.location.href, prompt: "consent" })}
+                                                            >
+                                                              Grant Calendar Permissions
+                                                            </button>
+                                                          </div>
+                                                        </div>
+                                                      ) : meetError ? (
+                                                        <div className="integration-error-card">
+                                                          <AlertCircle size={14} />
+                                                          <span>{meetError}</span>
+                                                        </div>
+                                                      ) : null}
+
+                                                      <div className="form-grid">
+                                                        <div className="form-group">
+                                                          <label>Meeting Title</label>
+                                                          <input 
+                                                            type="text" 
+                                                            value={meetTitle} 
+                                                            onChange={(e) => setMeetTitle(e.target.value)}
+                                                            placeholder="e.g. Sync Session"
+                                                          />
+                                                        </div>
+                                                        <div className="form-group-row">
+                                                          <div className="form-group">
+                                                            <label>Date & Time</label>
+                                                            <input 
+                                                              type="datetime-local" 
+                                                              value={meetDateTime} 
+                                                              onChange={(e) => setMeetDateTime(e.target.value)}
+                                                            />
+                                                          </div>
+                                                          <div className="form-group">
+                                                            <label>Duration</label>
+                                                            <select 
+                                                              value={meetDuration} 
+                                                              onChange={(e) => setMeetDuration(Number(e.target.value))}
+                                                            >
+                                                              <option value={15}>15 minutes</option>
+                                                              <option value={30}>30 minutes</option>
+                                                              <option value={45}>45 minutes</option>
+                                                              <option value={60}>1 hour</option>
+                                                            </select>
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                      
+                                                      <button 
+                                                        type="button"
+                                                        className="btn-primary btn-panel-submit" 
+                                                        onClick={handleBookMeeting}
+                                                        disabled={isBookingMeet || !meetDateTime}
+                                                      >
+                                                        {isBookingMeet ? "Creating Event..." : "Schedule Meeting & Append Link"}
+                                                      </button>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              )}
+
+                                              {activeIntegrationTab === "jira" && (
+                                                <div className="integration-subpanel">
+                                                  <div className="panel-header">
+                                                    <h4>
+                                                      Jira Workspace Issue Logger
+                                                      {jiraConnected && <span className="site-badge">{jiraSiteUrl} {jiraSandbox && "(Sandbox)"}</span>}
+                                                    </h4>
+                                                    <button type="button" className="panel-close-btn" onClick={() => setActiveIntegrationTab(null)}><X size={14} /></button>
+                                                  </div>
+
+                                                  {!jiraConnected ? (
+                                                    <div className="connect-prompt-container">
+                                                      <div className="connect-info">
+                                                        <p>Connect your Atlassian Jira workspace to log tasks, bugs, or updates directly from your email drafts.</p>
+                                                        <span className="sandbox-notice">
+                                                          {jiraSandbox 
+                                                            ? "⚡ Running in sandbox mode. Authorize with a mock site instantly." 
+                                                            : "✓ Production OAuth credentials detected."
+                                                          }
+                                                        </span>
+                                                      </div>
+                                                      <button 
+                                                        type="button"
+                                                        className="btn-primary connect-jira-btn" 
+                                                        onClick={handleJiraConnect}
+                                                      >
+                                                        Connect Atlassian Jira
+                                                      </button>
+                                                    </div>
+                                                  ) : jiraResult ? (
+                                                    <div className="integration-success-card">
+                                                      <div className="success-icon" style={{ background: "rgba(0,82,204,0.15)", color: "#0052cc" }}>✓</div>
+                                                      <div className="success-content">
+                                                        <h5>Jira Ticket Logged!</h5>
+                                                        <p>Successfully created issue under <strong>{jiraProjects.find(p => p.id === selectedJiraProject)?.name || "selected project"}</strong>.</p>
+                                                        <div className="success-links">
+                                                          <a href={jiraResult.url} target="_blank" rel="noopener noreferrer" className="meet-url-badge" style={{ background: "#0052cc", borderColor: "#0052cc" }}>
+                                                            View Issue ({jiraResult.key})
+                                                          </a>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  ) : (
+                                                    <div className="integration-form">
+                                                      {jiraError && (
+                                                        <div className="integration-error-card">
+                                                          <AlertCircle size={14} />
+                                                          <span>{jiraError}</span>
+                                                        </div>
+                                                      )}
+
+                                                      {jiraLoadingStatus ? (
+                                                        <div className="jira-loading-state">Loading Jira projects...</div>
+                                                      ) : (
+                                                        <>
+                                                          <div className="form-grid">
+                                                            <div className="form-group-row">
+                                                              <div className="form-group">
+                                                                <label>Project</label>
+                                                                <select 
+                                                                  value={selectedJiraProject} 
+                                                                  onChange={(e) => setSelectedJiraProject(e.target.value)}
+                                                                >
+                                                                  {jiraProjects.map((p) => (
+                                                                    <option key={p.id} value={p.id}>[{p.key}] {p.name}</option>
+                                                                  ))}
+                                                                </select>
+                                                              </div>
+                                                              <div className="form-group">
+                                                                <label>Issue Type</label>
+                                                                <select 
+                                                                  value={selectedJiraIssueType} 
+                                                                  onChange={(e) => setSelectedJiraIssueType(e.target.value)}
+                                                                >
+                                                                  {jiraIssueTypes.map((t) => (
+                                                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                                                  ))}
+                                                                </select>
+                                                              </div>
+                                                            </div>
+                                                            <div className="form-group">
+                                                              <label>Issue Title</label>
+                                                              <input 
+                                                                type="text" 
+                                                                value={jiraSummary} 
+                                                                onChange={(e) => setJiraSummary(e.target.value)}
+                                                                placeholder="Ticket summary..."
+                                                              />
+                                                            </div>
+                                                            <div className="form-group">
+                                                              <label>Description</label>
+                                                              <textarea 
+                                                                value={jiraDescription} 
+                                                                onChange={(e) => setJiraDescription(e.target.value)}
+                                                                rows={3}
+                                                                placeholder="Ticket details..."
+                                                                style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-color)", color: "white", padding: "0.4rem 0.6rem", borderRadius: "4px", fontSize: "0.78rem" }}
+                                                              />
+                                                            </div>
+                                                          </div>
+                                                          
+                                                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem" }}>
+                                                            <button 
+                                                              type="button"
+                                                              className="btn-secondary" 
+                                                              style={{ padding: "0.35rem 0.6rem", fontSize: "0.7rem", color: "var(--google-red)", border: "1px solid rgba(248,113,113,0.2)" }}
+                                                              onClick={handleJiraDisconnect}
+                                                            >
+                                                              Disconnect
+                                                            </button>
+                                                            <button 
+                                                              type="button"
+                                                              className="btn-primary btn-panel-submit" 
+                                                              onClick={handleCreateJiraIssue}
+                                                              disabled={isCreatingJiraIssue || !jiraSummary}
+                                                              style={{ background: "#0052cc", borderColor: "#0052cc" }}
+                                                            >
+                                                              {isCreatingJiraIssue ? "Creating Ticket..." : "Create Issue"}
+                                                            </button>
+                                                          </div>
+                                                        </>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+
                                           {/* Toolbar */}
                                           <div className="compose-toolbar">
                                             <div className="compose-toolbar-left">
@@ -3423,8 +2982,9 @@ export default function Home() {
                   </div>
                 )}
               </div>
-            </>
+            </div>
           )}
+
 
           {/* TAB 2: Eisenhower Priority Matrix */}
           {activeTab === "matrix" && (
@@ -3639,7 +3199,7 @@ export default function Home() {
                           </div>
                           <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "0.15rem" }}>
                             {email.summary?.shortSummary}
-                          </div>
+                      </div>
                         </div>
                       ))
                     )}
@@ -3650,123 +3210,713 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 4: Unsubscribe Hub */}
-          {activeTab === "unsubscribe" && (
-            <div className="unsubscribe-container">
-              <div className="unsub-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: "1.5rem" }}>
-                <div>
-                  <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
-                    Unsubscribe & Campaign Helper
-                  </h2>
-                  <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>
-                    The AI detected these senders as circulars, promotional lists, or newsletter campaigns. Trash them all-time to clear Google space.
-                  </p>
+          {/* TAB 5: Connections & Workflows */}
+          {activeTab === "connections" && (
+            <div className="connections-scroll-shell">
+              <div className="connections-container">
+
+              {/* ── Connections Section ────────────────── */}
+              <div className="connections-section">
+                <div className="connections-section-header">
+                  <div>
+                    <h2 className="connections-section-title"><Link2 size={16} /> Connections</h2>
+                    <p className="connections-section-desc">Manage third-party integrations. Connected services power your Workflow automations.</p>
+                  </div>
                 </div>
-                
-                {totalClearedCount > 0 && (
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "1rem",
-                    padding: "0.75rem 1.25rem",
-                    background: "rgba(16, 185, 129, 0.08)",
-                    border: "1px solid rgba(16, 185, 129, 0.2)",
-                    borderRadius: "10px",
-                    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.05)"
-                  }}>
-                    <ShieldCheck size={18} style={{ color: "var(--google-green)" }} />
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={{ fontSize: "0.68rem", color: "var(--google-green)", opacity: 0.85, textTransform: "uppercase", letterSpacing: "1px", fontWeight: "700" }}>All-Time Mailbox Cleared</span>
-                      <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "var(--google-green)" }}>
-                        {totalClearedCount} emails (~{(totalFreedBytes / (1024 * 1024)).toFixed(2)} MB)
-                      </span>
+
+                <div className="connection-cards-grid">
+                  {/* Google Card */}
+                  <div className="connection-card">
+                    <div className="connection-card-logo google-logo">G</div>
+                    <div className="connection-card-body">
+                      <div className="connection-card-title">Google Workspace</div>
+                      <div className="connection-card-sub">Gmail · Google Calendar · Google Meet</div>
+                      <div className="connection-status-row">
+                        <span className="conn-status-dot connected" />
+                        <span className="conn-status-text connected">Connected</span>
+                        <span className="conn-email-badge">{session?.user?.email}</span>
+                      </div>
                     </div>
+                    <div className="connection-card-actions">
+                      <div className="conn-scope-pills">
+                        <span className="conn-scope-pill">Gmail</span>
+                        <span className="conn-scope-pill">Calendar</span>
+                      </div>
+                      <button 
+                        className="conn-reauth-btn"
+                        onClick={() => signIn("google", { callbackUrl: window.location.href, prompt: "consent" })}
+                      >
+                        Re-authenticate
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Slack Card */}
+                  <div className="connection-card">
+                    <div className="connection-card-logo slack-logo">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+                      </svg>
+                    </div>
+                    <div className="connection-card-body">
+                      <div className="connection-card-title">Slack</div>
+                      <div className="connection-card-sub">Team messaging · Channel notifications</div>
+                      <div className="connection-status-row">
+                        <span className={`conn-status-dot ${slackConnected ? "connected" : "disconnected"}`} />
+                        <span className={`conn-status-text ${slackConnected ? "connected" : "disconnected"}`}>
+                          {slackConnected ? "Connected" : "Not Connected"}
+                        </span>
+                        {slackConnected && slackWorkspace && <span className="conn-email-badge">{slackWorkspace}</span>}
+                        {slackSandbox && <span className="conn-sandbox-badge">Sandbox</span>}
+                      </div>
+                    </div>
+                    <div className="connection-card-actions">
+                      {slackConnected ? (
+                        <>
+                          <div className="conn-scope-pills">
+                            <span className="conn-scope-pill">Post Messages</span>
+                            <span className="conn-scope-pill">List Channels</span>
+                          </div>
+                          <button className="conn-disconnect-btn" onClick={handleSlackDisconnect}>
+                            Disconnect
+                          </button>
+                        </>
+                      ) : (
+                        <button className="conn-connect-btn slack-connect-btn" onClick={handleSlackConnect}>
+                          Connect Slack
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Custom Webhooks Section ───────────── */}
+              <div className="connections-section">
+                <div className="connections-section-header">
+                  <div>
+                    <h2 className="connections-section-title"><Link2 size={16} /> Custom Webhooks</h2>
+                    <p className="connections-section-desc">Connect any app using a webhook URL — Zapier, n8n, Discord, your own server, or any HTTP endpoint. No OAuth needed.</p>
+                  </div>
+                  <button
+                    className="btn-primary"
+                    style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 1rem", fontSize: "0.8rem", flexShrink: 0 }}
+                    onClick={() => setShowWebhookForm(true)}
+                  >
+                    <Plus size={14} /> Add Webhook
+                  </button>
+                </div>
+
+                {/* Add Webhook Form */}
+                {showWebhookForm && (
+                  <div className="workflow-builder-card">
+                    <div className="wf-builder-header">
+                      <h3>New Webhook Connection</h3>
+                      <button className="panel-close-btn" onClick={resetWebhookForm}><X size={16} /></button>
+                    </div>
+                    <div className="wf-builder-body">
+                      <div className="wh-emoji-name-row">
+                        <div className="form-group wh-emoji-picker">
+                          <label>Icon</label>
+                          <div className="wh-emoji-options">
+                            {["🔗","⚡","🚀","📡","🔔","🎯","💬","🤖","🌐","🔧"].map(e => (
+                              <button key={e} type="button" className={`wh-emoji-btn ${whEmoji === e ? "active" : ""}`} onClick={() => setWhEmoji(e)}>{e}</button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="form-group" style={{ flex: 1 }}>
+                          <label>Webhook Name *</label>
+                          <input type="text" value={whName} onChange={e => setWhName(e.target.value)} placeholder="e.g. Zapier Trigger, Discord Alert" />
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Description</label>
+                        <input type="text" value={whDescription} onChange={e => setWhDescription(e.target.value)} placeholder="Optional — what does this webhook do?" />
+                      </div>
+
+                      <div className="form-group-row">
+                        <div className="form-group" style={{ flex: 3 }}>
+                          <label>Webhook URL *</label>
+                          <input type="url" value={whUrl} onChange={e => setWhUrl(e.target.value)} placeholder="https://hooks.zapier.com/hooks/catch/..." style={{ fontFamily: "monospace", fontSize: "0.78rem" }} />
+                        </div>
+                        <div className="form-group" style={{ flex: 1 }}>
+                          <label>Method</label>
+                          <select value={whMethod} onChange={e => setWhMethod(e.target.value)}>
+                            <option value="POST">POST</option>
+                            <option value="GET">GET</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Signing Secret <span style={{ fontSize: "0.65rem", color: "var(--text-dim)" }}>(optional — HMAC-SHA256 verification)</span></label>
+                        <input type="password" value={whSecret} onChange={e => setWhSecret(e.target.value)} placeholder="your-signing-secret" style={{ fontFamily: "monospace" }} />
+                      </div>
+
+                      <div className="wf-section-label"><Plus size={12} /> Custom Headers <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span></div>
+                      <div className="wh-headers-list">
+                        {whHeaders.map((h, i) => (
+                          <div key={i} className="wh-header-row">
+                            <input type="text" value={h.key} onChange={e => updateWhHeader(i, "key", e.target.value)} placeholder="Header name (e.g. Authorization)" style={{ flex: 1 }} />
+                            <span style={{ color: "var(--text-dim)", fontSize: "0.75rem", padding: "0 0.3rem" }}>:</span>
+                            <input type="text" value={h.value} onChange={e => updateWhHeader(i, "value", e.target.value)} placeholder="Value" style={{ flex: 2 }} />
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="wf-builder-footer">
+                        <button type="button" className="btn-secondary" style={{ fontSize: "0.78rem", padding: "0.4rem 0.8rem" }} onClick={resetWebhookForm}>Cancel</button>
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          style={{ fontSize: "0.78rem", padding: "0.4rem 1rem" }}
+                          onClick={handleSaveWebhook}
+                          disabled={isSavingWebhook || !whName.trim() || !whUrl.trim()}
+                        >
+                          {isSavingWebhook ? "Saving..." : "Save Webhook"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Webhook List */}
+                {isLoadingWebhooks ? (
+                  <div className="wf-empty-state">Loading webhooks...</div>
+                ) : webhooks.length === 0 && !showWebhookForm ? (
+                  <div className="wf-empty-state">
+                    <span style={{ fontSize: "1.5rem" }}>🔗</span>
+                    <p>No webhooks yet. Add one to connect any external app or service.</p>
+                  </div>
+                ) : (
+                  <div className="webhook-cards-list">
+                    {webhooks.map(wh => {
+                      const ts = webhookTestStatus[wh.id];
+                      const lastStatus = ts?.status || wh.lastTestStatus;
+                      return (
+                        <div key={wh.id} className="webhook-card">
+                          <div className="webhook-card-emoji">{wh.emoji}</div>
+                          <div className="webhook-card-body">
+                            <div className="webhook-card-name">{wh.name}</div>
+                            {wh.description && <div className="webhook-card-desc">{wh.description}</div>}
+                            <div className="webhook-card-url">{wh.url}</div>
+                            <div className="webhook-card-meta">
+                              <span className="webhook-method-badge">{wh.method}</span>
+                              {wh.secret && <span className="webhook-secure-badge">🔒 Signed</span>}
+                              {lastStatus && (
+                                <span className={`webhook-test-badge ${lastStatus}`}>
+                                  {ts?.status === "testing" ? "Testing..." : lastStatus === "success" ? `✓ ${ts?.code || wh.lastTestCode}` : `✗ ${ts?.code ?? wh.lastTestCode ?? "ERR"}`}
+                                </span>
+                              )}
+                              {wh.lastTestedAt && !ts && (
+                                <span style={{ fontSize: "0.66rem", color: "var(--text-dim)" }}>
+                                  Tested {new Date(wh.lastTestedAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            {ts?.msg && <div className="webhook-test-msg">{ts.msg}</div>}
+                          </div>
+                          <div className="webhook-card-actions">
+                            <button
+                              className="webhook-test-btn"
+                              onClick={() => handleTestWebhook(wh.id)}
+                              disabled={ts?.status === "testing"}
+                              title="Send test ping"
+                            >
+                              {ts?.status === "testing" ? <RefreshCw size={13} style={{ animation: "spin 0.8s linear infinite" }} /> : <Play size={13} />}
+                            </button>
+                            <button className="wf-delete-btn" onClick={() => handleDeleteWebhook(wh.id)} title="Delete">
+                              <Trash size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              {newsletterSenders.length === 0 ? (
-                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "4rem", fontSize: "0.82rem" }}>
-                  🎉 No repetitive newsletters or promotions detected. Your inbox is clean!
+              {/* ── Workflow Automations Section ───────── */}
+
+              <div className="connections-section">
+                <div className="connections-section-header">
+                  <div>
+                    <h2 className="connections-section-title"><Zap size={16} /> Workflow Automations</h2>
+                    <p className="connections-section-desc">Schedule automated pipelines — sync emails, summarize, and post digests to your Slack channel on a cron schedule.</p>
+                  </div>
+                  <button
+                    className="btn-primary"
+                    style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 1rem", fontSize: "0.8rem", flexShrink: 0 }}
+                    onClick={() => { setShowNewWorkflow(true); if (slackConnected) fetchSlackChannels(); }}
+                  >
+                    <Plus size={14} /> New Workflow
+                  </button>
                 </div>
-              ) : (
-                <table className="unsub-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: "25%" }}>Sender Name</th>
-                      <th style={{ width: "35%" }}>Sender Email</th>
-                      <th style={{ width: "20%" }}>Synchronized Count</th>
-                      <th style={{ width: "20%", textAlign: "right" }}>Cleanup Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {newsletterSenders.map((senderInfo) => (
-                      <tr key={senderInfo.email} className="unsub-row">
-                        <td style={{ fontWeight: "700", color: "var(--text-primary)" }}>{senderInfo.name}</td>
-                        <td style={{ color: "var(--text-muted)", fontFamily: "monospace" }}>{senderInfo.email}</td>
-                        <td>
-                          <span className="badge-count" style={{ background: "rgba(0, 0, 0, 0.05)", color: "var(--text-primary)" }}>
-                            {senderInfo.count} messages
-                          </span>
-                        </td>
-                        <td style={{ textAlign: "right" }}>
-                          <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
-                            {senderInfo.unsubscribeUrl && (
-                              <a 
-                                href={senderInfo.unsubscribeUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn-unsub-link"
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "0.35rem",
-                                  padding: "0.35rem 0.75rem",
-                                  background: "rgba(255,255,255,0.04)",
-                                  border: "1px solid var(--border-color)",
-                                  borderRadius: "6px",
-                                  color: "var(--text-secondary)",
-                                  fontSize: "0.74rem",
-                                  cursor: "pointer",
-                                  textDecoration: "none",
-                                  transition: "all 0.2s ease",
-                                }}
-                              >
-                                <span>Unsubscribe</span>
-                              </a>
-                            )}
-                            <button 
-                              className="btn-trash-sender"
-                              onClick={() => handleTrashSender(senderInfo.email)}
-                              disabled={isCleaning}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "0.35rem",
-                                padding: "0.35rem 0.75rem",
-                                background: "rgba(239, 68, 68, 0.1)",
-                                border: "1px solid rgba(239, 68, 68, 0.2)",
-                                borderRadius: "6px",
-                                color: "#f87171",
-                                fontSize: "0.74rem",
-                                cursor: "pointer",
-                                transition: "all 0.2s ease"
-                              }}
+
+                {/* New Workflow Form */}
+                {showNewWorkflow && (
+                  <div className="workflow-builder-card">
+                    <div className="wf-builder-header">
+                      <h3>New Workflow</h3>
+                      <button className="panel-close-btn" onClick={resetWorkflowForm}><X size={16} /></button>
+                    </div>
+
+                    <div className="wf-builder-body">
+                      {/* Name & Description */}
+                      <div className="wf-field-group">
+                        <div className="form-group">
+                          <label>Workflow Name *</label>
+                          <input type="text" value={wfName} onChange={e => setWfName(e.target.value)} placeholder="e.g. Daily Morning Digest" />
+                        </div>
+                        <div className="form-group">
+                          <label>Description</label>
+                          <input type="text" value={wfDescription} onChange={e => setWfDescription(e.target.value)} placeholder="Optional description..." />
+                        </div>
+                      </div>
+
+                      {/* Schedule */}
+                      <div className="wf-section-label"><Clock size={12} /> Schedule</div>
+                      <div className="wf-schedule-presets">
+                        {[
+                          { label: "Every Morning 8 AM", cron: "0 8 * * *" },
+                          { label: "Every Hour", cron: "0 * * * *" },
+                          { label: "Every 30 min", cron: "*/30 * * * *" },
+                          { label: "Every Weekday 9 AM", cron: "0 9 * * 1-5" },
+                          { label: "Custom", cron: "custom" },
+                        ].map(({ label, cron }) => (
+                          <button
+                            key={cron}
+                            type="button"
+                            className={`wf-preset-btn ${(cron !== "custom" && wfSchedule === cron) ? "active" : (cron === "custom" && !["0 8 * * *","0 * * * *","*/30 * * * *","0 9 * * 1-5"].includes(wfSchedule)) ? "active" : ""}`}
+                            onClick={() => { if (cron !== "custom") setWfSchedule(cron); }}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="form-group-row" style={{ marginTop: "0.5rem" }}>
+                        <div className="form-group" style={{ flex: 2 }}>
+                          <label>Cron Expression</label>
+                          <input type="text" value={wfSchedule} onChange={e => setWfSchedule(e.target.value)} placeholder="0 8 * * *" style={{ fontFamily: "monospace" }} />
+                        </div>
+                        <div className="form-group" style={{ flex: 1 }}>
+                          <label>Timezone</label>
+                          <select value={wfTimezone} onChange={e => setWfTimezone(e.target.value)}>
+                            <option value="UTC">UTC</option>
+                            <option value="Asia/Kolkata">IST (India)</option>
+                            <option value="America/New_York">EST (New York)</option>
+                            <option value="America/Los_Angeles">PST (LA)</option>
+                            <option value="Europe/London">GMT (London)</option>
+                            <option value="Europe/Berlin">CET (Berlin)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Action Steps */}
+                      <div className="wf-section-label"><Zap size={12} /> Action Pipeline</div>
+                      <div className="wf-steps-list">
+                        <div className={`wf-step-item ${wfActionSync ? "active" : ""}`}>
+                          <label className="wf-step-toggle">
+                            <input type="checkbox" checked={wfActionSync} onChange={e => setWfActionSync(e.target.checked)} />
+                            <div className="wf-step-info">
+                              <span className="wf-step-num">1</span>
+                              <div>
+                                <div className="wf-step-title"><RefreshCw size={12} /> Sync Emails</div>
+                                <div className="wf-step-desc">Pull new messages from Gmail into your inbox</div>
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+
+                        <div className={`wf-step-item ${wfActionSummarize ? "active" : ""}`}>
+                          <label className="wf-step-toggle">
+                            <input type="checkbox" checked={wfActionSummarize} onChange={e => setWfActionSummarize(e.target.checked)} />
+                            <div className="wf-step-info">
+                              <span className="wf-step-num">2</span>
+                              <div>
+                                <div className="wf-step-title"><Sparkles size={12} /> Summarize Emails</div>
+                                <div className="wf-step-desc">AI-summarize unread emails from the last 24 hours</div>
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+
+                        <div className={`wf-step-item ${wfActionJira ? "active" : ""}`}>
+                          <label className="wf-step-toggle">
+                            <input type="checkbox" checked={wfActionJira} onChange={e => {
+                              setWfActionJira(e.target.checked);
+                              if (e.target.checked && slackConnected && slackChannels.length === 0) fetchSlackChannels();
+                            }} />
+                            <div className="wf-step-info">
+                              <span className="wf-step-num">3</span>
+                              <div>
+                                <div className="wf-step-title">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ color: "#4A154B" }}><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/></svg>
+                                  Send to Slack
+                                </div>
+                                <div className="wf-step-desc">Post the email digest to a Slack channel</div>
+                              </div>
+                            </div>
+                          </label>
+                          {wfActionJira && (
+                            <div className="wf-step-config">
+                              {!slackConnected ? (
+                                <div className="wf-jira-not-connected">
+                                  <AlertCircle size={13} />
+                                  <span>Slack not connected. <button type="button" onClick={handleSlackConnect} style={{ background: "none", border: "none", color: "var(--accent-sky)", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Connect now</button></span>
+                                </div>
+                              ) : (
+                                <div className="form-group">
+                                  <label>Target Channel</label>
+                                  <select
+                                    value={wfSlackChannelId}
+                                    onChange={e => {
+                                      const ch = slackChannels.find(c => c.id === e.target.value);
+                                      setWfSlackChannelId(e.target.value);
+                                      setWfSlackChannelName(ch?.name || "");
+                                    }}
+                                  >
+                                    {slackChannels.length === 0 && <option value="">Loading channels...</option>}
+                                    {slackChannels.map(c => (
+                                      <option key={c.id} value={c.id}>#{c.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="wf-builder-footer">
+                        <button type="button" className="btn-secondary" style={{ fontSize: "0.78rem", padding: "0.4rem 0.8rem" }} onClick={resetWorkflowForm}>Cancel</button>
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          style={{ fontSize: "0.78rem", padding: "0.4rem 1rem" }}
+                          onClick={handleSaveWorkflow}
+                          disabled={isSavingWorkflow || !wfName.trim()}
+                        >
+                          {isSavingWorkflow ? "Saving..." : "Save Workflow"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Workflows List */}
+                {isLoadingWorkflows ? (
+                  <div className="wf-empty-state">Loading workflows...</div>
+                ) : workflows.length === 0 ? (
+                  <div className="wf-empty-state">
+                    <Zap size={28} style={{ color: "var(--text-dim)", marginBottom: "0.5rem" }} />
+                    <p>No workflows yet. Create your first automation to get started.</p>
+                  </div>
+                ) : (
+                  <div className="workflow-cards-list">
+                    {workflows.map((wf) => {
+                      const actions: any[] = (() => { try { return JSON.parse(wf.actions); } catch { return []; } })();
+                      const runState = workflowRunStatus[wf.id];
+                      return (
+                        <div key={wf.id} className={`workflow-card ${wf.enabled ? "" : "disabled"}`}>
+                          <div className="wf-card-left">
+                            <div className="wf-card-status-dot" style={{ background: wf.enabled ? "var(--google-green)" : "var(--text-dim)" }} />
+                            <div className="wf-card-info">
+                              <div className="wf-card-name">{wf.name}</div>
+                              {wf.description && <div className="wf-card-desc">{wf.description}</div>}
+                              <div className="wf-card-meta-row">
+                                <span className="wf-cron-badge"><Clock size={10} /> {wf.schedule}</span>
+                                <span className="wf-tz-badge">{wf.timezone}</span>
+                                {actions.map((a, i) => (
+                                  <span key={i} className="wf-action-chip">
+                                    {a.type === "sync_emails" && <><RefreshCw size={9} /> Sync</>}
+                                    {a.type === "summarize_emails" && <><Sparkles size={9} /> Summarize</>}
+                                    {a.type === "send_to_slack" && <><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/></svg> Slack</>}
+                                  </span>
+                                ))}
+                              </div>
+                              {wf.lastRunAt && (
+                                <div className="wf-last-run">
+                                  Last run: {new Date(wf.lastRunAt).toLocaleString()} ·{" "}
+                                  <span className={`wf-run-status ${wf.lastRunStatus}`}>{wf.lastRunStatus}</span>
+                                </div>
+                              )}
+                              {wf.nextRunAt && wf.enabled && (
+                                <div className="wf-next-run">Next run: {new Date(wf.nextRunAt).toLocaleString()}</div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="wf-card-actions">
+                            <button
+                              className={`wf-run-btn ${runState === "running" ? "spinning" : ""}`}
+                              onClick={() => handleRunWorkflow(wf.id)}
+                              disabled={runState === "running"}
+                              title="Run now"
                             >
-                              <Trash2 size={11} />
-                              <span>{isCleaning ? "Trashing..." : "Trash All"}</span>
+                              {runState === "running" ? <RefreshCw size={13} /> : <Play size={13} />}
+                            </button>
+                            <button
+                              className="wf-toggle-btn"
+                              onClick={() => handleToggleWorkflow(wf.id, wf.enabled)}
+                              title={wf.enabled ? "Pause" : "Resume"}
+                            >
+                              {wf.enabled ? <Pause size={13} /> : <Play size={13} />}
+                            </button>
+                            <button
+                              className="wf-delete-btn"
+                              onClick={() => handleDeleteWorkflow(wf.id)}
+                              title="Delete"
+                            >
+                              <Trash size={13} />
                             </button>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
             </div>
           )}
 
+
+          {/* TAB 4: Unsubscribe Hub */}
+
+          {activeTab === "unsubscribe" && (() => {
+            const selectedCount = Object.keys(selectedSenders).filter(email => selectedSenders[email]).length;
+            const isAllSelected = newsletterSenders.length > 0 && newsletterSenders.every(sender => selectedSenders[sender.email]);
+            const toggleSelectAll = () => {
+              if (isAllSelected) {
+                setSelectedSenders({});
+              } else {
+                const newSelected: Record<string, boolean> = {};
+                newsletterSenders.forEach(sender => {
+                  newSelected[sender.email] = true;
+                });
+                setSelectedSenders(newSelected);
+              }
+            };
+
+            return (
+              <div className="unsubscribe-container">
+                <div className="unsub-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: "1.5rem" }}>
+                  <div>
+                    <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
+                      Unsubscribe & Campaign Helper
+                    </h2>
+                    <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>
+                      The AI detected these senders as circulars, promotional lists, or newsletter campaigns. Trash them all-time to clear Google space.
+                    </p>
+                  </div>
+                  
+                  {totalClearedCount > 0 && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1rem",
+                      padding: "0.75rem 1.25rem",
+                      background: "rgba(16, 185, 129, 0.08)",
+                      border: "1px solid rgba(16, 185, 129, 0.2)",
+                      borderRadius: "10px",
+                      boxShadow: "0 4px 12px rgba(16, 185, 129, 0.05)"
+                    }}>
+                      <ShieldCheck size={18} style={{ color: "var(--google-green)" }} />
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span style={{ fontSize: "0.68rem", color: "var(--google-green)", opacity: 0.85, textTransform: "uppercase", letterSpacing: "1px", fontWeight: "700" }}>All-Time Mailbox Cleared</span>
+                        <span style={{ fontSize: "0.85rem", fontWeight: "800", color: "var(--google-green)" }}>
+                          {totalClearedCount} emails (~{(totalFreedBytes / (1024 * 1024)).toFixed(2)} MB)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bulk Actions Bar */}
+                {selectedCount > 0 && (
+                  <div className="bulk-actions-bar" style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "0.75rem 1.25rem",
+                    background: "rgba(26, 115, 232, 0.08)",
+                    border: "1px solid rgba(26, 115, 232, 0.2)",
+                    borderRadius: "10px",
+                    marginBottom: "1rem",
+                    animation: "fadeIn 0.2s ease"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <CheckSquare size={16} style={{ color: "var(--accent-indigo)" }} />
+                      <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-primary)" }}>
+                        {selectedCount} sender{selectedCount > 1 ? 's' : ''} selected
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.75rem" }}>
+                      <button
+                        onClick={handleUnsubscribeSelectedSenders}
+                        className="btn-bulk-unsub"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.35rem",
+                          padding: "0.4rem 0.85rem",
+                          background: "var(--bg-secondary)",
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "6px",
+                          color: "var(--text-secondary)",
+                          fontSize: "0.76rem",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        <span>Unsubscribe Selected</span>
+                      </button>
+                      <button
+                        onClick={handleTrashSelectedSenders}
+                        disabled={isCleaning}
+                        className="btn-bulk-trash"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.35rem",
+                          padding: "0.4rem 0.85rem",
+                          background: "rgba(239, 68, 68, 0.1)",
+                          border: "1px solid rgba(239, 68, 68, 0.2)",
+                          borderRadius: "6px",
+                          color: "#f87171",
+                          fontSize: "0.76rem",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        <Trash2 size={13} />
+                        <span>{isCleaning ? "Trashing..." : "Trash All-Time"}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {newsletterSenders.length === 0 ? (
+                  <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "4rem", fontSize: "0.82rem" }}>
+                    🎉 No repetitive newsletters or promotions detected. Your inbox is clean!
+                  </div>
+                ) : (
+                  <table className="unsub-table">
+                    <thead>
+                      <tr>
+                        <th className="checkbox-cell">
+                          <input
+                            type="checkbox"
+                            className="unsub-checkbox"
+                            checked={isAllSelected}
+                            onChange={toggleSelectAll}
+                          />
+                        </th>
+                        <th style={{ width: "25%" }}>Sender Name</th>
+                        <th style={{ width: "30%" }}>Sender Email</th>
+                        <th style={{ width: "15%" }}>Synchronized Count</th>
+                        <th style={{ width: "25%", textAlign: "right" }}>Cleanup Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {newsletterSenders.map((senderInfo) => {
+                        const isSelected = !!selectedSenders[senderInfo.email];
+                        return (
+                          <tr 
+                            key={senderInfo.email} 
+                            className={`unsub-row ${isSelected ? 'selected-row' : ''}`}
+                            onClick={() => {
+                              setSelectedSenders(prev => ({
+                                ...prev,
+                                [senderInfo.email]: !isSelected
+                              }));
+                            }}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <td className="checkbox-cell" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                className="unsub-checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  setSelectedSenders(prev => ({
+                                    ...prev,
+                                    [senderInfo.email]: e.target.checked
+                                  }));
+                                }}
+                              />
+                            </td>
+                            <td style={{ fontWeight: "700", color: "var(--text-primary)" }}>{senderInfo.name}</td>
+                            <td style={{ color: "var(--text-muted)", fontFamily: "monospace" }}>{senderInfo.email}</td>
+                            <td>
+                              <span className="badge-count" style={{ background: "rgba(0, 0, 0, 0.05)", color: "var(--text-primary)" }}>
+                                {senderInfo.count} messages
+                              </span>
+                            </td>
+                            <td className="actions-cell" style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                                {senderInfo.unsubscribeUrl && (
+                                  <a 
+                                    href={senderInfo.unsubscribeUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn-unsub-link"
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "0.35rem",
+                                      padding: "0.35rem 0.75rem",
+                                      background: "rgba(255,255,255,0.04)",
+                                      border: "1px solid var(--border-color)",
+                                      borderRadius: "6px",
+                                      color: "var(--text-secondary)",
+                                      fontSize: "0.74rem",
+                                      cursor: "pointer",
+                                      textDecoration: "none",
+                                      transition: "all 0.2s ease",
+                                    }}
+                                  >
+                                    <span>Unsubscribe</span>
+                                  </a>
+                                )}
+                                <button 
+                                  className="btn-trash-sender"
+                                  onClick={() => handleTrashSender(senderInfo.email)}
+                                  disabled={isCleaning}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "0.35rem",
+                                    padding: "0.35rem 0.75rem",
+                                    background: "rgba(239, 68, 68, 0.1)",
+                                    border: "1px solid rgba(239, 68, 68, 0.2)",
+                                    borderRadius: "6px",
+                                    color: "#f87171",
+                                    fontSize: "0.74rem",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease"
+                                  }}
+                                >
+                                  <Trash2 size={11} />
+                                  <span>{isCleaning ? "Trashing..." : "Trash All"}</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            );
+          })()}
+
         </div>
+      </div>
       </div>
 
       {/* 3. Right Panel: Copilot Chat */}
@@ -3804,9 +3954,9 @@ export default function Home() {
               </div>
             ))}
             {isChatLoading && (
-              <div className="chat-msg assistant" style={{ fontStyle: "italic", display: "flex", gap: "0.4rem", alignItems: "center" }}>
+              <div className="chat-msg assistant" style={{ fontStyle: "italic", display: "flex", gap: "0.4rem", alignItems: "center", opacity: 0.7 }}>
                 <RefreshCw size={11} className="animate-spin" />
-                <span>Compiling context...</span>
+                <span>Thinking...</span>
               </div>
             )}
             <div ref={chatEndRef} />
@@ -3824,29 +3974,37 @@ export default function Home() {
 
           {/* Send panel */}
           <div className="chat-input-container">
-            <input 
-              type="text" 
-              className="chat-input"
-              placeholder="Query mailbox (e.g. 'Summarize my week')..."
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+            {chatRemainingQueries !== null && chatRemainingQueries <= 3 && (
+              <div style={{ fontSize: "0.67rem", color: chatRemainingQueries === 0 ? "#f87171" : "#f59e0b", padding: "0.2rem 0.75rem 0", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                <AlertCircle size={10} />
+                {chatRemainingQueries === 0 ? "Rate limit reached — wait 1 min" : `${chatRemainingQueries} queries left this minute`}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+              <input 
+                type="text" 
+                className="chat-input"
+                placeholder="Ask about your emails..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSendChat(chatInput);
+                    setChatInput("");
+                  }
+                }}
+              />
+              <button 
+                className="btn-chat-send"
+                onClick={() => {
                   handleSendChat(chatInput);
                   setChatInput("");
-                }
-              }}
-            />
-            <button 
-              className="btn-chat-send"
-              onClick={() => {
-                handleSendChat(chatInput);
-                setChatInput("");
-              }}
-              disabled={isChatLoading || !chatInput.trim()}
-            >
-              <Send size={12} />
-            </button>
+                }}
+                disabled={isChatLoading || !chatInput.trim()}
+              >
+                <Send size={12} />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -3855,7 +4013,7 @@ export default function Home() {
       <div className="floating-chat-container">
         {showPaTooltip && (
           <div className="pa-tooltip-bubble">
-            <span>Use me, I'm your PA!</span>
+            <span>Use me, I&apos;m your PA!</span>
             <button className="pa-tooltip-close" onClick={dismissTooltip}>×</button>
           </div>
         )}
@@ -3891,8 +4049,8 @@ export default function Home() {
                       <div className="radio-dot-inner" />
                     </div>
                     <div className="strategy-info">
-                      <span className="strategy-name">Trash Newsletters & Promotions</span>
-                      <span className="strategy-desc-text">Cleans weekly duplicate newsletters and all promotions.</span>
+                      <span className="strategy-name">Trash Duplicates & Notifications</span>
+                      <span className="strategy-desc-text">Cleans duplicate newsletters and all system notifications.</span>
                     </div>
                   </div>
                   
@@ -3905,7 +4063,7 @@ export default function Home() {
                     </div>
                     <div className="strategy-info">
                       <span className="strategy-name">Trash Duplicate Newsletters Only</span>
-                      <span className="strategy-desc-text">Retains promotions, only clears duplicate circular content.</span>
+                      <span className="strategy-desc-text">Retains notifications, only clears duplicate circular content.</span>
                     </div>
                   </div>
                   
@@ -3917,8 +4075,8 @@ export default function Home() {
                       <div className="radio-dot-inner" />
                     </div>
                     <div className="strategy-info">
-                      <span className="strategy-name">Trash Promotions Only</span>
-                      <span className="strategy-desc-text">Retains duplicates, clears the promotions category.</span>
+                      <span className="strategy-name">Trash Notifications Only</span>
+                      <span className="strategy-desc-text">Retains duplicates, clears the system notifications category.</span>
                     </div>
                   </div>
                 </div>

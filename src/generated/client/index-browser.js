@@ -151,6 +151,40 @@ exports.Prisma.UserScalarFieldEnum = {
   image: 'image'
 };
 
+exports.Prisma.WebhookConnectionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  description: 'description',
+  url: 'url',
+  method: 'method',
+  headers: 'headers',
+  emoji: 'emoji',
+  secret: 'secret',
+  lastTestedAt: 'lastTestedAt',
+  lastTestStatus: 'lastTestStatus',
+  lastTestCode: 'lastTestCode',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.WorkflowScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  description: 'description',
+  enabled: 'enabled',
+  schedule: 'schedule',
+  timezone: 'timezone',
+  actions: 'actions',
+  lastRunAt: 'lastRunAt',
+  nextRunAt: 'nextRunAt',
+  lastRunStatus: 'lastRunStatus',
+  lastRunLog: 'lastRunLog',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.VerificationTokenScalarFieldEnum = {
   identifier: 'identifier',
   token: 'token',
@@ -205,6 +239,24 @@ exports.Prisma.SyncStateScalarFieldEnum = {
   lastSyncAt: 'lastSyncAt'
 };
 
+exports.Prisma.QueryCacheScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  queryHash: 'queryHash',
+  queryText: 'queryText',
+  answer: 'answer',
+  hitCount: 'hitCount',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt'
+};
+
+exports.Prisma.RateLimitScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  windowStart: 'windowStart',
+  requestCount: 'requestCount'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -225,11 +277,15 @@ exports.Prisma.ModelName = {
   Account: 'Account',
   Session: 'Session',
   User: 'User',
+  WebhookConnection: 'WebhookConnection',
+  Workflow: 'Workflow',
   VerificationToken: 'VerificationToken',
   UserPreference: 'UserPreference',
   Email: 'Email',
   EmailSummary: 'EmailSummary',
-  SyncState: 'SyncState'
+  SyncState: 'SyncState',
+  QueryCache: 'QueryCache',
+  RateLimit: 'RateLimit'
 };
 
 /**

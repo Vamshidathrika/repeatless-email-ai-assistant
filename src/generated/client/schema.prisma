@@ -37,15 +37,58 @@ model Session {
 }
 
 model User {
-  id            String          @id @default(cuid())
+  id            String              @id @default(cuid())
   name          String?
-  email         String?         @unique
+  email         String?             @unique
   emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
   emails        Email[]
   preferences   UserPreference?
+  workflows     Workflow[]
+  webhooks      WebhookConnection[]
+}
+
+model WebhookConnection {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  url            String
+  method         String    @default("POST") // POST or GET
+  headers        String? // JSON object of custom headers
+  emoji          String    @default("🔗")
+  secret         String? // Optional signing secret (HMAC)
+  lastTestedAt   DateTime?
+  lastTestStatus String? // "success" | "error"
+  lastTestCode   Int? // HTTP status code of last test
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Workflow {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  enabled       Boolean   @default(true)
+  schedule      String // Cron expression e.g. "0 8 * * *"
+  timezone      String    @default("UTC")
+  actions       String // JSON array of action step configs
+  lastRunAt     DateTime?
+  nextRunAt     DateTime?
+  lastRunStatus String? // "success" | "error" | "running"
+  lastRunLog    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([nextRunAt])
 }
 
 model VerificationToken {
@@ -112,4 +155,29 @@ model SyncState {
   userId        String   @unique
   lastHistoryId String?
   lastSyncAt    DateTime @default(now())
+}
+
+/// RAG Query Cache — stores normalized query hashes → AI answers per user
+/// Avoids re-calling LLM for semantically identical queries (TTL: 24h default)
+model QueryCache {
+  id        String   @id @default(cuid())
+  userId    String
+  queryHash String // SHA-256 of normalized query string
+  queryText String // Original query for debugging
+  answer    String // Cached LLM answer
+  hitCount  Int      @default(0) // Number of times this cache entry was used
+  createdAt DateTime @default(now())
+  expiresAt DateTime // Cache TTL — default 24h from creation
+
+  @@unique([userId, queryHash])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Per-user rate limiting state — sliding window counters
+model RateLimit {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  windowStart  DateTime @default(now())
+  requestCount Int      @default(0)
 }

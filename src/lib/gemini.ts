@@ -199,7 +199,72 @@ You MUST respond with a JSON object containing the following keys (do not includ
     }
 
     const cleaned = cleanJsonResponse(responseText);
-    return JSON.parse(cleaned) as SummaryResult;
+    const parsed = JSON.parse(cleaned) as any;
+    
+    // Ensure shortSummary is a string
+    if (parsed.shortSummary !== undefined && typeof parsed.shortSummary !== "string") {
+      parsed.shortSummary = String(parsed.shortSummary);
+    }
+    
+    // Ensure detailedSummary is a string
+    if (parsed.detailedSummary !== undefined) {
+      if (typeof parsed.detailedSummary !== "string") {
+        if (Array.isArray(parsed.detailedSummary)) {
+          parsed.detailedSummary = parsed.detailedSummary
+            .map((item: any) => {
+              if (typeof item === "string") return item;
+              if (item && typeof item === "object" && "text" in item) return String(item.text);
+              return JSON.stringify(item);
+            })
+            .join("\n");
+        } else if (typeof parsed.detailedSummary === "object" && parsed.detailedSummary !== null) {
+          if ("text" in parsed.detailedSummary) {
+            parsed.detailedSummary = String(parsed.detailedSummary.text);
+          } else {
+            parsed.detailedSummary = JSON.stringify(parsed.detailedSummary);
+          }
+        } else {
+          parsed.detailedSummary = String(parsed.detailedSummary);
+        }
+      }
+    } else {
+      parsed.detailedSummary = "";
+    }
+
+    // Ensure category is a string
+    if (parsed.category !== undefined && typeof parsed.category !== "string") {
+      parsed.category = String(parsed.category);
+    }
+
+    // Ensure importanceScore is a number
+    if (parsed.importanceScore !== undefined && typeof parsed.importanceScore !== "number") {
+      const parsedNum = Number(parsed.importanceScore);
+      parsed.importanceScore = isNaN(parsedNum) ? 5 : parsedNum;
+    }
+
+    // Ensure actionItems is a string array
+    if (parsed.actionItems !== undefined) {
+      if (!Array.isArray(parsed.actionItems)) {
+        parsed.actionItems = typeof parsed.actionItems === "string" ? [parsed.actionItems] : [];
+      } else {
+        parsed.actionItems = parsed.actionItems.map((item: any) => typeof item === "string" ? item : JSON.stringify(item));
+      }
+    } else {
+      parsed.actionItems = [];
+    }
+
+    // Ensure replySuggestions is a string array
+    if (parsed.replySuggestions !== undefined) {
+      if (!Array.isArray(parsed.replySuggestions)) {
+        parsed.replySuggestions = typeof parsed.replySuggestions === "string" ? [parsed.replySuggestions] : [];
+      } else {
+        parsed.replySuggestions = parsed.replySuggestions.map((item: any) => typeof item === "string" ? item : JSON.stringify(item));
+      }
+    } else {
+      parsed.replySuggestions = [];
+    }
+
+    return parsed as SummaryResult;
   } catch (error) {
     console.error("Groq summarization failed after retries:", error);
     return {

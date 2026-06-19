@@ -50,10 +50,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
+        const userId = (session.user as any).id;
     const body = await req.json().catch(() => ({}));
     const strategy = body.strategy;
     const sender = body.sender;
+    const senders = body.senders; // Array of sender emails
     const emailIds = body.emailIds; // Array of IDs to delete
 
     const gmail = await getGmailClient(userId);
@@ -63,6 +64,66 @@ export async function POST(req: Request) {
     if (emailIds && Array.isArray(emailIds) && emailIds.length > 0) {
       // Clean specific list of emails
       idsToTrash = emailIds;
+    } else if (senders && Array.isArray(senders) && senders.length > 0) {
+      // Clean all emails from multiple senders, all-time in Gmail
+      const results = await Promise.all(
+        senders.map(async (singleSender: string) => {
+          try {
+            const emailMatch = singleSender.match(/<([^>]+)>/);
+            const cleanSenderEmail = emailMatch ? emailMatch[1] : singleSender;
+
+            const gmailList = await gmail.users.messages.list({
+              userId: "me",
+              q: `from:${cleanSenderEmail}`,
+              maxResults: 1000,
+            });
+
+            const messages = gmailList.data.messages || [];
+            return {
+              success: true,
+              ids: messages.map((m) => m.id as string).filter(Boolean),
+              sender: singleSender,
+            };
+          } catch (err) {
+            console.error(`Failed to query Gmail for ${singleSender}, falling back:`, err);
+            return {
+              success: false,
+              ids: [],
+              sender: singleSender,
+            };
+          }
+        })
+      );
+
+      const allIdsToTrash: string[] = [];
+      const localFallbackSenders: string[] = [];
+      for (const res of results) {
+        if (res.success) {
+          allIdsToTrash.push(...res.ids);
+        } else {
+          localFallbackSenders.push(res.sender);
+        }
+      }
+
+      if (localFallbackSenders.length > 0) {
+        const localEmails = await db.email.findMany({
+          where: {
+            userId,
+            OR: localFallbackSenders.map((s) => ({
+              sender: {
+                contains: s,
+                mode: "insensitive",
+              },
+            })),
+          },
+          select: {
+            id: true,
+          },
+        });
+        allIdsToTrash.push(...localEmails.map((e) => e.id));
+      }
+
+      idsToTrash = Array.from(new Set(allIdsToTrash));
     } else if (sender) {
       // Clean all emails from a specific sender, all-time in Gmail
       try {
@@ -104,7 +165,7 @@ export async function POST(req: Request) {
       if (activeStrategy === "promotions" || activeStrategy === "both") {
         conditions.push({
           summary: {
-            category: "Promotions",
+            category: "Notifications",
           },
         });
       }
