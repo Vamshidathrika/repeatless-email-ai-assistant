@@ -6,7 +6,7 @@ import {
   Inbox, Sparkles, RefreshCw, LogOut, Send, Search, CheckSquare, 
   MessageSquare, User, AlertCircle, ChevronRight, Mail, Reply, ArrowRight, UserCheck, Star, Trash2,
   BarChart2, Calendar, ShieldCheck, MailOpen, X, Sun, Moon, PanelLeftClose, PanelLeft, Folder, Tag, Users,
-  Briefcase, Zap, Link2, Play, Pause, Trash, Plus, Clock, ToggleLeft, ToggleRight
+  Briefcase, Zap, Link2, Play, Pause, Trash, Plus, Clock, ToggleLeft, ToggleRight, Pencil
 } from "lucide-react";
 
 interface EmailSummary {
@@ -229,6 +229,7 @@ export default function Home() {
   const [workflows, setWorkflows] = useState<any[]>([]);
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState<boolean>(false);
   const [showNewWorkflow, setShowNewWorkflow] = useState<boolean>(false);
+  const [editingWorkflowId, setEditingWorkflowId] = useState<string | null>(null);
   const [wfName, setWfName] = useState<string>("");
   const [wfDescription, setWfDescription] = useState<string>("");
   const [wfSchedule, setWfSchedule] = useState<string>("0 8 * * *");
@@ -759,6 +760,7 @@ export default function Home() {
     setWfSlackChannelName("");
     setWfWebhookId("");
     setWfWebhookName("");
+    setEditingWorkflowId(null);
     setShowNewWorkflow(false);
   };
 
@@ -780,8 +782,12 @@ export default function Home() {
     });
 
     try {
-      const res = await fetch("/api/workflows", {
-        method: "POST",
+      const isEditing = !!editingWorkflowId;
+      const url = isEditing ? `/api/workflows/${editingWorkflowId}` : "/api/workflows";
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: wfName,
@@ -797,7 +803,11 @@ export default function Home() {
         return;
       }
       if (data.workflow) {
-        setWorkflows((prev) => [data.workflow, ...prev]);
+        if (isEditing) {
+          setWorkflows((prev) => prev.map((w) => w.id === editingWorkflowId ? data.workflow : w));
+        } else {
+          setWorkflows((prev) => [data.workflow, ...prev]);
+        }
         resetWorkflowForm();
       }
     } catch (e: any) {
@@ -806,6 +816,55 @@ export default function Home() {
     } finally {
       setIsSavingWorkflow(false);
     }
+  };
+
+  const handleEditWorkflow = (wf: any) => {
+    setEditingWorkflowId(wf.id);
+    setWfName(wf.name);
+    setWfDescription(wf.description || "");
+    setWfSchedule(wf.schedule);
+    setWfTimezone(wf.timezone || "UTC");
+    
+    // Parse actions
+    let actions: any[] = [];
+    try {
+      actions = JSON.parse(wf.actions);
+    } catch (e) {
+      console.error("Failed to parse actions", e);
+    }
+
+    const hasSync = actions.some((a) => a.type === "sync_emails");
+    const hasSummarize = actions.some((a) => a.type === "summarize_emails");
+    const hasSlack = actions.some((a) => a.type === "send_to_slack");
+    const hasWebhook = actions.some((a) => a.type === "send_to_webhook");
+
+    setWfActionSync(hasSync);
+    setWfActionSummarize(hasSummarize);
+    setWfActionSlack(hasSlack);
+    setWfActionWebhook(hasWebhook);
+
+    if (hasSlack) {
+      const slackAct = actions.find((a) => a.type === "send_to_slack");
+      setWfSlackChannelId(slackAct?.channelId || "");
+      setWfSlackChannelName(slackAct?.channelName || "");
+      if (slackConnected && slackChannels.length === 0) {
+        fetchSlackChannels();
+      }
+    } else {
+      setWfSlackChannelId("");
+      setWfSlackChannelName("");
+    }
+
+    if (hasWebhook) {
+      const webhookAct = actions.find((a) => a.type === "send_to_webhook");
+      setWfWebhookId(webhookAct?.webhookId || "");
+      setWfWebhookName(webhookAct?.webhookName || "");
+    } else {
+      setWfWebhookId("");
+      setWfWebhookName("");
+    }
+
+    setShowNewWorkflow(true);
   };
 
   const handleToggleWorkflow = async (id: string, enabled: boolean) => {
@@ -3181,7 +3240,7 @@ export default function Home() {
                 {showNewWorkflow && (
                   <div className="workflow-builder-card">
                     <div className="wf-builder-header">
-                      <h3>New Workflow</h3>
+                      <h3>{editingWorkflowId ? "Edit Workflow" : "New Workflow"}</h3>
                       <button className="panel-close-btn" onClick={resetWorkflowForm}><X size={16} /></button>
                     </div>
 
@@ -3321,7 +3380,7 @@ export default function Home() {
                           onClick={handleSaveWorkflow}
                           disabled={isSavingWorkflow || !wfName.trim()}
                         >
-                          {isSavingWorkflow ? "Saving..." : "Save Workflow"}
+                          {isSavingWorkflow ? "Saving..." : editingWorkflowId ? "Save Changes" : "Save Workflow"}
                         </button>
                       </div>
                     </div>
@@ -3392,6 +3451,13 @@ export default function Home() {
                               }}
                             >
                               {wf.enabled ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
+                            </button>
+                            <button
+                              className="wf-edit-btn"
+                              onClick={() => handleEditWorkflow(wf)}
+                              title="Edit"
+                            >
+                              <Pencil size={13} />
                             </button>
                             <button
                               className="wf-delete-btn"

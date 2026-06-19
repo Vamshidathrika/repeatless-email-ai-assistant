@@ -2970,7 +2970,7 @@ button {
   flex-shrink: 0;
 }
 
-.wf-run-btn, .wf-toggle-btn, .wf-delete-btn {
+.wf-run-btn, .wf-toggle-btn, .wf-delete-btn, .wf-edit-btn {
   width: 30px;
   height: 30px;
   border-radius: var(--radius-xs);
@@ -2985,10 +2985,12 @@ button {
 
 .wf-run-btn   { color: var(--accent-sky); }
 .wf-toggle-btn{ color: var(--text-secondary); }
+.wf-edit-btn  { color: var(--text-secondary); }
 .wf-delete-btn{ color: var(--google-red); }
 
 .wf-run-btn:hover   { background: rgba(56,189,248,0.1);  border-color: rgba(56,189,248,0.25); }
 .wf-toggle-btn:hover{ background: var(--bg-surface-hover); border-color: var(--border-hover); color: var(--text-primary); }
+.wf-edit-btn:hover  { background: var(--bg-surface-hover); border-color: var(--border-hover); color: var(--text-primary); }
 .wf-delete-btn:hover{ background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.3); }
 
 .wf-run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
