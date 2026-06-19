@@ -2209,28 +2209,30 @@ export default function Home() {
                                 const isNoReply = sender.includes("noreply") || sender.includes("no-reply") || sender.includes("notification") || sender.includes("alert");
                                 
                                 // 1. Check for Verification Code / OTP
+                                // Clean URLs first to prevent matching URL parameters like `otp=` or `verification=...`
+                                const cleanBodyForOtp = body
+                                  .replace(/https?:\/\/[^\s]+/g, "")
+                                  .replace(/www\.[^\s]+/g, "");
+
                                 const isOtp = 
-                                  subject.includes("verification") || 
-                                  subject.includes("otp") || 
-                                  subject.includes("one-time") || 
-                                  subject.includes("one time") || 
-                                  subject.includes("security code") ||
-                                  subject.includes("login code") ||
-                                  subject.includes("reset password") ||
-                                  body.includes("verification code") ||
-                                  body.includes("security code") ||
-                                  body.includes("login code") ||
-                                  body.includes("otp") ||
-                                  body.includes("one-time password");
+                                  /\b(verification|otp|one-time|one time|security code|login code|reset password)\b/i.test(subject) || 
+                                  /\b(verification code|security code|login code|otp|one-time password)\b/i.test(cleanBodyForOtp);
 
                                 if (isOtp) {
-                                  const text = `${selectedEmail.subject} \n ${selectedEmail.bodyContent}`;
+                                  const text = `${selectedEmail.subject} \n ${selectedEmail.bodyContent.replace(/https?:\/\/[^\s]+/g, "").replace(/www\.[^\s]+/g, "")}`;
                                   const codeMatch = text.match(/\b(?!(?:19|20)\d{2}\b)\d{4,8}\b/);
                                   let code = codeMatch ? codeMatch[0] : null;
                                   if (!code) {
                                     const alphaCodeMatch = text.match(/\b[A-Z0-9]{5,8}\b/i);
                                     if (alphaCodeMatch) code = alphaCodeMatch[0];
                                   }
+                                  
+                                  // Prevent common non-OTP uppercase English/layout words from being extracted as codes
+                                  const commonNonOtpWords = new Set(["CONNECT", "PROFILE", "STUDENT", "VIEW", "EMAIL", "SENDER", "SIGNIN", "LOGIN", "ONLINE", "ACTIVE"]);
+                                  if (code && commonNonOtpWords.has(code.toUpperCase())) {
+                                    code = null;
+                                  }
+
                                   return { type: "otp" as const, code };
                                 }
 
