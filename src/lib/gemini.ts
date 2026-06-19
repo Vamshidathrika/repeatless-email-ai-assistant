@@ -14,24 +14,29 @@ export interface DraftResult {
 
 // Helper to resolve model names based on OpenRouter availability
 function resolveModelName(modelName: string): string {
+  // Always force free models to prevent credit issues
   if (!modelName) {
     return "google/gemini-2.5-flash:free";
   }
-  // Map standard/old Gemini models to their OpenRouter free equivalents
-  if (
-    modelName === "gemini-3.5-flash" ||
-    modelName === "gemini-2.5-flash-lite" ||
-    modelName === "gemini-2.5-flash" ||
-    modelName === "gemini-2.0-flash-lite" ||
-    modelName === "gemini-1.5-flash"
-  ) {
+  
+  if (!modelName.endsWith(":free")) {
+    const nameLower = modelName.toLowerCase();
+    if (nameLower.includes("gemini")) {
+      return "google/gemini-2.5-flash:free";
+    }
+    if (nameLower.includes("gemma")) {
+      return "google/gemma-2-9b-it:free";
+    }
+    if (nameLower.includes("qwen")) {
+      return "qwen/qwen-2.5-72b-instruct:free";
+    }
+    if (nameLower.includes("mistral")) {
+      return "mistralai/mistral-7b-instruct:free";
+    }
+    // Default fallback to gemini free
     return "google/gemini-2.5-flash:free";
   }
   
-  // If it's a short name without provider, default to google/ and free
-  if (modelName.startsWith("gemini-")) {
-    return `google/${modelName}:free`;
-  }
   return modelName;
 }
 
