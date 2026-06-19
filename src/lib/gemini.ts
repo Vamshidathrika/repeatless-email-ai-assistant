@@ -12,29 +12,33 @@ export interface DraftResult {
   body: string;
 }
 
-// Helper to resolve model names based on OpenRouter availability
+// Helper to resolve model names based on Groq availability
 function resolveModelName(modelName: string): string {
-  // Always force free models to prevent credit issues
   if (!modelName) {
-    return "google/gemini-2.5-flash:free";
+    return "llama-3.3-70b-versatile";
   }
   
-  if (!modelName.endsWith(":free")) {
-    const nameLower = modelName.toLowerCase();
-    if (nameLower.includes("gemini")) {
-      return "google/gemini-2.5-flash:free";
-    }
-    if (nameLower.includes("gemma")) {
-      return "google/gemma-2-9b-it:free";
-    }
-    if (nameLower.includes("qwen")) {
-      return "qwen/qwen-2.5-72b-instruct:free";
-    }
-    if (nameLower.includes("mistral")) {
-      return "mistralai/mistral-7b-instruct:free";
-    }
-    // Default fallback to gemini free
-    return "google/gemini-2.5-flash:free";
+  const nameLower = modelName.toLowerCase();
+  
+  // Map standard/old Gemini models to their Groq equivalents
+  if (
+    nameLower.includes("gemini") ||
+    nameLower.includes("llama-3.3") ||
+    nameLower.includes("70b")
+  ) {
+    return "llama-3.3-70b-versatile";
+  }
+  
+  if (nameLower.includes("gemma")) {
+    return "gemma2-9b-it";
+  }
+  
+  if (nameLower.includes("qwen") || nameLower.includes("llama3-8b") || nameLower.includes("8b")) {
+    return "llama3-8b-8192";
+  }
+  
+  if (nameLower.includes("mistral") || nameLower.includes("mixtral") || nameLower.includes("8x7b")) {
+    return "mixtral-8x7b-32768";
   }
   
   return modelName;
@@ -52,20 +56,20 @@ function cleanJsonResponse(text: string): string {
   return cleaned.trim();
 }
 
-// Helper to make requests to OpenRouter's API with an automated model fallback chain
-async function fetchOpenRouter(messages: { role: string; content: string }[], activeModel: string, jsonMode = false) {
-  const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+// Helper to make requests to Groq's API with an automated model fallback chain
+async function fetchGroq(messages: { role: string; content: string }[], activeModel: string, jsonMode = false) {
+  const apiKey = process.env.GROQ_API_KEY || process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("Neither OPENROUTER_API_KEY nor GEMINI_API_KEY is configured in your environment.");
+    throw new Error("Neither GROQ_API_KEY, OPENROUTER_API_KEY, nor GEMINI_API_KEY is configured in your environment.");
   }
 
-  // Define the chain of free models to try in sequence if a failure occurs
+  // Define the chain of Groq models to try in sequence if a failure occurs
   const modelsToTry = [activeModel];
   const fallbackList = [
-    "google/gemini-2.5-flash:free",
-    "google/gemma-2-9b-it:free",
-    "qwen/qwen-2.5-72b-instruct:free",
-    "mistralai/mistral-7b-instruct:free"
+    "llama-3.3-70b-versatile",
+    "gemma2-9b-it",
+    "llama3-8b-8192",
+    "mixtral-8x7b-32768"
   ];
   
   for (const model of fallbackList) {
@@ -78,21 +82,18 @@ async function fetchOpenRouter(messages: { role: string; content: string }[], ac
 
   for (const model of modelsToTry) {
     try {
-      console.log(`[OpenRouter] Attempting generation with model: ${model}`);
+      console.log(`[Groq] Attempting generation with model: ${model}`);
       
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://repeatless.vercel.app",
-          "X-Title": "Repeatless Email Assistant",
         },
         body: JSON.stringify({
           model: model,
           messages: messages,
-          // Only pass response_format if the model isn't gemma/mistral to avoid strict format errors
-          response_format: jsonMode && !model.includes("gemma") && !model.includes("mistral") ? { type: "json_object" } : undefined,
+          response_format: jsonMode ? { type: "json_object" } : undefined,
         }),
       });
 
@@ -107,11 +108,11 @@ async function fetchOpenRouter(messages: { role: string; content: string }[], ac
       }
 
       const content = data.choices[0].message.content || "";
-      console.log(`[OpenRouter] Successfully generated response using model: ${model}`);
+      console.log(`[Groq] Successfully generated response using model: ${model}`);
       return content;
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      console.warn(`[OpenRouter] Model ${model} failed: ${errorMsg}. Trying next fallback model...`);
+      console.warn(`[Groq] Model ${model} failed: ${errorMsg}. Trying next fallback model...`);
       lastError = err instanceof Error ? err : new Error(errorMsg);
     }
   }
@@ -142,7 +143,7 @@ async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, delay = 10
       errorMsg.includes("insufficient");
 
     if (retries > 0 && isRateLimit && !isQuotaExceeded) {
-      console.warn(`OpenRouter request rate limited/unavailable. Retrying in ${delay}ms... (${retries} retries left)`);
+      console.warn(`Groq request rate limited/unavailable. Retrying in ${delay}ms... (${retries} retries left)`);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return retryWithBackoff(fn, retries - 1, delay * 2.5); // Exponential backoff
     }
@@ -155,7 +156,7 @@ export async function summarizeThreadEmail(
   sender: string,
   body: string,
   threadContext: string,
-  modelName: string = "google/gemini-2.5-flash:free"
+  modelName: string = "llama-3.3-70b-versatile"
 ): Promise<SummaryResult> {
   const activeModel = resolveModelName(modelName);
   
@@ -183,7 +184,7 @@ You MUST respond with a JSON object containing the following keys (do not includ
 
   try {
     const responseText = await retryWithBackoff(() =>
-      fetchOpenRouter(
+      fetchGroq(
         [
           { role: "system", content: systemInstruction },
           { role: "user", content: prompt }
@@ -194,13 +195,13 @@ You MUST respond with a JSON object containing the following keys (do not includ
     );
 
     if (!responseText) {
-      throw new Error("Empty response from OpenRouter API");
+      throw new Error("Empty response from Groq API");
     }
 
     const cleaned = cleanJsonResponse(responseText);
     return JSON.parse(cleaned) as SummaryResult;
   } catch (error) {
-    console.error("OpenRouter summarization failed after retries:", error);
+    console.error("Groq summarization failed after retries:", error);
     return {
       shortSummary: "Failed to summarize email.",
       detailedSummary: "The AI model encountered an error while processing this message.",
@@ -216,7 +217,7 @@ export async function askAgentAboutEmails(
   query: string,
   emailContext: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
-  modelName: string = "google/gemini-2.5-flash:free",
+  modelName: string = "llama-3.3-70b-versatile",
   isNewsletterQuery: boolean = false
 ): Promise<string> {
   const activeModel = resolveModelName(modelName);
@@ -261,12 +262,12 @@ User Query: ${query}
 
   try {
     const responseText = await retryWithBackoff(() =>
-      fetchOpenRouter(messages, activeModel, false)
+      fetchGroq(messages, activeModel, false)
     );
 
     return responseText || "I was unable to generate an answer.";
   } catch (error) {
-    console.error("OpenRouter Chat Agent failed after retries:", error);
+    console.error("Groq Chat Agent failed after retries:", error);
     return "Error: I encountered a problem communicating with the AI agent.";
   }
 }
@@ -277,7 +278,7 @@ export async function draftReply(
   threadContext: string,
   userInstruction: string,
   userName: string = "User",
-  modelName: string = "google/gemini-2.5-flash:free"
+  modelName: string = "llama-3.3-70b-versatile"
 ): Promise<DraftResult> {
   const activeModel = resolveModelName(modelName);
   
@@ -300,7 +301,7 @@ You MUST respond with a JSON object containing (do not include any conversationa
 
   try {
     const responseText = await retryWithBackoff(() =>
-      fetchOpenRouter(
+      fetchGroq(
         [
           { role: "system", content: systemInstruction },
           { role: "user", content: prompt }
@@ -311,13 +312,13 @@ You MUST respond with a JSON object containing (do not include any conversationa
     );
 
     if (!responseText) {
-      throw new Error("Empty response from OpenRouter API");
+      throw new Error("Empty response from Groq API");
     }
 
     const cleaned = cleanJsonResponse(responseText);
     return JSON.parse(cleaned) as DraftResult;
   } catch (error) {
-    console.error("OpenRouter Draft Writer failed after retries:", error);
+    console.error("Groq Draft Writer failed after retries:", error);
     return {
       subject: subject.toLowerCase().startsWith("re:") ? subject : `Re: ${subject}`,
       body: `Hi,\n\nI received your email regarding "${subject}". I will review the details and get back to you shortly.\n\nRegards,\n${userName}`
