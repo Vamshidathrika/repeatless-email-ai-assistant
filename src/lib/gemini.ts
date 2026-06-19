@@ -43,7 +43,12 @@ async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 4, delay = 10
       errorMsg.includes("high demand") || 
       errorMsg.includes("temporary");
     
-    if (retries > 0 && isRateLimit) {
+    const isQuotaExceeded = 
+      errorMsg.includes("exceeded your current quota") || 
+      errorMsg.includes("Quota exceeded") || 
+      errorMsg.includes("RESOURCE_EXHAUSTED");
+
+    if (retries > 0 && isRateLimit && !isQuotaExceeded) {
       console.warn(`Gemini API rate limited/unavailable. Retrying in ${delay}ms... (${retries} retries left)`);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return retryWithBackoff(fn, retries - 1, delay * 2.5); // Exponential backoff

@@ -269,27 +269,44 @@ export async function syncEmails(userId: string, limit: number = 20) {
 
         // 4. Summarization step (only if not a duplicate)
         if (!isDuplicate) {
-          // Pass the rolling threadContextText to summarizeThreadEmail
-          const summary = await summarizeThreadEmail(
-            subject,
-            sender,
-            bodyContent,
-            threadContextText,
-            preference.summaryModel
-          );
+          try {
+            // Pass the rolling threadContextText to summarizeThreadEmail
+            const summary = await summarizeThreadEmail(
+              subject,
+              sender,
+              bodyContent,
+              threadContextText,
+              preference.summaryModel
+            );
 
-          await db.emailSummary.create({
-            data: {
-              emailId: email.id,
-              shortSummary: summary.shortSummary,
-              detailedSummary: summary.detailedSummary,
-              actionItems: JSON.stringify(summary.actionItems),
-              category: summary.category,
-              importanceScore: summary.importanceScore,
-              replySuggestions: JSON.stringify(summary.replySuggestions),
-            },
-          });
-          newEmailsCount++;
+            await db.emailSummary.create({
+              data: {
+                emailId: email.id,
+                shortSummary: summary.shortSummary,
+                detailedSummary: summary.detailedSummary,
+                actionItems: JSON.stringify(summary.actionItems),
+                category: summary.category,
+                importanceScore: summary.importanceScore,
+                replySuggestions: JSON.stringify(summary.replySuggestions),
+              },
+            });
+            newEmailsCount++;
+          } catch (summarizeError) {
+            console.error(`Failed to summarize email ${email.id} during sync:`, summarizeError);
+            // Create a default placeholder summary so that sync continues and completes successfully
+            await db.emailSummary.create({
+              data: {
+                emailId: email.id,
+                shortSummary: "Failed to summarize email.",
+                detailedSummary: "The AI model encountered an error while processing this message.",
+                actionItems: JSON.stringify([]),
+                category: "Updates",
+                importanceScore: 1,
+                replySuggestions: JSON.stringify([]),
+              },
+            });
+            newEmailsCount++;
+          }
         } else {
           // Create dummy summary for duplicate
           await db.emailSummary.create({

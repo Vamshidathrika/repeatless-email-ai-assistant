@@ -173,6 +173,7 @@ export default function Home() {
   const [copyToast, setCopyToast] = useState<boolean>(false);
   const [showReplyForNotification, setShowReplyForNotification] = useState<boolean>(false);
   const [isResummarizing, setIsResummarizing] = useState<boolean>(false);
+  const [attemptedSummaries, setAttemptedSummaries] = useState<Record<string, boolean>>({});
 
   // Compose window fields (CC / BCC / Forward)
   const [ccField, setCcField] = useState<string>("");
@@ -279,9 +280,15 @@ export default function Home() {
     setReplyStatus("");
     setShowReplyForNotification(false);
 
-    if (selectedEmail && selectedEmail.summary?.shortSummary === "Failed to summarize email." && !isResummarizing) {
+    if (
+      selectedEmail && 
+      selectedEmail.summary?.shortSummary === "Failed to summarize email." && 
+      !attemptedSummaries[selectedEmail.id] &&
+      !isResummarizing
+    ) {
       const resummarize = async () => {
         setIsResummarizing(true);
+        setAttemptedSummaries(prev => ({ ...prev, [selectedEmail.id]: true }));
         try {
           const res = await fetch("/api/emails/summarize", {
             method: "POST",
@@ -301,7 +308,7 @@ export default function Home() {
       };
       resummarize();
     }
-  }, [selectedEmail]);
+  }, [selectedEmail, attemptedSummaries]);
 
   const fetchEmails = async (search = searchQuery) => {
     setIsLoadingEmails(true);
