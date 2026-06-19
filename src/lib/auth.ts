@@ -2,6 +2,15 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { db } from "./db";
 
+// Dynamically resolve NEXTAUTH_URL on Vercel deployments to prevent session mismatch/401 errors
+if (process.env.VERCEL_URL && (!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL.includes("localhost"))) {
+  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
+
+if (!process.env.NEXTAUTH_SECRET) {
+  process.env.NEXTAUTH_SECRET = "fallback_secret_for_vercel_deployments_only";
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({

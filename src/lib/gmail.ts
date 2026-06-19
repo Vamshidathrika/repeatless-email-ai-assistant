@@ -3,6 +3,11 @@ import { db } from "./db";
 import { summarizeThreadEmail } from "./gemini";
 import crypto from "crypto";
 
+// Dynamically resolve NEXTAUTH_URL on Vercel deployments to prevent redirect URI mismatch
+if (process.env.VERCEL_URL && (!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL.includes("localhost"))) {
+  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
+
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
