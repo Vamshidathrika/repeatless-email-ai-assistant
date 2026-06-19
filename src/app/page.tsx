@@ -6,7 +6,7 @@ import {
   Inbox, Sparkles, RefreshCw, LogOut, Send, Search, CheckSquare, 
   MessageSquare, User, AlertCircle, ChevronRight, Mail, Reply, ArrowRight, UserCheck, Star, Trash2,
   BarChart2, Calendar, ShieldCheck, MailOpen, X, Sun, Moon, PanelLeftClose, PanelLeft, Folder, Tag, Users,
-  Briefcase, Zap, Link2, Play, Pause, Trash, Plus, Clock, ToggleLeft, ToggleRight, Pencil, Paperclip
+  Briefcase, Zap, Link2, Play, Pause, Trash, Plus, Clock, ToggleLeft, ToggleRight, Pencil, Paperclip, Menu, ArrowLeft
 } from "lucide-react";
 
 interface EmailSummary {
@@ -133,6 +133,26 @@ export default function Home() {
       document.documentElement.classList.add("light-theme");
     } else {
       document.documentElement.classList.remove("light-theme");
+    }
+  };
+
+  // Auto-collapse sidebar on mobile
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 1024) {
+        setSidebarCollapsed(true);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close sidebar on nav click (mobile)
+  const handleMobileNavClick = (callback: () => void) => {
+    callback();
+    if (window.innerWidth <= 1024) {
+      setSidebarCollapsed(true);
     }
   };
   
@@ -1732,6 +1752,22 @@ export default function Home() {
             from { opacity: 0; transform: translateY(14px); }
             to   { opacity: 1; transform: translateY(0); }
           }
+
+          @media (max-width: 900px) {
+            .login-root { flex-direction: column; }
+            .login-left { padding: 2rem 1.5rem; min-height: auto; }
+            .login-right { width: 100%; padding: 2rem 1.5rem; }
+            .left-headline { font-size: 2rem; }
+            .left-sub { font-size: 0.88rem; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .stats-row { gap: 1.25rem; }
+          }
+          @media (max-width: 480px) {
+            .login-left { padding: 1.5rem 1rem; }
+            .login-right { padding: 1.5rem 1rem; }
+            .left-headline { font-size: 1.6rem; }
+            .right-title { font-size: 1.25rem; }
+          }
         `}</style>
 
         {/* ── LEFT ── */}
@@ -1867,6 +1903,11 @@ export default function Home() {
   return (
     <div className="app-layout slide-in">
 
+      {/* Mobile Sidebar Overlay */}
+      {!sidebarCollapsed && (
+        <div className="sidebar-overlay" onClick={() => setSidebarCollapsed(true)} />
+      )}
+
       {/* 1. Collapsible Sidebar */}
       <div className={`sidebar-column ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="sidebar-brand">
@@ -1885,7 +1926,7 @@ export default function Home() {
           <div className="sidebar-menu">
             <button 
               className={`sidebar-menu-item ${activeTab === "inbox" && categoryFilter === "All" ? "active" : ""}`} 
-              onClick={() => { setActiveTab("inbox"); setCategoryFilter("All"); setStatusFilter("all"); }}
+              onClick={() => handleMobileNavClick(() => { setActiveTab("inbox"); setCategoryFilter("All"); setStatusFilter("all"); })}
               title="Inbox Reader"
             >
               <Inbox size={14} />
@@ -1894,7 +1935,7 @@ export default function Home() {
             </button>
             <button 
               className={`sidebar-menu-item ${activeTab === "matrix" ? "active" : ""}`} 
-              onClick={() => setActiveTab("matrix")}
+              onClick={() => handleMobileNavClick(() => setActiveTab("matrix"))}
               title="Priority Matrix"
             >
               <BarChart2 size={14} />
@@ -1903,7 +1944,7 @@ export default function Home() {
             </button>
             <button 
               className={`sidebar-menu-item ${activeTab === "brief" ? "active" : ""}`} 
-              onClick={() => setActiveTab("brief")}
+              onClick={() => handleMobileNavClick(() => setActiveTab("brief"))}
               title="Executive Brief"
             >
               <Calendar size={14} />
@@ -1911,7 +1952,7 @@ export default function Home() {
             </button>
             <button 
               className={`sidebar-menu-item ${activeTab === "unsubscribe" ? "active" : ""}`} 
-              onClick={() => setActiveTab("unsubscribe")}
+              onClick={() => handleMobileNavClick(() => setActiveTab("unsubscribe"))}
               title="Unsubscribe Hub"
             >
               <ShieldCheck size={14} />
@@ -1920,7 +1961,7 @@ export default function Home() {
             </button>
             <button 
               className={`sidebar-menu-item ${activeTab === "connections" ? "active" : ""}`} 
-              onClick={() => setActiveTab("connections")}
+              onClick={() => handleMobileNavClick(() => setActiveTab("connections"))}
               title="Connections & Workflows"
             >
               <Zap size={14} />
@@ -2020,6 +2061,9 @@ export default function Home() {
         {/* Modern Top Navbar */}
         <div className="top-navbar-modern">
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <button className="mobile-menu-toggle" onClick={() => setSidebarCollapsed(false)}>
+              <Menu size={18} />
+            </button>
             <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "1px", fontFamily: "var(--font-display)" }}>
               {activeTab === "inbox" ? `Inbox / ${categoryFilter}` : activeTab === "matrix" ? "Priority Matrix" : activeTab === "brief" ? "Executive Brief" : activeTab === "unsubscribe" ? "Unsubscribe Hub" : "Connections & Workflows"}
             </span>
@@ -2067,7 +2111,7 @@ export default function Home() {
           
           {/* TAB 1: Inbox Reader Split Pane */}
           {activeTab === "inbox" && (
-            <div className="inbox-split-pane">
+            <div className={`inbox-split-pane${selectedEmail ? ' has-selected-email' : ''}`}>
               {/* Left Column: Email list */}
               <div className="emails-column">
                 <div className="search-container">
@@ -2194,6 +2238,12 @@ export default function Home() {
                 {selectedEmail ? (
                   <>
                     <div className="detail-header-panel">
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                        <button className="mobile-back-btn" onClick={() => setSelectedEmail(null)}>
+                          <ArrowLeft size={14} />
+                          <span>Back</span>
+                        </button>
+                      </div>
                       <div className="detail-meta-row">
                         <span className="detail-sender">
                           From: <strong>{selectedEmail.sender}</strong>

@@ -3354,3 +3354,406 @@ button {
 .btn-remove-attachment:hover {
   color: #f87171;
 }
+
+/* ══════════════════════════════════════════════
+   MOBILE RESPONSIVE STYLES
+   ══════════════════════════════════════════════ */
+
+/* ── Sidebar Overlay (mobile drawer backdrop) ── */
+.sidebar-overlay {
+  display: none;
+}
+
+/* ── Mobile-only elements (hidden by default) ── */
+.mobile-menu-toggle {
+  display: none;
+}
+.mobile-back-btn {
+  display: none;
+}
+
+/* ═══════════ TABLET BREAKPOINT (max-width: 1024px) ═══════════ */
+@media (max-width: 1024px) {
+  /* Sidebar becomes overlay drawer */
+  .sidebar-column {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    width: 260px;
+    height: 100vh;
+    transform: translateX(0);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  }
+  .sidebar-column.collapsed {
+    width: 260px;
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  /* Overlay backdrop */
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 999;
+    animation: fadeIn 0.2s ease;
+  }
+
+  /* Hamburger menu button */
+  .mobile-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: var(--radius-xs);
+    padding: 0.4rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+  }
+  .mobile-menu-toggle:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+    background: var(--bg-surface-hover);
+  }
+
+  /* Sidebar collapsed state should hide text on collapse toggle within drawer */
+  .sidebar-column.collapsed .menu-text,
+  .sidebar-column.collapsed .menu-badge,
+  .sidebar-column.collapsed .sidebar-section-title,
+  .sidebar-column.collapsed .sidebar-user-info,
+  .sidebar-column.collapsed .sidebar-btn-logout,
+  .sidebar-column.collapsed .brand-text {
+    display: block;
+  }
+  /* Force sidebar items to show full text when overlay */
+  .sidebar-column.collapsed .sidebar-collapse-btn {
+    display: none;
+  }
+
+  /* Email column takes more space */
+  .emails-column {
+    width: 320px;
+    min-width: 280px;
+  }
+
+  /* Priority Matrix: 1 column on smaller tablets */
+  .priority-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    overflow-y: auto;
+  }
+
+  /* Brief stats: 2 columns */
+  .brief-grid-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .brief-layout-split {
+    grid-template-columns: 1fr;
+  }
+
+  /* Workflow field group: stack */
+  .wf-field-group {
+    grid-template-columns: 1fr;
+  }
+
+  /* Modal responsive */
+  .modal-card {
+    width: 90vw;
+    max-width: 440px;
+  }
+
+  /* Top navbar responsive */
+  .top-navbar-modern {
+    padding: 0 1rem;
+    gap: 0.5rem;
+  }
+}
+
+/* ═══════════ MOBILE BREAKPOINT (max-width: 768px) ═══════════ */
+@media (max-width: 768px) {
+  /* Inbox split pane: show one pane at a time */
+  .inbox-split-pane {
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Email list: full width by default */
+  .emails-column {
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  /* Detail column: full width, hidden by default */
+  .detail-column {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    border-left: none;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* When email is selected, show detail and hide list */
+  .inbox-split-pane.has-selected-email .emails-column {
+    visibility: hidden;
+  }
+  .inbox-split-pane.has-selected-email .detail-column {
+    transform: translateX(0);
+  }
+
+  /* Mobile back button */
+  .mobile-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: var(--radius-xs);
+    padding: 0.35rem 0.65rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+  .mobile-back-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+    background: var(--bg-surface-hover);
+  }
+
+  /* Detail header adjustments */
+  .detail-header-panel {
+    padding: 0.75rem 1rem;
+  }
+  .detail-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .detail-subject {
+    font-size: 1rem;
+  }
+
+  /* Unsubscribe table → card layout */
+  .unsub-table,
+  .unsub-table thead,
+  .unsub-table tbody,
+  .unsub-table tr,
+  .unsub-table th,
+  .unsub-table td {
+    display: block;
+    width: 100%;
+  }
+  .unsub-table thead {
+    display: none;
+  }
+  .unsub-table tr {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .unsub-table td {
+    border-bottom: none;
+    padding: 0;
+    white-space: normal;
+    overflow: visible;
+  }
+  .unsub-table td.checkbox-cell {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: auto;
+    padding: 0;
+  }
+  .unsub-table .unsub-row {
+    position: relative;
+  }
+  .unsub-table td.actions-cell {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+  }
+  .unsub-table td.actions-cell > div {
+    justify-content: flex-start !important;
+  }
+
+  /* Connection cards: single column */
+  .connection-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Connection card layout: stack */
+  .connection-card {
+    flex-direction: column;
+  }
+  .connection-card-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  /* Brief stats: single column on small mobile */
+  .brief-grid-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Top navbar */
+  .top-navbar-modern {
+    padding: 0 0.75rem;
+    height: 50px;
+  }
+  .top-navbar-modern span {
+    font-size: 0.72rem !important;
+  }
+
+  /* Unsubscribe container */
+  .unsubscribe-container {
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Chat panel adjustments */
+  .chat-messages-scroll {
+    padding: 0.75rem;
+  }
+
+  /* Matrix quadrant */
+  .matrix-quadrant {
+    padding: 0.85rem;
+  }
+}
+
+/* ═══════════ SMALL MOBILE (max-width: 480px) ═══════════ */
+@media (max-width: 480px) {
+  /* Brief stats: single column */
+  .brief-grid-stats {
+    grid-template-columns: 1fr;
+  }
+
+  /* Email row compact */
+  .email-row {
+    padding: 0.6rem 0.75rem;
+  }
+  .email-row-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.65rem;
+  }
+  .email-row-subject {
+    font-size: 0.76rem;
+  }
+  .email-row-snippet {
+    font-size: 0.68rem;
+  }
+
+  /* Top navbar buttons: hide text, keep icons */
+  .top-navbar-modern .btn-primary span,
+  .top-navbar-modern .btn-danger span {
+    display: none;
+  }
+  .top-navbar-modern .btn-primary,
+  .top-navbar-modern .btn-danger {
+    padding: 0.4rem !important;
+  }
+
+  /* Compose input row: stack */
+  .compose-input-row {
+    flex-direction: column;
+  }
+
+  /* Search input */
+  .search-container {
+    padding: 0.65rem;
+  }
+
+  /* Modal: nearly full width */
+  .modal-card {
+    width: 95vw;
+    padding: 1.25rem;
+  }
+
+  /* Detail header tighter */
+  .detail-header-panel {
+    padding: 0.65rem 0.75rem;
+  }
+
+  /* Unsubscribe header: stack */
+  .unsub-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* Bulk actions bar: stack */
+  .bulk-actions-bar {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Stat card value */
+  .stat-card-val {
+    font-size: 1.25rem;
+  }
+}
+
+/* ═══════════ LOGIN PAGE RESPONSIVE ═══════════ */
+@media (max-width: 900px) {
+  .login-root {
+    flex-direction: column !important;
+  }
+  .login-left {
+    padding: 2rem 1.5rem !important;
+    min-height: auto !important;
+  }
+  .login-right {
+    width: 100% !important;
+    padding: 2rem 1.5rem !important;
+  }
+  .left-headline {
+    font-size: 2rem !important;
+  }
+  .left-sub {
+    font-size: 0.88rem !important;
+  }
+  .feature-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .stats-row {
+    gap: 1.25rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-left {
+    padding: 1.5rem 1rem !important;
+  }
+  .login-right {
+    padding: 1.5rem 1rem !important;
+  }
+  .left-headline {
+    font-size: 1.6rem !important;
+  }
+  .right-title {
+    font-size: 1.25rem !important;
+  }
+}
