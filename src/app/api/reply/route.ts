@@ -64,12 +64,21 @@ export async function POST(req: Request) {
         draft, // structured as { subject: string, body: string }
       });
     } else if (action === "send") {
-      const { threadId, replyText, recipient, subject, cc, bcc } = body;
+      const { threadId, replyText, recipient, subject, cc, bcc, attachments } = body;
       if (!replyText || !recipient || !subject) {
         return NextResponse.json({ error: "Missing required fields for sending" }, { status: 400 });
       }
 
-      const sendResult = await sendGmailReply(userId, threadId || null, replyText, recipient, subject, cc || null, bcc || null);
+      const sendResult = await sendGmailReply(
+        userId, 
+        threadId || null, 
+        replyText, 
+        recipient, 
+        subject, 
+        cc || null, 
+        bcc || null,
+        attachments || []
+      );
 
       // Save the sent email to the local database so it immediately updates in the thread list
       if (sendResult && sendResult.id) {

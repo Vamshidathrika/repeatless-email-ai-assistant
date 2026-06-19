@@ -340,6 +340,13 @@ export async function syncEmails(userId: string, limit: number = 20) {
     duplicatesSkipped: skippedDuplicates,
   };
 }
+export interface EmailAttachment {
+  filename: string;
+  mimeType: string;
+  content: string; // base64 string
+  size: number;
+}
+
 export async function sendGmailReply(
   userId: string,
   threadId: string | null,
@@ -347,7 +354,8 @@ export async function sendGmailReply(
   recipient: string,
   subject: string,
   cc?: string | null,
-  bcc?: string | null
+  bcc?: string | null,
+  attachments?: EmailAttachment[]
 ) {
   const gmail = await getGmailClient(userId);
 
@@ -393,11 +401,47 @@ export async function sendGmailReply(
     mimeHeaders.push(`References: ${allMessageIds.join(" ")}`);
   }
 
-  mimeHeaders.push("Content-Type: text/plain; charset=utf-8");
-  mimeHeaders.push("");
-  mimeHeaders.push(replyText);
+  let rawMessage = "";
 
-  const rawMessage = mimeHeaders.join("\n");
+  if (attachments && attachments.length > 0) {
+    const boundary = "repeatless_mime_boundary_" + crypto.randomBytes(8).toString("hex");
+    mimeHeaders.push(`MIME-Version: 1.0`);
+    mimeHeaders.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+    mimeHeaders.push(""); // Empty line indicating end of headers
+
+    const parts: string[] = [];
+    
+    // Add text body part
+    parts.push(`--${boundary}`);
+    parts.push("Content-Type: text/plain; charset=utf-8");
+    parts.push("Content-Transfer-Encoding: 7bit");
+    parts.push("");
+    parts.push(replyText);
+
+    // Add each attachment
+    for (const att of attachments) {
+      parts.push(`--${boundary}`);
+      parts.push(`Content-Type: ${att.mimeType}; name="${att.filename}"`);
+      parts.push("Content-Transfer-Encoding: base64");
+      parts.push(`Content-Disposition: attachment; filename="${att.filename}"`);
+      parts.push("");
+      
+      // Clean up base64 prefix if present (e.g. data:image/png;base64,)
+      const base64Data = att.content.includes("base64,")
+        ? att.content.split("base64,")[1]
+        : att.content;
+      
+      parts.push(base64Data);
+    }
+
+    parts.push(`--${boundary}--`);
+    rawMessage = mimeHeaders.join("\n") + "\n" + parts.join("\n");
+  } else {
+    mimeHeaders.push("Content-Type: text/plain; charset=utf-8");
+    mimeHeaders.push("");
+    mimeHeaders.push(replyText);
+    rawMessage = mimeHeaders.join("\n");
+  }
 
   const encodedMessage = Buffer.from(rawMessage)
     .toString("base64")

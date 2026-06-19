@@ -6,7 +6,7 @@ import {
   Inbox, Sparkles, RefreshCw, LogOut, Send, Search, CheckSquare, 
   MessageSquare, User, AlertCircle, ChevronRight, Mail, Reply, ArrowRight, UserCheck, Star, Trash2,
   BarChart2, Calendar, ShieldCheck, MailOpen, X, Sun, Moon, PanelLeftClose, PanelLeft, Folder, Tag, Users,
-  Briefcase, Zap, Link2, Play, Pause, Trash, Plus, Clock, ToggleLeft, ToggleRight, Pencil
+  Briefcase, Zap, Link2, Play, Pause, Trash, Plus, Clock, ToggleLeft, ToggleRight, Pencil, Paperclip
 } from "lucide-react";
 
 interface EmailSummary {
@@ -197,6 +197,7 @@ export default function Home() {
   const [chatRemainingQueries, setChatRemainingQueries] = useState<number | null>(null);
   const [lastMsgCached, setLastMsgCached] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reply Draft State
   const [replyInstruction, setReplyInstruction] = useState<string>("");
@@ -211,7 +212,8 @@ export default function Home() {
   const [attemptedSummaries, setAttemptedSummaries] = useState<Record<string, boolean>>({});
 
   // Integrations States
-  const [activeIntegrationTab, setActiveIntegrationTab] = useState<"meet" | null>(null);
+  const [activeIntegrationTab, setActiveIntegrationTab] = useState<"meet" | "attachments" | null>(null);
+  const [attachments, setAttachments] = useState<{ filename: string; mimeType: string; content: string; size: number }[]>([]);
   const [meetTitle, setMeetTitle] = useState<string>("");
   const [meetDateTime, setMeetDateTime] = useState<string>("");
   const [meetDuration, setMeetDuration] = useState<number>(30);
@@ -907,7 +909,35 @@ export default function Home() {
     }
   };
 
+  // Handle attachments file change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Content = reader.result as string;
+        setAttachments(prev => [
+          ...prev,
+          {
+            filename: file.name,
+            mimeType: file.type,
+            content: base64Content,
+            size: file.size,
+          }
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    // Reset file input value so same file can be selected again
+    if (e.target) e.target.value = "";
+  };
 
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
 
   // Book a meeting via Google Calendar
   const handleBookMeeting = async () => {
@@ -1023,6 +1053,7 @@ export default function Home() {
           subject: draftSubject || selectedEmail.subject,
           cc: ccField.trim() || null,
           bcc: bccField.trim() || null,
+          attachments, // Include attachments
         }),
       });
       const data = await res.json();
@@ -1034,6 +1065,7 @@ export default function Home() {
         setCcField("");
         setBccField("");
         setToField("");
+        setAttachments([]); // Clear attachments
         setComposeMode("reply");
         setShowCc(false);
         setShowBcc(false);
@@ -2628,6 +2660,14 @@ export default function Home() {
                                                 <Calendar size={12} />
                                                 <span>Book Google Meet</span>
                                               </button>
+                                              <button
+                                                type="button"
+                                                className={`integration-tab-btn ${activeIntegrationTab === "attachments" ? "active" : ""}`}
+                                                onClick={() => setActiveIntegrationTab(activeIntegrationTab === "attachments" ? null : "attachments")}
+                                              >
+                                                <Paperclip size={12} />
+                                                <span>Attachments ({attachments.length})</span>
+                                              </button>
                                             </div>
                                           </div>
 
@@ -2723,6 +2763,55 @@ export default function Home() {
                                                       >
                                                         {isBookingMeet ? "Creating Event..." : "Schedule Meeting & Append Link"}
                                                       </button>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              )}
+
+                                              {activeIntegrationTab === "attachments" && (
+                                                <div className="integration-subpanel">
+                                                  <div className="panel-header">
+                                                    <h4>Email Attachments</h4>
+                                                    <button type="button" className="panel-close-btn" onClick={() => setActiveIntegrationTab(null)}><X size={14} /></button>
+                                                  </div>
+                                                  
+                                                  <div 
+                                                    className="attachment-upload-zone"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                  >
+                                                    <Paperclip size={24} style={{ color: "var(--accent-indigo)" }} />
+                                                    <span style={{ fontWeight: 600, fontSize: "0.8rem" }}>Upload File(s)</span>
+                                                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Click to select files to attach to this email</span>
+                                                    <input 
+                                                      type="file" 
+                                                      ref={fileInputRef} 
+                                                      style={{ display: "none" }} 
+                                                      multiple 
+                                                      onChange={handleFileChange} 
+                                                    />
+                                                  </div>
+
+                                                  {attachments.length > 0 && (
+                                                    <div className="attachments-list">
+                                                      {attachments.map((att, idx) => (
+                                                        <div key={idx} className="attachment-item">
+                                                          <div className="attachment-info">
+                                                            <Paperclip size={12} style={{ color: "var(--text-muted)" }} />
+                                                            <span>{att.filename}</span>
+                                                            <span className="attachment-size">
+                                                              ({(att.size / 1024).toFixed(1)} KB)
+                                                            </span>
+                                                          </div>
+                                                          <button 
+                                                            type="button" 
+                                                            className="btn-remove-attachment"
+                                                            onClick={() => removeAttachment(idx)}
+                                                            title="Remove file"
+                                                          >
+                                                            <X size={14} />
+                                                          </button>
+                                                        </div>
+                                                      ))}
                                                     </div>
                                                   )}
                                                 </div>
