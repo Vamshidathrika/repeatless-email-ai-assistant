@@ -1,7 +1,3 @@
-import { GoogleGenAI, Type } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-
 export interface SummaryResult {
   shortSummary: string;
   detailedSummary: string;
@@ -11,17 +7,67 @@ export interface SummaryResult {
   replySuggestions: string[];
 }
 
-// Helper to resolve model names based on availability
+export interface DraftResult {
+  subject: string;
+  body: string;
+}
+
+// Helper to resolve model names based on OpenRouter availability
 function resolveModelName(modelName: string): string {
-  // Map invalid/unavailable model names to gemini-2.5-flash (correct free-tier model)
+  if (!modelName) {
+    return "google/gemini-2.5-flash";
+  }
+  // Map standard/old Gemini models to their OpenRouter equivalents
   if (
+    modelName === "gemini-3.5-flash" ||
+    modelName === "gemini-2.5-flash-lite" ||
+    modelName === "gemini-2.5-flash" ||
     modelName === "gemini-2.0-flash-lite" ||
-    modelName === "gemini-1.5-flash" ||
-    !modelName
+    modelName === "gemini-1.5-flash"
   ) {
-    return "gemini-2.5-flash";
+    return "google/gemini-2.5-flash";
+  }
+  
+  // If it's a short name without provider, default to google/
+  if (modelName.startsWith("gemini-")) {
+    return `google/${modelName}`;
   }
   return modelName;
+}
+
+// Helper to make direct requests to OpenRouter's API
+async function fetchOpenRouter(messages: { role: string; content: string }[], activeModel: string, jsonMode = false) {
+  const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Neither OPENROUTER_API_KEY nor GEMINI_API_KEY is configured in your environment.");
+  }
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://repeatless.vercel.app",
+      "X-Title": "Repeatless Email Assistant",
+    },
+    body: JSON.stringify({
+      model: activeModel,
+      messages: messages,
+      response_format: jsonMode ? { type: "json_object" } : undefined,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`OpenRouter API error (status ${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  if (!data.choices || data.choices.length === 0) {
+    throw new Error("No completion choices returned by OpenRouter.");
+  }
+
+  return data.choices[0].message.content || "";
 }
 
 // Resilient API calling with backoff
@@ -30,26 +76,24 @@ async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 4, delay = 10
     return await fn();
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
-    const status = (error as { status?: number })?.status;
     const errorMsg = err.message;
     const isRateLimit = 
-      status === 429 || 
-      status === 503 ||
       errorMsg.includes("429") || 
       errorMsg.includes("503") || 
       errorMsg.includes("quota") || 
+      errorMsg.includes("limit") || 
       errorMsg.includes("RESOURCE_EXHAUSTED") || 
       errorMsg.includes("UNAVAILABLE") || 
-      errorMsg.includes("high demand") || 
       errorMsg.includes("temporary");
-    
+
     const isQuotaExceeded = 
       errorMsg.includes("exceeded your current quota") || 
       errorMsg.includes("Quota exceeded") || 
-      errorMsg.includes("RESOURCE_EXHAUSTED");
+      errorMsg.includes("credits") || 
+      errorMsg.includes("insufficient");
 
     if (retries > 0 && isRateLimit && !isQuotaExceeded) {
-      console.warn(`Gemini API rate limited/unavailable. Retrying in ${delay}ms... (${retries} retries left)`);
+      console.warn(`OpenRouter API rate limited/unavailable. Retrying in ${delay}ms... (${retries} retries left)`);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return retryWithBackoff(fn, retries - 1, delay * 2.5); // Exponential backoff
     }
@@ -62,13 +106,11 @@ export async function summarizeThreadEmail(
   sender: string,
   body: string,
   threadContext: string,
-  modelName: string = "gemini-3.5-flash"
+  modelName: string = "google/gemini-2.5-flash"
 ): Promise<SummaryResult> {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not set in environment variables.");
-  }
-
   const activeModel = resolveModelName(modelName);
+  
+  const systemInstruction = "You extract structured information from emails. Be concise, objective, and accurate.";
   const prompt = `You are an AI assistant processing emails for a personal inbox dashboard.
 Analyze the following email in the context of its email thread history, generate a structured summary, categorizing it, and determining its importance and reply options.
 
@@ -80,60 +122,35 @@ Sender: ${sender}
 Subject: ${subject}
 Body content:
 ${body.slice(0, 10000)}
+
+You MUST respond with a JSON object containing the following keys:
+- "shortSummary": A one-sentence summary (max 15 words) of the email.
+- "detailedSummary": A short paragraph or bullet points detailing the key context and points.
+- "actionItems": A list of actionable steps or questions directed at the recipient (array of strings, e.g., ["Send invoice details"]). Empty array [] if none.
+- "category": The primary category for this email based on its intent. Choose exactly one: "Newsletters", "Job / Recruitment", "Finance", "Notifications", "Personal", "Work / Professional".
+- "importanceScore": An urgency/importance rating from 1 (lowest) to 10 (highest).
+- "replySuggestions": 3-4 contextual, short reply action options tailored specifically to this email (e.g. ["Confirm attendance", "Decline invitation"]). Max 4 options.
 `;
 
   try {
-    const response = await retryWithBackoff(() =>
-      ai.models.generateContent({
-        model: activeModel,
-        contents: prompt,
-        config: {
-          systemInstruction: "You extract structured information from emails. Be concise, objective, and accurate.",
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              shortSummary: { 
-                type: Type.STRING, 
-                description: "A one-sentence summary (max 15 words) of the email." 
-              },
-              detailedSummary: { 
-                type: Type.STRING, 
-                description: "A short paragraph or bullet points detailing the key context and points." 
-              },
-              actionItems: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "A list of actionable steps or questions directed at the recipient. Empty array if none."
-              },
-              category: {
-                type: Type.STRING,
-                enum: ["Newsletters", "Job / Recruitment", "Finance", "Notifications", "Personal", "Work / Professional"],
-                description: "The primary category for this email based on its intent and source."
-              },
-              importanceScore: {
-                type: Type.INTEGER,
-                description: "An urgency/importance rating from 1 (lowest) to 10 (highest, e.g. from manager, urgent bank notices)."
-              },
-              replySuggestions: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "3-4 contextual, short reply action options tailored specifically to this email (e.g., 'Confirm attendance', 'Decline invitation', 'Ask for invoice details'). Max 4 options."
-              }
-            },
-            required: ["shortSummary", "detailedSummary", "actionItems", "category", "importanceScore", "replySuggestions"]
-          }
-        }
-      })
+    const responseText = await retryWithBackoff(() =>
+      fetchOpenRouter(
+        [
+          { role: "system", content: systemInstruction },
+          { role: "user", content: prompt }
+        ],
+        activeModel,
+        true
+      )
     );
 
-    if (!response.text) {
-      throw new Error("Empty response from Gemini API");
+    if (!responseText) {
+      throw new Error("Empty response from OpenRouter API");
     }
 
-    return JSON.parse(response.text) as SummaryResult;
+    return JSON.parse(responseText) as SummaryResult;
   } catch (error) {
-    console.error("Gemini summarization failed after retries:", error);
+    console.error("OpenRouter summarization failed after retries:", error);
     return {
       shortSummary: "Failed to summarize email.",
       detailedSummary: "The AI model encountered an error while processing this message.",
@@ -149,34 +166,11 @@ export async function askAgentAboutEmails(
   query: string,
   emailContext: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
-  modelName: string = "gemini-3.5-flash",
+  modelName: string = "google/gemini-2.5-flash",
   isNewsletterQuery: boolean = false
 ): Promise<string> {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not set in environment variables.");
-  }
-
   const activeModel = resolveModelName(modelName);
   
-  // Format the user query + email context for the current turn
-  const currentPrompt = `Retrieved Email Context:
-${emailContext}
-
-User Query: ${query}
-`;
-
-  // Build conversational content structure for the Google GenAI SDK
-  const contents = [
-    ...history.map(msg => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }]
-    })),
-    {
-      role: "user",
-      parts: [{ text: currentPrompt }]
-    }
-  ];
-
   let systemInstruction = `You are a knowledgeable personal email assistant that has read all of the user's emails.
 Your task is to answer user queries using the provided email context as your EXCLUSIVE knowledge base.
 
@@ -200,27 +194,31 @@ CRITICAL SAFETY RULES (ZERO HALLUCINATIONS):
 6. CONTEXT LIMITS: If the newsletter context is empty, or does not contain any newsletters, respond: "No recent newsletters found to summarize." Do not invent any news stories.`;
   }
 
+  const currentPrompt = `Retrieved Email Context:
+${emailContext}
+
+User Query: ${query}
+`;
+
+  const messages = [
+    { role: "system", content: systemInstruction },
+    ...history.map(msg => ({
+      role: msg.role === "assistant" ? "assistant" : "user",
+      content: msg.content
+    })),
+    { role: "user", content: currentPrompt }
+  ];
+
   try {
-    const response = await retryWithBackoff(() =>
-      ai.models.generateContent({
-        model: activeModel,
-        contents: contents,
-        config: {
-          systemInstruction: systemInstruction
-        }
-      })
+    const responseText = await retryWithBackoff(() =>
+      fetchOpenRouter(messages, activeModel, false)
     );
 
-    return response.text || "I was unable to generate an answer.";
+    return responseText || "I was unable to generate an answer.";
   } catch (error) {
-    console.error("Gemini Chat Agent failed after retries:", error);
+    console.error("OpenRouter Chat Agent failed after retries:", error);
     return "Error: I encountered a problem communicating with the AI agent.";
   }
-}
-
-export interface DraftResult {
-  subject: string;
-  body: string;
 }
 
 export async function draftReply(
@@ -229,13 +227,11 @@ export async function draftReply(
   threadContext: string,
   userInstruction: string,
   userName: string = "User",
-  modelName: string = "gemini-3.5-flash"
+  modelName: string = "google/gemini-2.5-flash"
 ): Promise<DraftResult> {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not set in environment variables.");
-  }
-
   const activeModel = resolveModelName(modelName);
+  
+  const systemInstruction = "You draft email replies. Return a structured JSON response with a subject line (usually starting with Re:) and a body content that includes a friendly regards sign-off at the end using the user's name. You must strictly base the reply content on the provided thread context and the user's instruction. Do not invent any meetings, dates, names, or outside facts that are not present in the context or user's instructions.";
   const prompt = `You are a personal assistant. Help draft a reply to an email thread based on the user's instructions.
   
 Original Email Thread Context:
@@ -246,41 +242,31 @@ ${userInstruction}
 
 User's Name (for signature/regards):
 ${userName}
+
+You MUST respond with a JSON object containing:
+- "subject": A suitable reply subject line (usually starts with Re:).
+- "body": The complete email body content, ending with a professional sign-off (e.g. Regards, [User's Name]).
 `;
 
   try {
-    const response = await retryWithBackoff(() =>
-      ai.models.generateContent({
-        model: activeModel,
-        contents: prompt,
-        config: {
-          systemInstruction: "You draft email replies. Return a structured JSON response with a subject line (usually starting with Re:) and a body content that includes a friendly regards sign-off at the end using the user's name. You must strictly base the reply content on the provided thread context and the user's instruction. Do not invent any meetings, dates, names, or outside facts that are not present in the context or user's instructions.",
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              subject: { 
-                type: Type.STRING, 
-                description: "A suitable reply subject line (e.g. Re: subject)." 
-              },
-              body: { 
-                type: Type.STRING, 
-                description: "The complete email body content, ending with a professional sign-off (e.g. Regards, [User's Name])." 
-              }
-            },
-            required: ["subject", "body"]
-          }
-        }
-      })
+    const responseText = await retryWithBackoff(() =>
+      fetchOpenRouter(
+        [
+          { role: "system", content: systemInstruction },
+          { role: "user", content: prompt }
+        ],
+        activeModel,
+        true
+      )
     );
 
-    if (!response.text) {
-      throw new Error("Empty response from Gemini API");
+    if (!responseText) {
+      throw new Error("Empty response from OpenRouter API");
     }
 
-    return JSON.parse(response.text) as DraftResult;
+    return JSON.parse(responseText) as DraftResult;
   } catch (error) {
-    console.error("Gemini Draft Writer failed after retries:", error);
+    console.error("OpenRouter Draft Writer failed after retries:", error);
     return {
       subject: subject.toLowerCase().startsWith("re:") ? subject : `Re: ${subject}`,
       body: `Hi,\n\nI received your email regarding "${subject}". I will review the details and get back to you shortly.\n\nRegards,\n${userName}`
