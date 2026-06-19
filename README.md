@@ -1,9 +1,9 @@
 <p align="center">
-  <h1 align="center">✉️ Repeatless</h1>
-  <p align="center"><strong>Your inbox, finally intelligent.</strong></p>
+  <h1 align="center">✉️ Aether</h1>
+  <p align="center"><strong>Breathe clarity into your inbox.</strong></p>
   <p align="center">
-    An AI-powered Gmail workspace that summarizes emails, composes smart replies,<br/>
-    deduplicates newsletters, and provides a conversational AI assistant — all in a premium, modern UI.
+    A focused, AI-powered Gmail workspace that summarizes email threads, composes smart replies,<br/>
+    deduplicates newsletters, and provides a Personal Assistant chatbot — all in a premium, modern UI.
   </p>
 </p>
 
@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Next.js-16.2.9-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Prisma-6.19.3-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma" />
-  <img src="https://img.shields.io/badge/Gemini_AI-2.0_Flash_Lite-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini AI" />
+  <img src="https://img.shields.io/badge/AI_API-Groq_/_Llama_3-F55036?style=for-the-badge" alt="Groq API" />
   <img src="https://img.shields.io/badge/Gmail_API-v173-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Gmail API" />
   <img src="https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge" alt="License" />
 </p>
@@ -63,6 +63,7 @@ Full Gmail integration with granular scopes:
 | `gmail.readonly` | Read email threads and messages |
 | `gmail.modify` | Archive, star, trash, and label emails |
 | `gmail.send` | Send emails and smart replies |
+| `calendar.events` | Create and manage calendar events |
 
 Automatic token refresh is persisted to the database, ensuring uninterrupted access. Sessions use a **JWT strategy** for stateless, edge-compatible authentication.
 
@@ -78,7 +79,7 @@ Thread-first synchronization architecture:
 
 ### 🧠 AI Email Summarization
 
-Powered by **Google Gemini 2.0 Flash Lite**, each email is summarized into a structured JSON output:
+Powered by **Groq API** (primarily utilizing the `llama-3.1-8b-instant` model with an automated fallback chain), each email is summarized into a structured JSON output:
 
 ```json
 {
@@ -91,7 +92,7 @@ Powered by **Google Gemini 2.0 Flash Lite**, each email is summarized into a str
 }
 ```
 
-Uses **JSON schema enforcement** for reliable structured output. Implements **retry with exponential backoff** to gracefully handle Gemini API rate limits.
+Uses **JSON schema enforcement** for reliable structured output. Implements **retry with exponential backoff** to gracefully handle rate limits and availability.
 
 ### 🏷️ Smart Categorization
 
@@ -129,16 +130,16 @@ MD5( normalized(sender) + normalized(subject) + year-week )
 ### ✍️ AI Smart Replies
 
 1. User types a natural-language instruction (e.g., *"Politely decline and suggest next quarter"*)
-2. Gemini drafts a **context-aware reply** with subject line and body
+2. The AI assistant drafts a **context-aware reply** with subject line and body
 3. Supports **Reply** and **Forward** modes
 4. CC/BCC recipient fields
 5. Sends directly via Gmail API with proper **RFC 2822 threading headers** (`In-Reply-To`, `References`)
 
-### 🤖 Gemini Copilot Chat
+### 🤖 Personal Assistant (PA) Chat
 
-A conversational AI assistant that understands your entire inbox:
+A conversational AI assistant accessible via a floating chat FAB with a helpful PA tooltip:
 
-- **Thread-first RAG**: retrieves recent emails + keyword matches + category matches, groups by thread, and builds structured context
+- **Thread-first RAG**: Retrieves recent emails + keyword matches + category matches, groups by thread, and builds structured context
 - **Conversational history** maintained across messages
 - **Specialized newsletter digest mode** for summarizing subscription content
 - Example queries: *"Summarize my week"*, *"What action items do I have?"*, *"Find emails about the Q3 budget"*
@@ -153,24 +154,25 @@ Four-quadrant urgency dashboard based on AI importance scores:
 │  Score ≥ 7          │  Score 5–6          │
 │  Urgent & Important │  Important, Not     │
 │                     │  Urgent             │
-├─────────────────────┼─────────────────────┤
+│ ├───────────────────┼─────────────────────┤
 │  🔵 DELEGATE        │  ⚪ ELIMINATE        │
 │  Score 3–4          │  Score < 3 or       │
 │  Urgent, Not        │  Duplicate          │
 │  Important          │                     │
-└─────────────────────┴─────────────────────┘
+│ └───────────────────┴─────────────────────┘
 ```
 
-### 📋 Daily Brief
+### 📋 Executive Brief
 
 AI-generated daily briefing aggregated from **all action items** extracted across your synced emails. Presented as an interactive checklist with checkboxes for tracking completion.
 
 ### 🚫 Unsubscribe Hub
 
 - Groups promotional and duplicate senders by message count
-- **One-click trash**: queries Gmail for **ALL-TIME** messages from a sender (not just local DB)
+- **One-click trash**: Queries Gmail for **ALL-TIME** messages from a sender (not just local DB)
 - Direct links to unsubscribe URLs parsed from email headers
 - Running stats (**total emails cleared**, **bytes freed**) persisted in `localStorage`
+- **Multi-Select Unsubscribe UI**: Checkbox-based multi-selection system allowing users to select multiple email subscriptions simultaneously and perform bulk actions.
 
 ### 🧹 Storage Saver Agent
 
@@ -186,7 +188,7 @@ Features **resilient batch trash** with individual fallback — if a batch opera
 
 ### 🔄 On-the-fly Re-summarization
 
-If an email's summary shows *"Failed to summarize"*, Repeatless **automatically retriggers** Gemini summarization when that email is selected — no manual intervention required.
+If an email's summary shows *"Failed to summarize"*, Aether **automatically retriggers** AI summarization when that email is selected — no manual intervention required.
 
 ### 📖 Email Detail Pane
 
@@ -208,7 +210,7 @@ Allows real-time syncing and alerts to Slack channels:
 
 Schedule meetings directly from email summaries:
 - **Gmail-to-Calendar Booking**: Analyzes action items and reply suggestions to automatically book events on Google Calendar.
-- **OAuth 2.0 Integration**: Uses Gmail API token permissions to create and reference calendar invites.
+- **OAuth 2.0 Integration**: Uses Google OAuth session token permissions to create events.
 
 ### 🔁 Automated Workflows & Custom Webhooks
 
@@ -237,7 +239,7 @@ graph TB
         Sync["/api/sync<br/>Gmail Sync"]
         Emails["/api/emails<br/>Fetch & Filter"]
         Summarize["/api/emails/summarize<br/>Re-summarize"]
-        Chat["/api/chat<br/>Copilot RAG & Cache"]
+        Chat["/api/chat<br/>Personal Assistant RAG & Cache"]
         Reply["/api/reply<br/>Smart Reply"]
         Clean["/api/clean<br/>Bulk Trash"]
         Slack["/api/slack/**<br/>OAuth & Channels"]
@@ -247,7 +249,7 @@ graph TB
     end
 
     subgraph Services["🔧 Core Services"]
-        GeminiSvc["gemini.ts<br/>Gemini AI Service"]
+        AISvc["gemini.ts<br/>Groq AI Service"]
         GmailSvc["gmail.ts<br/>Gmail API Service"]
         AuthCfg["auth.ts<br/>NextAuth Config"]
         DB["db.ts<br/>Prisma Singleton"]
@@ -259,17 +261,17 @@ graph TB
         Google["Google OAuth & Calendar"]
         Gmail["Gmail API"]
         SlackAPI["Slack Web API"]
-        Gemini["Gemini 2.0<br/>Flash Lite"]
+        Groq["Groq API<br/>Llama 3.1 / 3.3"]
         PG["PostgreSQL"]
     end
 
     UI -->|API calls| NextJS
     Auth --> AuthCfg --> Google
     Sync --> GmailSvc --> Gmail
-    Sync --> GeminiSvc --> Gemini
-    Summarize --> GeminiSvc
-    Chat --> GeminiSvc
-    Reply --> GeminiSvc
+    Sync --> AISvc --> Groq
+    Summarize --> AISvc
+    Chat --> AISvc
+    Reply --> AISvc
     Reply --> GmailSvc
     Clean --> GmailSvc
     Slack --> SlackAPI
@@ -284,26 +286,26 @@ graph TB
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology | Version |
-|---|---|---|
-| **Framework** | Next.js (App Router, Turbopack) | 16.2.9 |
-| **Language** | TypeScript | 5 |
-| **UI** | React | 19.2.4 |
-| **Icons** | Lucide React | — |
-| **Styling** | Styled-JSX, vanilla CSS | — |
-| **Authentication** | NextAuth (Google OAuth 2.0, JWT) | v4 |
-| **Database** | PostgreSQL via Prisma ORM | 6.19.3 |
-| **AI** | Google Gemini (`gemini-2.0-flash-lite`) via `@google/genai` | 2.8.0 |
-| **Email** | Gmail API via `googleapis` | v173 |
-| **Integrations** | Slack Web API, Google Calendar API | — |
-| **Hosting** | Vercel (recommended), Firebase App Hosting | — |
+| Layer | Technology | Version | Purpose |
+|---|---|---|---|
+| **Framework** | Next.js (App Router, Turbopack) | 16.2.9 | Full-stack React framework |
+| **Language** | TypeScript | 5 | Type safety |
+| **UI** | React | 19.2.4 | Component rendering |
+| **Icons** | Lucide React | — | Icon set |
+| **Styling** | Styled-JSX, vanilla CSS | — | Scoped component styles + global design system |
+| **Authentication** | NextAuth (Google OAuth 2.0, JWT) | v4 | OAuth 2.0 / JWT sessions |
+| **Database** | PostgreSQL via Prisma ORM | 6.19.3 | Database access + migrations |
+| **AI** | Groq API via standard HTTP fetch | — | Summarization, chat, draft generation |
+| **Email** | Gmail API via `googleapis` | v173 | Gmail read/write/send |
+| **Integrations** | Slack Web API, Google Calendar API | — | Slack digests, Calendar event booking |
+| **Hosting** | Vercel (recommended), Firebase App Hosting | — | Serverless SSR & API hosting |
 
 ---
 
 ## 📂 Project Structure
 
 ```
-repeatless/
+aether/
 ├── prisma/
 │   ├── schema.prisma              # Database schema (User, Email, Workflow, QueryCache, etc.)
 │   └── migrations/                # Prisma migration history
@@ -313,7 +315,7 @@ repeatless/
 │   │   │   ├── auth/[...nextauth]/route.ts   # NextAuth OAuth handler
 │   │   │   ├── calendar/                     # Calendar booking route
 │   │   │   │   └── book/route.ts
-│   │   │   ├── chat/route.ts                 # Gemini Copilot chat endpoint
+│   │   │   ├── chat/route.ts                 # Personal Assistant chat endpoint
 │   │   │   ├── clean/route.ts                # Bulk trash / storage saver
 │   │   │   ├── cron/                         # Background cron entrypoints
 │   │   │   │   └── workflows/route.ts
@@ -336,7 +338,7 @@ repeatless/
 │       ├── calendar.ts             # Google Calendar API helper
 │       ├── cron.ts                 # Workflow automation runner engine
 │       ├── db.ts                   # Prisma client singleton
-│       ├── gemini.ts               # Gemini AI service (summarize, chat, reply)
+│       ├── gemini.ts               # Groq AI service (summarize, chat, reply - legacy name)
 │       └── gmail.ts                # Gmail API service (fetch, send, trash)
 ├── .env.example                    # Environment variable template
 ├── ARCHITECTURE.md                 # Detailed architecture documentation
@@ -357,14 +359,14 @@ repeatless/
 | **npm** | v9+ |
 | **PostgreSQL** | v14+ (or a hosted provider like [Neon](https://neon.tech) / [Supabase](https://supabase.com)) |
 | **Google Cloud Project** | With Gmail API and Google Calendar API enabled |
-| **Google AI Studio** | API key for Gemini |
+| **Groq API Key** | API key from Groq Console |
 
 ### Installation
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Vamshidathrika/repeatless.git
-cd repeatless
+git clone https://github.com/Vamshidathrika/repeatless.git aether
+cd aether
 
 # 2. Install dependencies
 npm install
@@ -403,8 +405,8 @@ Create a `.env` file in the project root with the following variables:
 
 ```env
 # ── Database ──────────────────────────────────────────────
-DATABASE_URL="postgresql://user:password@host:5432/repeatless?sslmode=require"
-DIRECT_URL="postgresql://user:password@host:5432/repeatless"
+DATABASE_URL="postgresql://user:password@host:5432/aether?sslmode=require"
+DIRECT_URL="postgresql://user:password@host:5432/aether"
 
 # ── NextAuth ──────────────────────────────────────────────
 NEXTAUTH_URL="http://localhost:3000"
@@ -414,11 +416,10 @@ NEXTAUTH_SECRET=""  # Generate with: openssl rand -base64 32
 GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="your-client-secret"
 
-# ── Google Gemini AI ──────────────────────────────────────
-GEMINI_API_KEY="your-gemini-api-key"
-
-# ── Groq API fallback ─────────────────────────────────────
+# ── Groq / AI API ─────────────────────────────────────────
 GROQ_API_KEY="your-groq-api-key"
+OPENROUTER_API_KEY="your-openrouter-key-optional"
+GEMINI_API_KEY="your-gemini-key-optional"
 
 # ── Slack OAuth Integration ────────────────────────────────
 SLACK_CLIENT_ID="your-slack-client-id"
@@ -581,7 +582,7 @@ erDiagram
 | `/api/sync` | `POST` | Triggers thread-first Gmail sync, body extraction, duplicate detection, and summarization |
 | `/api/emails` | `GET` | Fetches saved emails with filter/search options |
 | `/api/emails/summarize` | `POST` | Performs on-demand re-summarization of an email |
-| `/api/chat` | `POST` | Gemini Copilot conversational assistant (with query caching and rate limits) |
+| `/api/chat` | `POST` | Personal Assistant conversational assistant (with query caching and rate limits) |
 | `/api/reply` | `POST` | AI Smart Reply generation and direct Gmail reply execution |
 | `/api/clean` | `POST` | Resilient batch cleanup of duplicates, categories, or senders |
 | `/api/slack/connect` | `GET` | Initiates the Slack OAuth connection flow |
@@ -589,12 +590,6 @@ erDiagram
 | `/api/slack/status` | `GET` | Returns details about whether Slack is connected for the user |
 | `/api/slack/channels` | `GET` | Retrieves accessible public and private Slack channels for posting digests |
 | `/api/slack/disconnect` | `POST` | Removes the Slack account reference from database |
-| `/api/jira/connect` | `GET` | Initiates the Jira OAuth connection flow |
-| `/api/jira/callback` | `GET` | Jira OAuth callback exchange and credentials update |
-| `/api/jira/status` | `GET` | Returns details about whether Jira is connected |
-| `/api/jira/projects` | `GET` | Lists available Atlassian Jira projects to host tickets |
-| `/api/jira/issue` | `POST` | Creates a structured Jira ticket from an email action item |
-| `/api/jira/disconnect` | `POST` | Removes the Jira account reference from database |
 | `/api/calendar/book` | `POST` | Schedules and creates an event in Google Calendar |
 | `/api/workflows` | `GET`/`POST` | Lists all workflows or creates a new automated workflow |
 | `/api/workflows/[id]` | `PUT`/`DELETE` | Updates or deletes an automated workflow config |
@@ -615,27 +610,26 @@ Follow these steps to verify a successful setup:
 | 1 | Open **http://localhost:3000** | SaaS-style login page with animated gradient panel |
 | 2 | Click **Continue with Google** | Google OAuth consent screen appears |
 | 3 | Authorize and return | Redirected to the main inbox view |
-| 4 | Click **Sync Inbox** in the sidebar | Emails are fetched, summarized, and displayed in threaded groups |
+| 4 | Click **Sync Inbox** in the top navbar | Emails are fetched, summarized, and displayed in threaded groups |
 | 5 | Click any email thread | AI Summary tab shows importance score, action items, and reply suggestions |
 | 6 | Click **Book Event** next to a suggestion | Calendar schedule popup appears; booking registers directly in Google Calendar |
-| 7 | Click **Create Jira Ticket** on an action item | Populates ticket title/description, submits directly to select Jira project |
-| 8 | Navigate to **Integrations** / **Settings** | Slack Connection panels show Connect options. Complete Slack OAuth successfully |
-| 9 | Navigate to **Workflows & Webhooks** | Define a new workflow to post daily digests to Slack; execute a test run successfully |
-| 10 | Open **Gemini Copilot** chat | Chat interface with text input appears |
-| 11 | Type *"Summarize my week"* | Copilot returns a cached semantic summary or queries DB under sliding rate limits |
+| 7 | Navigate to **Integrations** (Connections) | Slack Connection panels show Connect options. Complete Slack OAuth successfully |
+| 8 | Navigate to **Workflows & Webhooks** | Define a new workflow to post daily digests to Slack; execute a test run successfully |
+| 9 | Click the Personal Assistant FAB (bottom right) | Chat interface with text input appears |
+| 10 | Type *"Summarize my week"* | Personal Assistant returns a cached semantic summary or queries DB under sliding rate limits |
 
 ---
 
 ## 🌐 Deployment
 
-Repeatless is optimized for deployment on **Vercel** (recommended) and also supports **Firebase App Hosting**.
+Aether is optimized for deployment on **Vercel** (recommended) and also supports **Firebase App Hosting**.
 
 For detailed deployment instructions, production environment configuration, and platform-specific guides, see:
 
 📘 **[DEPLOYMENT.md](DEPLOYMENT.md)**
 
 > [!TIP]
-> When deploying to production, remember to update `NEXTAUTH_URL` to your production domain and add the production callback URIs for Google, Slack, and Jira to their respective developer portals.
+> When deploying to production, remember to update `NEXTAUTH_URL` to your production domain and add the production callback URIs for Google and Slack to their respective developer portals.
 
 ---
 
@@ -658,7 +652,7 @@ This project is licensed under the **MIT License**.
 ```
 MIT License
 
-Copyright (c) 2026 Repeatless
+Copyright (c) 2026 Aether
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -682,5 +676,5 @@ SOFTWARE.
 ---
 
 <p align="center">
-  Built with ❤️ using Next.js, Gemini AI, and the Gmail API
+  Built with ❤️ using Next.js, Groq AI API, and the Gmail API
 </p>

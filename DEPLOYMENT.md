@@ -71,8 +71,6 @@ Under the **Environment Variables** accordion, add the following variables:
 | `GROQ_API_KEY`         | Your Groq API Key for model failover. |
 | `SLACK_CLIENT_ID`      | Your Slack App Client ID. |
 | `SLACK_CLIENT_SECRET`  | Your Slack App Client Secret. |
-| `JIRA_CLIENT_ID`       | Your Jira OAuth Client ID (Optional). |
-| `JIRA_CLIENT_SECRET`   | Your Jira OAuth Client Secret (Optional). |
 | `CRON_SECRET`          | Secure key to protect cron workflow runner triggers (e.g. `b3A5OW5iMjdkNDIyNWI4ZDJiYjJiZTcwNjg1OQ==`). |
 
 ### Step 3: Deploy
@@ -91,13 +89,6 @@ Since Repeatless will be installed by users in different workspaces, you **must 
 3. Select **Manage Distribution**:
    - Verify the checklists under "Remove Hard Coded Information" and "Use HTTPS For Your Features" are green.
    - Click the green **Activate Public Distribution** button.
-
-#### 💼 Jira OAuth Configuration
-1. Go to the [Atlassian Developer Console](https://developer.atlassian.com/console/myapps/).
-2. Create/edit your OAuth 2.0 app.
-3. Under **OAuth 2.0 (3LO)**:
-   - Add callback URL: `https://your-domain.vercel.app/api/jira/callback`
-   - Enable Jira Platform REST API scopes: `read:jira-user`, `read:jira-work`, `write:jira-work`, and `offline_access`.
 
 #### 📅 Google Calendar API
 1. Enable the **Google Calendar API** in your Google Cloud Console project.

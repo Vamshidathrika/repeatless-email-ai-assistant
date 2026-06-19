@@ -1,7 +1,7 @@
-# Repeatless — Technical Architecture
+# Aether — Technical Architecture
 
-> **AI-Powered Gmail Intelligence Platform**
-> Version 0.1.0 · Next.js 16 · React 19 · Prisma · Google Gemini AI
+> **Focused Gmail Intelligence Platform**
+> Version 0.1.0 · Next.js 16 · React 19 · Prisma · Groq AI API
 
 ---
 
@@ -23,19 +23,19 @@
 
 ## 1. Overview
 
-Repeatless is a **Next.js 16 (App Router)** application that connects to a user's Gmail account via **OAuth 2.0**, syncs email threads, processes them with **Google Gemini AI** for structured summarization and categorization, and presents the results through an intelligent, multi-view workspace UI.
+Aether is a **Next.js 16 (App Router)** application that connects to a user's Gmail account via **OAuth 2.0**, syncs email threads, processes them with **Groq AI** for structured summarization and categorization, and presents the results through an intelligent, multi-view workspace UI.
 
 ### Core Capabilities
 
 | Capability | Description |
 |---|---|
 | **Email Sync** | Thread-first Gmail synchronization with MIME parsing and deduplication |
-| **AI Summarization** | Structured summaries, action items, importance scoring, and reply suggestions via Gemini |
-| **Conversational RAG** | Natural-language email assistant with 3-source retrieval-augmented generation |
+| **AI Summarization** | Structured summaries, action items, importance scoring, and reply suggestions via Groq |
+| **Conversational RAG** | Natural-language email Personal Assistant with 3-source retrieval-augmented generation |
 | **Smart Reply** | AI-drafted replies with full thread context, sent via Gmail API with proper RFC 2822 threading |
 | **Priority Matrix** | Importance-scored email triage across AI-detected categories |
 | **Bulk Cleanup** | Strategy-based batch operations (duplicates, promotions) across Gmail and local DB |
-| **Unsubscribe Hub** | Centralized discovery and one-click unsubscribe via `List-Unsubscribe` header extraction |
+| **Unsubscribe Hub** | Centralized discovery, direct unsubscribe URLs, and multi-select unsubscribe bulk actions |
 
 ---
 
@@ -59,7 +59,6 @@ graph TB
         ReplyRoute["/api/reply"]
         CleanRoute["/api/clean"]
         SlackRoute["/api/slack/**"]
-        JiraRoute["/api/jira/**"]
         CalendarRoute["/api/calendar/book"]
         WorkflowsRoute["/api/workflows/**"]
         WebhooksRoute["/api/webhooks/**"]
@@ -69,7 +68,7 @@ graph TB
     subgraph Services["Service Layer (src/lib/)"]
         AuthSvc["auth.ts"]
         DBSvc["db.ts"]
-        GeminiSvc["gemini.ts"]
+        AISvc["gemini.ts<br/>Groq AI Service"]
         GmailSvc["gmail.ts"]
         CronSvc["cron.ts"]
         CalendarSvc["calendar.ts"]
@@ -78,9 +77,8 @@ graph TB
     subgraph External["External Services"]
         Google["Google Cloud & Calendar"]
         GmailAPI["Gmail API"]
-        GeminiAPI["Gemini AI API"]
+        GroqAPI["Groq AI API"]
         SlackAPI["Slack Web API"]
-        JiraAPI["Jira Platform API"]
     end
 
     DB[("PostgreSQL<br/>(Prisma ORM)")]
@@ -91,20 +89,19 @@ graph TB
 
     SyncRoute --> GmailSvc
     GmailSvc <-->|"threads.list / get"| GmailAPI
-    GmailSvc --> GeminiSvc
-    GeminiSvc <-->|"generateContent"| GeminiAPI
+    GmailSvc --> AISvc
+    AISvc <-->|"chat completions"| GroqAPI
 
     ReplyRoute --> GmailSvc
     GmailSvc -->|"messages.send"| GmailAPI
 
-    ChatRoute --> GeminiSvc
-    SummarizeRoute --> GeminiSvc
+    ChatRoute --> AISvc
+    SummarizeRoute --> AISvc
 
     CleanRoute --> GmailSvc
     GmailSvc -->|"messages.trash"| GmailAPI
 
     SlackRoute --> SlackAPI
-    JiraRoute --> JiraAPI
     CalendarRoute --> CalendarSvc --> Google
     WorkflowsRoute --> CronSvc
     CronRoute --> CronSvc
@@ -133,7 +130,7 @@ graph TB
 | **Auth** | NextAuth.js | 4.24.14 | OAuth 2.0 / JWT sessions |
 | **ORM** | Prisma | 6.19.3 | Database access + migrations |
 | **Database** | PostgreSQL | — | Persistent storage |
-| **AI** | Google Gemini (`@google/genai`) | 2.8.0 | Summarization, chat, draft generation |
+| **AI** | Groq API via standard HTTP fetch | — | Summarization, chat, draft generation |
 | **Email** | Google APIs (`googleapis`) | 173.0.0 | Gmail read/write/send |
 | **Language** | TypeScript | 5.x | Type safety |
 
@@ -143,7 +140,7 @@ graph TB
 
 ### 4.1 Component Structure
 
-The frontend is a **single-page client component** (`src/app/page.tsx`, ~3,700 lines) that manages the full dashboard experience. It is wrapped by a minimal root layout (`layout.tsx`) that provides the `SessionProvider` and global CSS.
+The frontend is a **single-page client component** (`src/app/page.tsx`, ~3,900 lines) that manages the full dashboard experience. It is wrapped by a minimal root layout (`layout.tsx`) that provides the `SessionProvider` and global CSS.
 
 ```
 src/app/
@@ -156,62 +153,41 @@ src/app/
 
 ### 4.2 UI Layout
 
-The dashboard follows a **3-column layout** inspired by Google Workspace:
+The dashboard follows a collapsible sidebar layout with a modern top-navbar:
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Header Bar (logo, search, sync button, user avatar)            │
-├────────────┬──────────────────┬───────────────────────────────────┤
-│            │                  │                                   │
-│  Sidebar   │   Email List     │   Detail Pane                    │
-│  (250px)   │   (380px)        │   (flex: 1)                      │
-│            │                  │                                   │
-│  • Inbox   │  Thread cards    │  Full email view                 │
-│  • Priority│  w/ AI badges    │  AI summary panel                │
-│  • Brief   │  category chips  │  Action items                    │
-│  • Unsub   │  importance dots │  Smart reply composer            │
-│  • Chat    │                  │  Thread timeline                 │
-│            │                  │                                   │
-└────────────┴──────────────────┴───────────────────────────────────┘
+│  Top Navbar (active view title, clean inbox button, sync button) │
+├────────────┬─────────────────────────────────────────────────────┤
+│  Sidebar   │  Workspace Content Area                             │
+│  (collaps- │  • TAB 1: Inbox Reader (emails-column + detail-pane)│
+│  ible)     │  • TAB 2: Priority Matrix                           │
+│            │  • TAB 3: Executive Brief                           │
+│  • Mail    │  • TAB 4: Unsubscribe Hub                           │
+│  • Prefs   │  • TAB 5: Connections & Workflows                   │
+│  • Avatar  │                                                     │
+│            │  (FAB - Bottom Right: Personal Assistant Chat)      │
+└────────────┴─────────────────────────────────────────────────────┘
 ```
 
-| Column | Width | Content |
-|---|---|---|
-| **Sidebar** | 250px fixed | Navigation tabs, category filters, sync controls |
-| **Email List** | 380px fixed | Scrollable list of email cards with AI metadata |
-| **Detail Pane** | Flex (remaining) | Selected email body, AI summary, reply composer, thread view |
+The app features a floating chat button (FAB) in the bottom-right corner to open the Personal Assistant.
 
 ### 4.3 Application Views (Tabs)
 
 | Tab | Purpose |
 |---|---|
-| **Inbox** | Primary email list with category filters, search, and full detail view |
-| **Priority Matrix** | Emails organized by AI-assigned importance score and category |
-| **Daily Brief** | AI-generated summary digest of the day's most important emails |
-| **Unsubscribe Hub** | Aggregated view of newsletters/promotions with `List-Unsubscribe` URLs |
+| **Inbox Reader** | Primary email list with sub-filters (All, Unread, Starred, Actions), keyword search, and detailed email viewer. |
+| **Priority Matrix** | Urgency dashboard based on AI importance scores divided into four quadrants. |
+| **Executive Brief** | Daily checklist and action items summary. |
+| **Unsubscribe Hub** | Lists news/promotions with direct unsubscribe links and multi-select checkbox bulk operations. |
+| **Connections** | Slack setup, workflows scheduling, and webhook configurations. |
 
 ### 4.4 State Management
 
-State is managed entirely through **React hooks** — no external state library is used:
-
-- **`useState`** — All UI state (selected email, active tab, filters, search query, chat history, compose mode, etc.)
-- **`useEffect`** — Data fetching on mount and on dependency changes (emails, session)
-- **`useMemo`** — Derived/computed values (filtered email lists, category counts, sorted results)
-
-### 4.5 Design System
-
-The design system is defined in `globals.css` via **CSS custom properties**:
-
-| Token Category | Examples |
-|---|---|
-| **Colors** | `--color-primary`, `--color-surface`, `--color-text-secondary`, `--color-border` |
-| **Typography** | `Inter` (body), `Plus Jakarta Sans` (headings), `Outfit` (display/accent) |
-| **Spacing** | Consistent 4px / 8px grid via padding/margin utilities |
-| **Borders & Radii** | `--radius-sm`, `--radius-md`, `--radius-lg` |
-| **Shadows** | `--shadow-sm`, `--shadow-md`, `--shadow-lg` |
-| **Transitions** | `--transition-fast`, `--transition-normal` |
-
-The visual design follows a **Google Workspace-inspired light theme** with clean surfaces, subtle borders, and accent colors for AI-generated elements.
+State is managed entirely through **React hooks**:
+- **`useState`** — UI states (active tab, search query, selected email, chat panel visibility, checkbox selections, webhook/workflow builders).
+- **`useEffect`** — Trigger-based side effects (token listeners, initial fetches, selected email prefills).
+- **`useMemo`** — Efficient filtering and counts calculation (filtered threads, status counts, matrix buckets).
 
 ---
 
@@ -236,7 +212,7 @@ graph LR
     A1 -->|"OAuth"| EXT1["Google OAuth"]
     A2 -->|"Sync"| EXT2["Gmail API"]
     A3 -->|"Query"| DB[("PostgreSQL")]
-    A4 -->|"Summarize"| EXT3["Gemini AI"]
+    A4 -->|"Summarize"| EXT3["Groq API"]
     A5 -->|"RAG"| EXT3
     A6 -->|"Send"| EXT2
     A7 -->|"Trash"| EXT2
@@ -248,16 +224,16 @@ graph LR
 
 #### `POST /api/auth/[...nextauth]`
 
-**NextAuth catch-all handler.** Manages the complete OAuth 2.0 lifecycle with Google.
+**NextAuth catch-all handler.** Manages OAuth 2.0 with Google.
 
 | Aspect | Detail |
 |---|---|
 | **Provider** | Google OAuth with `access_type: "offline"`, `prompt: "consent"` |
-| **Scopes** | `openid`, `email`, `profile`, `gmail.readonly`, `gmail.modify`, `gmail.send` |
-| **Session Strategy** | JWT (stateless, no server-side session store) |
+| **Scopes** | `openid`, `email`, `profile`, `gmail.readonly`, `gmail.modify`, `gmail.send`, `calendar.events` |
+| **Session Strategy** | JWT (stateless) |
 | **`signIn` Callback** | Upserts `User` and `Account` records in Prisma |
-| **`jwt` Callback** | Looks up the database user by email, attaches CUID as `token.uid` |
-| **`session` Callback** | Exposes `session.user.id` (CUID) and `session.accessToken` to the client |
+| **`jwt` Callback** | Attaches database user ID as `token.id` and Google tokens as `token.accessToken`/`token.refreshToken` |
+| **`session` Callback** | Exposes `session.user.id` and `session.accessToken` to the client |
 
 ---
 
@@ -280,137 +256,67 @@ Triggers email synchronization from Gmail.
 }
 ```
 
-Internally calls `syncEmails(userId, limit)` from `gmail.ts`, which performs thread-first sync with per-message Gemini summarization.
+Calls `syncEmails(userId, limit)` from `gmail.ts` which extracts emails, checks deduplication hashes, and summarizes them via Groq.
 
 ---
 
 #### `GET /api/emails`
 
-Fetches stored emails with optional filtering.
-
-| Query Param | Type | Description |
-|---|---|---|
-| `category` | `string` | Filter by AI-assigned category |
-| `search` | `string` | Full-text search across subject and sender |
-| `includeDuplicates` | `boolean` | Whether to include emails flagged as duplicates |
-
-Builds a dynamic Prisma `where` clause. Returns emails with their associated `EmailSummary` relation.
+Fetches stored emails with optional filtering by `category`, `search`, and `includeDuplicates`.
 
 ---
 
 #### `POST /api/emails/summarize`
 
-On-demand re-summarization for a single email (e.g., after a failed or incomplete summary).
-
-| Body Field | Type | Description |
-|---|---|---|
-| `emailId` | `string` | Gmail message ID of the email to re-summarize |
-
-Fetches the email, builds thread context from all emails sharing the same `threadId` (in chronological order), calls `summarizeThreadEmail()`, and upserts the resulting `EmailSummary`.
+On-demand re-summarization for a single email (triggered automatically if a summary was missing or failed during sync).
 
 ---
 
 #### `POST /api/chat`
 
-Conversational email assistant powered by RAG (Retrieval-Augmented Generation).
+Conversational assistant powered by RAG (Retrieval-Augmented Generation) and rate limited via sliding window counters.
 
-| Body Field | Type | Description |
-|---|---|---|
-| `query` | `string` | User's natural-language question |
-| `history` | `array` | Prior conversation turns for context continuity |
-
-**Processing Pipeline:**
-
-1. **Intent Classification** — Keyword → category mapping to detect query intent
-2. **3-Source RAG Retrieval:**
-   - Recent emails — top 25 by date
-   - Keyword search — top 15 matching subject/sender
-   - Category-specific — top 15–25 from the detected category
-3. **Thread-First Context Construction** — Groups retrieved emails by `threadId`, builds structured prompt
-4. **Generation** — Calls `askAgentAboutEmails()` with full conversational history
-5. **Special Mode** — Newsletter digest queries trigger a dedicated system prompt with semantic deduplication instructions
+- **3-Source RAG Retrieval:** Caches queries using SHA-256 hashes. If missed, queries the database for:
+  1. Recency: Top 25 emails.
+  2. Keywords: Top 15 matching keyword search.
+  3. Categories: Top 15-25 from the detected intent category.
+- **Personal Assistant Prompt:** Tailored conversational prompts with strict grounding and formatting rules.
 
 ---
 
 #### `POST /api/reply`
 
-AI-assisted reply drafting and sending.
-
-| Body Field | Type | Description |
-|---|---|---|
-| `action` | `"draft"` \| `"send"` | Whether to draft only or send immediately |
-| `emailId` | `string` | Target email to reply to |
-| `instruction` | `string` | User's guidance for the reply content |
-| `subject` | `string` | _(send only)_ Final subject line |
-| `body` | `string` | _(send only)_ Final reply body |
-
-**Draft mode:** Fetches thread emails, builds context, calls `draftReply()` via Gemini → returns `{ subject, body }`.
-
-**Send mode:** Calls `sendGmailReply()` which constructs a full RFC 2822 MIME message with proper `In-Reply-To` and `References` headers for correct thread association. Saves the sent email and a dummy summary to the local DB.
+AI-assisted reply drafting and sending. Constructs raw RFC 2822 MIME replies with correct `In-Reply-To` and `References` headers.
 
 ---
 
 #### `POST /api/clean`
 
-Batch email cleanup across Gmail and the local database.
-
-| Body Field | Type | Description |
-|---|---|---|
-| `strategy` | `string?` | `"duplicates"` \| `"promotions"` \| `"both"` |
-| `sender` | `string?` | Sender email for all-time cleanup via Gmail query |
-| `emailIds` | `string[]?` | Specific email IDs to trash |
-
-**Three operating modes:**
-
-| Mode | Trigger | Behavior |
-|---|---|---|
-| **Specific IDs** | `emailIds` provided | Trashes the listed emails |
-| **By Sender** | `sender` provided | Queries Gmail for all emails from sender across all time, trashes them |
-| **Strategy** | `strategy` provided | Finds duplicates and/or promotions, trashes in batch |
-
-Uses **resilient batch trashing**: chunks of 1,000 messages with individual-fallback on per-message errors. Cleans both Gmail (via API) and local database records.
+Resilient batch email cleanup across Gmail and local DB. Features a chunk size of 1,000 with individual retry fallback on failure.
 
 ---
 
 #### `GET /api/slack/connect` & `GET /api/slack/callback`
-Manages the Slack OAuth 2.0 flow. `connect` redirects to Slack OAuth. `callback` exchanges the authorization code for a Bot User access token (`xoxb-...`), captures metadata (team ID, team name, scope), and upserts the `Account` table under provider `"slack"`.
 
-#### `GET /api/slack/status` & `GET /api/slack/channels` & `POST /api/slack/disconnect`
-* **`/api/slack/status`**: Checks database for a connected Slack account.
-* **`/api/slack/channels`**: Queries the Slack Web API (`conversations.list` and `conversations.join` if needed) to list available channels for sending summaries.
-* **`/api/slack/disconnect`**: Truncates/deletes the Slack provider credentials from the `Account` database.
+Manages the Slack OAuth 2.0 flow. Upserts the `Account` table with provider `"slack"`.
 
-#### `GET /api/jira/connect` & `GET /api/jira/callback`
-Integrates with Jira OAuth 3LO (Three-Legged OAuth). On development mode (missing credentials), redirects to a sandbox demo page. In production, redirects to Atlassian OAuth and exchanges the callback code for a Jira access token.
-
-#### `GET /api/jira/status` & `GET /api/jira/projects` & `POST /api/jira/issue` & `POST /api/jira/disconnect`
-* **`/api/jira/status`**: Returns Jira connection state.
-* **`/api/jira/projects`**: Fetches projects from Atlassian's Cloud Platform.
-* **`/api/jira/issue`**: Receives an email summary action item, calls Jira's API (`/rest/api/3/issue`) to create a ticket, and returns the issue URL.
-* **`/api/jira/disconnect`**: Deletes the Jira OAuth record from database.
+---
 
 #### `POST /api/calendar/book`
-Extracts meeting details (title, description, start time, end time) and calls the Google Calendar API (`events.insert`) to schedule meetings directly from action item/reply suggestion context.
 
-#### `/api/workflows` & `/api/workflows/[id]` & `/api/workflows/run`
-Handles automated workflows:
-- **`GET /api/workflows` & `POST /api/workflows`**: CRUD endpoints for configuring automated scheduling (cron patterns), trigger actions, and status trackers.
-- **`PUT/DELETE /api/workflows/[id]`**: Controls enabling/disabling or removing custom workflows.
-- **`POST /api/workflows/run`**: Triggers execution on-demand. Resolves actions (e.g. summarizing categories, posting to Slack, calling custom Webhooks).
+Schedules and creates an event in Google Calendar using the Google API `events.insert`.
+
+---
 
 #### `GET/POST /api/cron/workflows`
-Cron entry point. Intended to be triggered regularly (e.g., every minute) by Vercel Cron. Checks for enabled workflows where `nextRunAt <= now()`, runs them sequentially via the `cron.ts` engine, logs the output, and updates the `nextRunAt` timestamps. Secured using `CRON_SECRET` validation.
 
-#### `/api/webhooks` & `/api/webhooks/[id]` & `/api/webhooks/test`
-Manages outbound webhooks:
-- **`POST /api/webhooks`**: Registers webhook targets with custom URLs, HTTP methods (POST/GET), emojis, and signing secrets.
-- **`POST /api/webhooks/test`**: Performs a test call with a signed HMAC payload if a secret is provided.
+Cron entry point. Secured using `CRON_SECRET` validation. Executes scheduled workflows, posts digests to Slack, or invokes outbound webhooks.
 
 ---
 
 ### 5.2 Service Layer
 
-The service layer lives in `src/lib/` and encapsulates all business logic, external integrations, and data access.
+The service layer lives in `src/lib/` and encapsulates business logic.
 
 ```
 src/lib/
@@ -418,241 +324,38 @@ src/lib/
 ├── calendar.ts  # Google Calendar API helper
 ├── cron.ts      # Workflow runner & webhook dispatcher
 ├── db.ts        # Prisma client singleton
-├── gemini.ts    # Google Gemini AI integration
+├── gemini.ts    # Groq AI service layer (legacy filename)
 └── gmail.ts     # Gmail API integration & sync engine
 ```
 
 ---
 
-#### `auth.ts` — Authentication Configuration
+#### `gemini.ts` — Groq AI Service
 
-Configures NextAuth with the Google OAuth provider and custom callbacks:
-
-| Callback | Responsibility |
-|---|---|
-| `signIn` | Upserts `User` + `Account` records in Prisma on every sign-in |
-| `jwt` | Enriches the JWT with the database user's CUID (`token.uid`) |
-| `session` | Attaches `user.id` and `accessToken` to the client-visible session |
-
-Provider settings: `access_type: "offline"` (enables refresh tokens), `prompt: "consent"` (always shows consent screen for reliable refresh token issuance).
-
----
-
-#### `db.ts` — Prisma Client Singleton
-
-Manages a single Prisma client instance with **global caching** to survive Next.js development hot-reloads.
-
-| Environment | Log Levels |
-|---|---|
-| Development | `error`, `warn` |
-| Production | `error` only |
-
----
-
-#### `gemini.ts` — AI Integration
-
-Provides three primary AI functions plus resilience utilities:
+Provides core AI interfaces using standard HTTP POST requests to `https://api.groq.com/openai/v1/chat/completions`:
 
 | Function | Input | Output | Description |
 |---|---|---|---|
-| `summarizeThreadEmail()` | Email content + thread context | Structured JSON via `responseSchema` | Generates: `shortSummary`, `detailedSummary`, `actionItems[]`, `category` (enum), `importanceScore` (1–10), `replySuggestions[]`. Uses a system instruction enforcing objectivity. |
-| `askAgentAboutEmails()` | User query + email context + history | Free-text response | Conversational RAG agent with a zero-hallucination system prompt and strict grounding rules. Special newsletter digest mode with semantic deduplication instructions. |
-| `draftReply()` | Thread context + user instruction | `{ subject, body }` JSON | Generates a contextual reply draft. Signs off with the user's name. |
-| `retryWithBackoff()` | Async function | Function result | Generic retry wrapper: **4 retries**, **2.5× exponential backoff**. Catches `429`, `503`, quota exhaustion, and `RESOURCE_EXHAUSTED` errors. |
-| `resolveModelName()` | Model name string | Canonical model ID | Maps various model name inputs to `gemini-2.0-flash-lite`. |
-
----
-
-#### `gmail.ts` — Gmail Integration & Sync Engine
-
-| Function | Description |
-|---|---|
-| `getGmailClient()` | Creates an authenticated Gmail API client. Reads OAuth tokens from the `Account` table. Registers an `oauth2Client.on('tokens')` listener that auto-persists refreshed tokens back to the DB. |
-| `syncEmails()` | **Thread-first sync engine.** Lists threads (`maxResults`), fetches full thread data, processes each message: header extraction, recursive MIME body parsing (`text/plain` + `text/html`), `List-Unsubscribe` header extraction, rolling thread-context construction, deduplication check, `Email` record creation, and Gemini summarization call. |
-| `sendGmailReply()` | Constructs an RFC 2822 MIME message with `In-Reply-To` and `References` headers for proper Gmail threading. Supports `threadId=null` for forwards (creates a new thread). Base64url-encodes the raw message for the Gmail API. |
-| `generateDedupHash()` | Produces an MD5 hash of: normalized sender email + normalized subject (stripped of `Re:`/`Fwd:`, lowercased, alpha-only) + ISO year-week string. Used only for single-message threads. |
-
-**Helper functions:**
-
-| Helper | Purpose |
-|---|---|
-| `extractBodyParts()` | Recursive MIME tree traversal to extract `text/plain` and `text/html` parts |
-| `parseUnsubscribeUrl()` | Extracts URL or `mailto:` link from the `List-Unsubscribe` header |
-| `normalizeSender()` | Extracts the email address from display-name format (e.g., `"John Doe <john@example.com>"` → `john@example.com`) |
-| `normalizeSubject()` | Strips `Re:`/`Fwd:` prefixes, lowercases, and removes non-alpha characters |
-| `getYearWeekString()` | Returns an ISO year-week string (e.g., `2026-W25`) for dedup windowing |
+| `summarizeThreadEmail()` | Email body + thread context | Structured JSON via prompt schema | Generates short summary, detailed summary, action items, category, importance score, and reply suggestions. |
+| `askAgentAboutEmails()` | User query + email context + history | Free-text response | Personal Assistant chatbot with conversational grounding and newsletter digest capabilities. |
+| `draftReply()` | Thread context + instructions | `{ subject, body }` JSON | Contextual email reply compiler. |
+| `resolveModelName()` | Model name string | Groq model key | Resolves custom configurations to `llama-3.1-8b-instant` or `llama-3.3-70b-versatile`. |
+| `cleanJsonResponse()` | Raw response text | Clean JSON string | Trims surrounding markdown backticks (e.g. ` ```json `) to ensure safe JSON parsing. |
+| `retryWithBackoff()` | Execution function | Result | 3-retries exponential backoff (2.5x multipliers) skipping hard quota failures. |
 
 ---
 
 ## 6. Database Schema
 
-The database uses **PostgreSQL** via **Prisma ORM**. The schema is defined in `prisma/schema.prisma`.
-
-### 6.1 Entity-Relationship Diagram
-
-```mermaid
-erDiagram
-    User {
-        string id PK "CUID"
-        string name "nullable"
-        string email UK "nullable"
-        datetime emailVerified "nullable"
-        string image "nullable"
-    }
-
-    Account {
-        string id PK "CUID"
-        string userId FK
-        string type
-        string provider
-        string providerAccountId
-        string refresh_token "nullable"
-        string access_token "nullable"
-        int expires_at "nullable"
-        string token_type "nullable"
-        string scope "nullable"
-        string id_token "nullable"
-        string session_state "nullable"
-    }
-
-    Session {
-        string id PK "CUID"
-        string sessionToken UK
-        string userId FK
-        datetime expires
-    }
-
-    VerificationToken {
-        string identifier
-        string token UK
-        datetime expires
-    }
-
-    UserPreference {
-        string id PK "CUID"
-        string userId FK_UK
-        string categories "CSV default"
-        int dedupWindowHrs "default: 168"
-        string summaryModel "default: gemini-3.5-flash"
-        string chatModel "default: gemini-3.5-flash"
-    }
-
-    Email {
-        string id PK "Gmail message ID"
-        string threadId "indexed"
-        string userId FK "indexed"
-        string subject
-        string sender
-        string receiver
-        datetime date
-        string bodySnippet
-        string bodyContent
-        string htmlContent "nullable"
-        string unsubscribeUrl "nullable"
-        string labels "CSV"
-        boolean isDuplicate "default: false"
-        string dedupHash "nullable"
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    EmailSummary {
-        string id PK "CUID"
-        string emailId FK_UK
-        string shortSummary
-        string detailedSummary
-        string actionItems "JSON"
-        string category
-        int importanceScore "1-10"
-        string replySuggestions "JSON, nullable"
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    SyncState {
-        string id PK "CUID"
-        string userId UK
-        string lastHistoryId "nullable"
-        datetime lastSyncAt
-    }
-
-    WebhookConnection {
-        string id PK "CUID"
-        string userId FK
-        string name
-        string description "nullable"
-        string url
-        string method "default: POST"
-        string headers "nullable"
-        string emoji "default: 🔗"
-        string secret "nullable"
-        datetime lastTestedAt "nullable"
-        string lastTestStatus "nullable"
-        int lastTestCode "nullable"
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    Workflow {
-        string id PK "CUID"
-        string userId FK
-        string name
-        string description "nullable"
-        boolean enabled "default: true"
-        string schedule "cron expression"
-        string timezone "default: UTC"
-        string actions "JSON list"
-        datetime lastRunAt "nullable"
-        datetime nextRunAt "nullable"
-        string lastRunStatus "nullable"
-        string lastRunLog "nullable"
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    QueryCache {
-        string id PK "CUID"
-        string userId
-        string queryHash "SHA-256"
-        string queryText
-        string answer
-        int hitCount "default: 0"
-        datetime createdAt
-        datetime expiresAt
-    }
-
-    RateLimit {
-        string id PK "CUID"
-        string userId UK
-        datetime windowStart
-        int requestCount "default: 0"
-    }
-
-    User ||--o{ Account : "has"
-    User ||--o{ Session : "has"
-    User ||--o{ Email : "has"
-    User ||--o| UserPreference : "has"
-    User ||--o{ Workflow : "schedules"
-    User ||--o{ WebhookConnection : "connects"
-    Email ||--o| EmailSummary : "has"
-```
-
-### 6.2 Model Details
-
-| Model | Key Constraints | Notes |
-|---|---|---|
-| **User** | `email` unique | Central identity. Cascading deletes to all children. |
-| **Account** | `(provider, providerAccountId)` unique | Stores OAuth tokens (`access_token`, `refresh_token`, `expires_at`). |
-| **Session** | `sessionToken` unique | Used by NextAuth; JWT strategy means sessions are stateless in practice. |
-| **VerificationToken** | `(identifier, token)` unique | Standard NextAuth email verification support. |
-| **UserPreference** | `userId` unique (1:1 with User) | User-configurable categories (CSV), dedup window (default 168h = 1 week), AI model selection. |
-| **Email** | `id` = Gmail message ID (not auto-generated) | Indexed on `threadId` and `userId`. `bodyContent` stores raw plaintext; `htmlContent` optionally stores HTML. |
-| **EmailSummary** | `emailId` unique (1:1 with Email) | AI-generated structured data. `actionItems` and `replySuggestions` are JSON-stringified arrays. |
-| **SyncState** | `userId` unique | Tracks sync position for incremental sync via `lastHistoryId`. |
-| **WebhookConnection**| `id` primary key | Stores custom outbound HTTP endpoint details with an optional HMAC secret. |
-| **Workflow** | `id` primary key | Stores cron-scheduled task automations (actions is JSON list) and logs status. |
-| **QueryCache** | `(userId, queryHash)` unique | Cache table for RAG answers to minimize duplicate LLM invocation costs (TTL: 24h). |
-| **RateLimit** | `userId` unique | Tracks user requests within a sliding window (1 minute) for sliding window rate limiting. |
+The database uses **PostgreSQL** via **Prisma ORM**. Key models:
+- **User** / **Account** / **Session** / **VerificationToken**: Standard NextAuth-compatible structure.
+- **UserPreference**: Holds category lists (CSV), deduplication windows, and preferred AI models.
+- **Email** / **EmailSummary**: Stores parsed email metadata and their corresponding AI-generated structured summaries.
+- **SyncState**: Tracks the incremental sync token (`lastHistoryId`).
+- **WebhookConnection**: Configurations and results for outbound JSON webhooks.
+- **Workflow**: Automated workflows configurations (cron trigger string, action JSON).
+- **QueryCache**: Cache table for RAG queries to minimize redundant LLM token costs.
+- **RateLimit**: Sliding window rate limits table (request counter resetting per minute).
 
 ---
 
@@ -667,8 +370,8 @@ sequenceDiagram
     participant API as /api/sync
     participant Gmail as Gmail API
     participant Svc as gmail.ts
-    participant AI as gemini.ts
-    participant Gemini as Gemini AI
+    participant AI as gemini.ts (Groq Svc)
+    participant Groq as Groq API
     participant DB as PostgreSQL
 
     User->>Client: Clicks "Sync"
@@ -684,8 +387,7 @@ sequenceDiagram
         Gmail-->>Svc: Full thread data (messages[])
 
         loop For each message in thread
-            Svc->>Svc: Extract headers (Subject, From, To, Date)
-            Svc->>Svc: Parse MIME body (extractBodyParts)
+            Svc->>Svc: Extract headers & parse body
             Svc->>Svc: Extract List-Unsubscribe header
             Svc->>Svc: Build rolling thread context
 
@@ -700,8 +402,9 @@ sequenceDiagram
 
             alt Not a duplicate
                 Svc->>AI: summarizeThreadEmail(content, threadContext)
-                AI->>Gemini: generateContent (structured JSON schema)
-                Gemini-->>AI: { shortSummary, detailedSummary, actionItems, category, importanceScore, replySuggestions }
+                AI->>Groq: POST /chat/completions (Llama 3.1 8B)
+                Groq-->>AI: JSON string response
+                AI->>AI: cleanJsonResponse() & JSON.parse()
                 AI-->>Svc: Parsed summary
                 Svc->>DB: Upsert EmailSummary
             end
@@ -721,85 +424,77 @@ sequenceDiagram
     participant Client as Browser
     participant API as /api/chat
     participant DB as PostgreSQL
-    participant AI as gemini.ts
-    participant Gemini as Gemini AI
+    participant AI as gemini.ts (Groq Svc)
+    participant Groq as Groq API
 
-    User->>Client: Types question
+    User->>Client: Types question in PA Panel
     Client->>API: POST /api/chat { query, history }
     API->>API: Validate session
 
-    API->>API: Intent classification (keyword → category)
-
-    par 3-Source Retrieval
-        API->>DB: Recent emails (top 25 by date)
-        API->>DB: Keyword search (top 15, subject/sender match)
-        API->>DB: Category-specific (top 15-25)
+    alt Cache Hit
+        API->>DB: QueryQueryCache (hash match)
+        DB-->>API: Cached answer
+        API-->>Client: Return cached response
     end
 
-    DB-->>API: Combined email results
+    alt Cache Miss
+        API->>API: Intent classification (keyword → category)
 
-    API->>API: Deduplicate results
-    API->>API: Group by threadId
-    API->>API: Build structured context prompt
+        par 3-Source Retrieval
+            API->>DB: Recent emails (top 25)
+            API->>DB: Keyword search (top 15)
+            API->>DB: Category-specific (top 15-25)
+        end
+        DB-->>API: Combined email results
 
-    API->>AI: askAgentAboutEmails(query, context, history)
-    AI->>Gemini: generateContent (conversational, grounded)
-    Gemini-->>AI: Natural language response
-    AI-->>API: Response text
-    API-->>Client: 200 OK + response
-    Client->>Client: Append to chat history
+        API->>API: Deduplicate & group by threadId
+        API->>API: Build structured context prompt
+
+        API->>AI: askAgentAboutEmails(query, context, history)
+        AI->>Groq: POST /chat/completions (conversational prompt)
+        Groq-->>AI: Response text
+        AI-->>API: Response text
+        API->>DB: Cache response (QueryCache)
+        API-->>Client: 200 OK + response
+        Client->>Client: Append to chat history
+    end
 ```
 
 ### 7.3 AI Model Configuration
 
-| Function | Model | Output Format |
+| Function | Model | Details |
 |---|---|---|
-| Email Summarization | `gemini-2.0-flash-lite` | Structured JSON via `responseSchema` |
-| Chat / RAG Agent | `gemini-2.0-flash-lite` | Free-text with grounding constraints |
-| Reply Drafting | `gemini-2.0-flash-lite` | Structured JSON `{ subject, body }` |
+| Email Summarization | `llama-3.1-8b-instant` | Structured JSON with custom schema. |
+| Personal Assistant Chat | `llama-3.1-8b-instant` | Conversational text with strict grounding. |
+| Reply Drafting | `llama-3.1-8b-instant` | Context-aware reply suggestions `{ subject, body }`. |
 
-All AI calls use `retryWithBackoff()` for resilience: **4 retries** with **2.5× exponential backoff**, handling rate limits (`429`), server errors (`503`), and quota exhaustion (`RESOURCE_EXHAUSTED`).
+#### Fallback Chain Configuration
+If the primary model is rate limited or returns errors, the Groq service loops through the following fallbacks:
+1. `llama-3.1-8b-instant` (Primary)
+2. `llama-3.3-70b-versatile` (Large model fallback)
+3. `openai/gpt-oss-20b` (Secondary open fallback)
+4. `groq/compound-mini` (Mini agent fallback)
 
 ---
 
 ## 8. Authentication & Security
 
-### 8.1 OAuth 2.0 Flow
+### 8.1 Google OAuth 2.0 Scopes
+Aether requires the following OAuth permissions:
+- `openid`, `email`, `profile` for core authentication.
+- `gmail.readonly` for syncing emails.
+- `gmail.modify` for trashing and marking emails.
+- `gmail.send` for executing smart replies.
+- `https://www.googleapis.com/auth/calendar.events` for event booking.
 
-```mermaid
-sequenceDiagram
-    actor User
-    participant Client as Browser
-    participant NextAuth as NextAuth.js
-    participant Google as Google OAuth
-    participant DB as PostgreSQL
-
-    User->>Client: Click "Sign in with Google"
-    Client->>NextAuth: GET /api/auth/signin
-    NextAuth->>Google: Authorization redirect
-    Google->>User: Consent screen (gmail scopes)
-    User->>Google: Approve
-    Google->>NextAuth: Authorization code
-    NextAuth->>Google: Exchange code for tokens
-    Google-->>NextAuth: access_token, refresh_token, id_token
-    NextAuth->>DB: Upsert User + Account (store tokens)
-    NextAuth->>Client: Set JWT session cookie
-    Client->>Client: SessionProvider updates
+### 8.2 Token Refresh Pipeline
+Google tokens expire every hour. Aether registers a callback:
+```typescript
+oauth2Client.on('tokens', (tokens) => {
+  // Auto-persisted to Account table in PostgreSQL
+});
 ```
-
-### 8.2 Security Controls
-
-| Control | Implementation |
-|---|---|
-| **Session Strategy** | JWT — stateless, signed with `NEXTAUTH_SECRET` |
-| **API Route Protection** | Every API route calls `getServerSession()` and returns `401` if unauthenticated |
-| **Token Storage** | OAuth tokens (`access_token`, `refresh_token`) stored in PostgreSQL `Account` table |
-| **Token Refresh** | Automatic via `oauth2Client.on('tokens')` listener — refreshed tokens are persisted back to DB |
-| **Cookie Security** | Signed and encrypted by NextAuth using `NEXTAUTH_SECRET` |
-| **Data Boundary** | Email content only leaves the system to Gemini AI for summarization — no other third parties |
-| **Content Truncation** | Body content is truncated to **10,000 characters** before being sent to Gemini, limiting data exposure |
-| **Offline Access** | `access_type: "offline"` ensures refresh tokens are issued for background sync capability |
-| **Consent Prompt** | `prompt: "consent"` forces explicit user approval on every auth flow |
+This ensures token refreshes occur background-safely during cron execution.
 
 ---
 
@@ -807,12 +502,8 @@ sequenceDiagram
 
 | Decision | Rationale |
 |---|---|
-| **Single-file page component (~3,700 lines)** | Optimizes for rapid prototyping and eliminates prop-drilling overhead. All state is colocated. Refactor candidate as the app matures. |
-| **No external state management** | React 19's built-in hooks (`useState`, `useMemo`) are sufficient for the current complexity level. Avoids unnecessary dependency overhead. |
-| **Styled-JSX over CSS modules** | Provides true scoped styles colocated with component logic. CSS custom properties in `globals.css` handle the design system layer. |
-| **Thread-first sync** | Gmail's threading model is central to the UX. Syncing by thread (not individual messages) ensures complete conversation context for AI summarization. |
-| **MD5 dedup hashing** | Lightweight deduplication for single-message threads (newsletters, notifications). Hash = `sender + normalized_subject + year_week`. Multi-message threads are exempt since they carry unique conversation value. |
-| **JWT over database sessions** | Reduces database load. Session data is minimal (user ID + access token). Tradeoff: no server-side session revocation. |
-| **Structured JSON schema for Gemini** | Using `responseSchema` in `generateContent` enforces consistent output shape, avoiding fragile regex/JSON parsing of free-text responses. |
-| **Resilient batch operations** | Chunk size of 1,000 with per-message fallback in the cleanup pipeline ensures partial failures don't abort the entire batch. |
-| **3-source RAG retrieval** | Combining recency, keyword relevance, and category specificity maximizes recall while maintaining precision for the conversational agent. |
+| **Collapsible Sidebar Layout** | Maximizes screen real estate for email reading and priority matrix viewing. |
+| **Personal Assistant Chat FAB** | Keeps conversational inbox assistance accessible on every tab without breaking reading flows. |
+| **Groq API HTTP Client** | Direct `fetch` requests avoid native library bundle overhead while making model fallback chains simple to execute. |
+| **Thread-first sync** | Keeping emails grouped by threadId allows the summarizer and draft reply endpoints to ingest chronological conversation history. |
+| **QueryCache (SHA-256)** | RAG summaries are cached per user query to optimize performance and prevent token cost inflation. |
